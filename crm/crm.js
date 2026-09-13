@@ -2,31 +2,22 @@
   'use strict';
 
   /* ──────────────────────────────────────────────────────────────
-     Модель данных (v3)
-     clients: {id, name, contact, note, color, createdAt}
-     tasks:   {id, title, clientId, status, urgent, price, paid, due, time, note}
-     notes:   {id, body (санитизированный HTML, первая строка = заголовок),
-               pinned, deletedAt, createdAt, updatedAt}
+     Модель данных (v4) — максимально просто: карточки добавляют и удаляют,
+     без статусов, срочности и отдельной сущности «клиент».
+     tasks: {id, title, price, paid, due, time, note, createdAt}
+     notes: {id, body (санитизированный HTML, первая строка = заголовок),
+             pinned, deletedAt, createdAt, updatedAt}
      ────────────────────────────────────────────────────────────── */
 
-  const KEY = 'pelenev.crm.workspace.v3';
+  const KEY = 'pelenev.crm.workspace.v4';
+  const LEGACY_KEY_V3 = 'pelenev.crm.workspace.v3';
   const LEGACY_KEY_V2 = 'pelenev.crm.workspace.v2';
   const LEGACY_KEY_V1 = 'pelenev.crm.workspace.v1';
   const THEME_KEY = 'pelenev.crm.theme';
   const METRICS_KEY = 'pelenev.crm.metricsOpen';
 
-  const STATUSES = [
-    { id: 'new',      label: 'Новая' },
-    { id: 'progress', label: 'В работе' },
-    { id: 'review',   label: 'На согласовании' },
-    { id: 'done',     label: 'Готово' }
-  ];
-  const STATUS_LABEL = Object.fromEntries(STATUSES.map((s) => [s.id, s.label]));
-  const COLORS = ['orange', 'blue', 'green', 'violet'];
-
   /* ── Даты ─────────────────────────────────────────────────── */
   const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-  const WEEKDAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 
   const iso = (date) => {
     const d = new Date(date);
@@ -89,16 +80,9 @@
   /* ── Утилиты ──────────────────────────────────────────────── */
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const money = (n) => `₽ ${Math.round(Number(n) || 0).toLocaleString('ru-RU')}`;
-  const moneyShort = (n) => {
-    const v = Math.round(Number(n) || 0);
-    if (Math.abs(v) >= 1000000) return `₽ ${(v / 1000000).toFixed(1).replace('.0', '')} млн`;
-    if (Math.abs(v) >= 10000) return `₽ ${Math.round(v / 1000)}к`;
-    return money(v);
-  };
   const byId = (id) => document.getElementById(id);
   const num = (v) => Math.max(0, Math.round(Number(v) || 0));
   const uid = (prefix) => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-  const pickColor = (seed) => COLORS[Math.abs([...String(seed)].reduce((a, c) => a + c.charCodeAt(0), 0)) % COLORS.length];
 
   /* Заметки хранятся как ограниченный HTML — только то, что реально создаётся
      тулбаром редактора. Всё остальное (вставка из буфера, чужой мусор) вырезаем,
@@ -183,15 +167,13 @@
   });
 
   /* ── Состояние ────────────────────────────────────────────── */
-  const emptyState = () => ({ v: 3, clients: [], tasks: [], notes: [] });
+  const emptyState = () => ({ v: 4, tasks: [], notes: [] });
 
   const seed = () => {
     const state = emptyState();
-    const c1 = { id: uid('c'), name: 'Авито Сервис', contact: 'hello@avito.example', note: 'Сайт под ключ', color: 'orange', createdAt: today() };
-    state.clients = [c1];
     state.tasks = [
-      { id: uid('t'), title: 'Отправить КП', clientId: c1.id, status: 'progress', urgent: true, price: 65000, paid: 30000, due: today(), time: '10:00', note: '' },
-      { id: uid('t'), title: 'Собрать референсы для главного экрана', clientId: '', status: 'new', urgent: false, price: 0, paid: 0, due: '', time: '', note: '' }
+      { id: uid('t'), title: 'Отправить КП', price: 65000, paid: 30000, due: today(), time: '10:00', note: '', createdAt: today() },
+      { id: uid('t'), title: 'Собрать референсы для главного экрана', price: 0, paid: 0, due: '', time: '', note: '', createdAt: today() }
     ];
     const now = new Date().toISOString();
     state.notes = [{
@@ -203,73 +185,22 @@
   };
 
   /* Перенос данных со старой (веб-архивной) версии CRM, ещё до сделок/задач v2 */
-  const migrate = (old) => {
+  const migrateLegacy = (old) => {
     const state = emptyState();
-    const byName = new Map();
-    const ensureClient = (name) => {
-      const key = String(name || '').trim();
-      if (!key) return '';
-      if (byName.has(key)) return byName.get(key);
-      const client = { id: uid('c'), name: key, contact: '', note: '', color: pickColor(key), createdAt: today() };
-      state.clients.push(client);
-      byName.set(key, client.id);
-      return client.id;
-    };
-
-    (Array.isArray(old.clients) ? old.clients : []).forEach((c) => {
-      const client = { id: c.id || uid('c'), name: c.name || 'Без имени', contact: c.email || '', note: c.type || '', color: c.color || pickColor(c.name), createdAt: today() };
-      state.clients.push(client);
-      byName.set(client.name, client.id);
-    });
-
-    const statusMap = { 'Новая заявка': 'new', 'Созвон': 'new', 'В работе': 'progress', 'Согласование': 'review', 'Оплата': 'review', 'Завершено': 'done' };
     (Array.isArray(old.deals) ? old.deals : []).forEach((d) => {
-      const status = statusMap[d.status] || 'progress';
-      state.tasks.push({
-        id: d.id || uid('t'),
-        title: d.name || 'Без названия',
-        clientId: ensureClient(d.client),
-        status,
-        urgent: d.priority === 'high',
-        price: num(d.value),
-        paid: status === 'done' ? num(d.value) : 0,
-        due: '', time: '', note: ''
-      });
+      state.tasks.push({ id: d.id || uid('t'), title: d.name || 'Без названия', price: num(d.value), paid: d.status === 'Завершено' ? num(d.value) : 0, due: '', time: '', note: '', createdAt: today() });
     });
     (Array.isArray(old.tasks) ? old.tasks : []).forEach((t) => {
-      state.tasks.push({
-        id: t.id || uid('t'),
-        title: t.title || 'Без названия',
-        clientId: ensureClient(t.project),
-        status: t.done ? 'done' : 'progress',
-        urgent: false,
-        price: 0, paid: 0,
-        due: today(), time: t.time || '', note: ''
-      });
+      state.tasks.push({ id: t.id || uid('t'), title: t.title || 'Без названия', price: 0, paid: 0, due: today(), time: t.time || '', note: '', createdAt: today() });
     });
     return state;
   };
 
   const normalize = (incoming) => {
     if (!incoming || typeof incoming !== 'object') return seed();
-    if (incoming.v !== 2 && incoming.v !== 3 && (Array.isArray(incoming.deals) || Array.isArray(incoming.finance))) return migrate(incoming);
+    if (incoming.v !== 2 && incoming.v !== 3 && incoming.v !== 4 && (Array.isArray(incoming.deals) || Array.isArray(incoming.finance))) return migrateLegacy(incoming);
 
     const state = emptyState();
-    const clientIds = new Set();
-
-    (Array.isArray(incoming.clients) ? incoming.clients : []).forEach((c) => {
-      if (!c || typeof c !== 'object') return;
-      const id = String(c.id || uid('c'));
-      clientIds.add(id);
-      state.clients.push({
-        id,
-        name: String(c.name || 'Без имени').slice(0, 120),
-        contact: String(c.contact || '').slice(0, 160),
-        note: String(c.note || '').slice(0, 400),
-        color: COLORS.includes(c.color) ? c.color : pickColor(c.name),
-        createdAt: c.createdAt || today()
-      });
-    });
 
     (Array.isArray(incoming.tasks) ? incoming.tasks : []).forEach((t) => {
       if (!t || typeof t !== 'object') return;
@@ -277,14 +208,12 @@
       state.tasks.push({
         id: String(t.id || uid('t')),
         title: String(t.title || 'Без названия').slice(0, 200),
-        clientId: clientIds.has(t.clientId) ? t.clientId : '',
-        status: STATUS_LABEL[t.status] ? t.status : 'new',
-        urgent: Boolean(t.urgent),
         price,
         paid: Math.min(price, num(t.paid)),
         due: fromIso(t.due) ? t.due : '',
         time: validTime(t.time),
-        note: String(t.note || '').slice(0, 800)
+        note: String(t.note || '').slice(0, 800),
+        createdAt: typeof t.createdAt === 'string' && t.createdAt ? t.createdAt : today()
       });
     });
 
@@ -311,11 +240,12 @@
   let migratedFromLegacy = false;
   try {
     const current = localStorage.getItem(KEY);
-    const legacyV2 = current ? null : localStorage.getItem(LEGACY_KEY_V2);
-    const legacyV1 = current || legacyV2 ? null : localStorage.getItem(LEGACY_KEY_V1);
-    const source = current || legacyV2 || legacyV1;
+    const legacyV3 = current ? null : localStorage.getItem(LEGACY_KEY_V3);
+    const legacyV2 = current || legacyV3 ? null : localStorage.getItem(LEGACY_KEY_V2);
+    const legacyV1 = current || legacyV3 || legacyV2 ? null : localStorage.getItem(LEGACY_KEY_V1);
+    const source = current || legacyV3 || legacyV2 || legacyV1;
     data = source ? normalize(JSON.parse(source)) : seed();
-    migratedFromLegacy = Boolean(legacyV2 || legacyV1);
+    migratedFromLegacy = Boolean(legacyV3 || legacyV2 || legacyV1);
   } catch (_) {
     data = seed();
   }
@@ -351,7 +281,7 @@
       const result = await response.json();
       serverMode = true;
       if (result.state && typeof result.state === 'object') {
-        const wasLegacy = result.state.v !== 3;
+        const wasLegacy = result.state.v !== 4;
         data = normalize(result.state);
         setSyncState('Синхронизировано', 'ok');
         render();
@@ -367,16 +297,11 @@
   };
 
   /* ── Производные величины ─────────────────────────────────── */
-  const clientById = (id) => data.clients.find((c) => c.id === id) || null;
-  const clientName = (id) => (clientById(id) || {}).name || '';
   const taskLeft = (task) => Math.max(0, task.price - task.paid);
   const earned = () => data.tasks.reduce((sum, t) => sum + t.paid, 0);
   const awaiting = () => data.tasks.reduce((sum, t) => sum + taskLeft(t), 0);
 
-  /* ── Режим 1: Работа ──────────────────────────────────────── */
-  let taskQuery = '';
-  let clientQuery = '';
-  let statusFilter = 'all';
+  /* ── Работа: метрики и задачи ─────────────────────────────── */
   let metricsOpen = false;
   try { metricsOpen = localStorage.getItem(METRICS_KEY) === '1'; } catch (_) {}
 
@@ -388,49 +313,31 @@
     </article>`;
 
   const renderWorkMetrics = () => {
-    const open = data.tasks.filter((t) => t.status !== 'done');
-    const urgent = open.filter((t) => t.urgent);
-    const overdue = open.filter((t) => t.due && daysBetween(today(), t.due) < 0);
+    const overdue = data.tasks.filter((t) => t.due && daysBetween(today(), t.due) < 0);
     byId('work-metrics').innerHTML = [
       metricCard('Заработано', money(earned()), `по ${data.tasks.length} ${plural(data.tasks.length, 'задаче', 'задачам', 'задачам')}`),
       metricCard('Ждёт оплаты', money(awaiting()), awaiting() ? 'выставлено, но не получено' : 'всё оплачено', awaiting() ? 'warn' : 'ok'),
-      metricCard('Срочные', String(urgent.length), overdue.length ? `${overdue.length} ${plural(overdue.length, 'просрочена', 'просрочены', 'просрочено')}` : 'всё в срок', urgent.length ? 'urgent' : ''),
-      metricCard('В работе', String(open.length), `${data.clients.length} ${plural(data.clients.length, 'клиент', 'клиента', 'клиентов')}`)
+      metricCard('Всего задач', String(data.tasks.length), data.tasks.length ? 'на доске' : 'доска пуста'),
+      metricCard('Просрочено', String(overdue.length), overdue.length ? 'нужно закрыть' : 'всё в срок', overdue.length ? 'urgent' : 'ok')
     ].join('');
-    byId('metrics-summary-text').textContent = `${money(earned())} заработано · ${urgent.length} ${plural(urgent.length, 'срочная', 'срочные', 'срочных')} · ${open.length} в работе`;
+    byId('metrics-summary-text').textContent = `${money(earned())} заработано · ${data.tasks.length} ${plural(data.tasks.length, 'задача', 'задачи', 'задач')}${overdue.length ? ` · ${overdue.length} просрочено` : ''}`;
     byId('metrics-toggle').setAttribute('aria-expanded', String(metricsOpen));
     byId('work-metrics').hidden = !metricsOpen;
-    byId('work-subtitle').textContent = open.length
-      ? `${open.length} ${plural(open.length, 'открытая задача', 'открытые задачи', 'открытых задач')} · ${urgent.length} ${plural(urgent.length, 'срочная', 'срочные', 'срочных')}`
-      : 'Открытых задач нет — можно выдохнуть.';
-    byId('tab-count-tasks').textContent = data.tasks.length;
-    byId('tab-count-clients').textContent = data.clients.length;
-  };
-
-  const renderStatusFilter = () => {
-    const options = [{ id: 'all', label: 'Все' }, ...STATUSES];
-    byId('status-filter').innerHTML = options.map((option) => {
-      const count = option.id === 'all' ? data.tasks.length : data.tasks.filter((t) => t.status === option.id).length;
-      return `<button class="chip${statusFilter === option.id ? ' is-active' : ''}" data-status-filter="${option.id}">${esc(option.label)} <em>${count}</em></button>`;
-    }).join('');
+    byId('work-subtitle').textContent = data.tasks.length
+      ? `${data.tasks.length} ${plural(data.tasks.length, 'карточка', 'карточки', 'карточек')} на доске`
+      : 'Карточек пока нет — самое время добавить первую.';
   };
 
   const taskCard = (task) => {
-    const client = clientById(task.clientId);
     const left = taskLeft(task);
     const payPercent = task.price > 0 ? Math.round(task.paid / task.price * 100) : 0;
-    const overdue = task.due && task.status !== 'done' && daysBetween(today(), task.due) < 0;
+    const overdue = task.due && daysBetween(today(), task.due) < 0;
     return `
-      <article class="task${task.status === 'done' ? ' is-done' : ''}${task.urgent ? ' is-urgent' : ''}" data-task="${esc(task.id)}">
+      <article class="task" data-task="${esc(task.id)}">
         <div class="task__top">
-          <button class="task__check" data-toggle-task="${esc(task.id)}" aria-label="${task.status === 'done' ? 'Вернуть в работу' : 'Отметить выполненной'}"></button>
           <div class="task__main" data-edit-task="${esc(task.id)}">
             <b>${esc(task.title)}</b>
-            <div class="task__meta">
-              ${client ? `<span class="tag tag--${client.color}">${esc(client.name)}</span>` : ''}
-              <span class="task__due${overdue ? ' is-overdue' : ''}">${esc(task.due ? fmtDateRelative(task.due) : 'без даты')}${task.time ? ` · ${esc(task.time)}` : ''}</span>
-              ${task.urgent ? '<span class="flag">срочно</span>' : ''}
-            </div>
+            ${task.due ? `<div class="task__meta"><span class="task__due${overdue ? ' is-overdue' : ''}">${esc(fmtDateRelative(task.due))}${task.time ? ` · ${esc(task.time)}` : ''}</span></div>` : ''}
           </div>
           <button class="mini-btn" data-edit-task="${esc(task.id)}" title="Редактировать" aria-label="Редактировать">↗</button>
         </div>
@@ -441,26 +348,14 @@
             <small>${left > 0 ? `осталось ${money(left)}` : 'оплачено полностью'}</small>
           </div>` : ''}
         <div class="task__controls">
-          ${task.status === 'new' ? `<button class="primary-btn primary-btn--sm" data-take-task="${esc(task.id)}">Взять в работу</button>` : `
-          <select class="status-select status-select--${task.status}" data-task-status="${esc(task.id)}" aria-label="Статус задачи">
-            ${STATUSES.map((s) => `<option value="${s.id}"${s.id === task.status ? ' selected' : ''}>${s.label}</option>`).join('')}
-          </select>`}
           ${left > 0 ? `<button class="mini-btn" data-pay-task="${esc(task.id)}" title="Внести оплату">+ ₽</button>` : ''}
+          <button class="task__delete" data-delete-task="${esc(task.id)}" title="Удалить" aria-label="Удалить карточку">🗑</button>
         </div>
       </article>`;
   };
 
   const renderTasks = () => {
-    const query = taskQuery.trim().toLowerCase();
-    const visible = data.tasks.filter((task) => {
-      if (statusFilter !== 'all' && task.status !== statusFilter) return false;
-      if (!query) return true;
-      return `${task.title} ${clientName(task.clientId)} ${task.note}`.toLowerCase().includes(query);
-    });
-
-    const sorted = visible.slice().sort((a, b) => {
-      if ((a.status === 'done') !== (b.status === 'done')) return a.status === 'done' ? 1 : -1;
-      if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
+    const sorted = data.tasks.slice().sort((a, b) => {
       if (!a.due && b.due) return 1;
       if (a.due && !b.due) return -1;
       if (a.due !== b.due) return a.due < b.due ? -1 : 1;
@@ -469,52 +364,11 @@
 
     byId('task-groups').innerHTML = sorted.length ? `<div class="task-list">${sorted.map(taskCard).join('')}</div>` : `
       <div class="empty">
-        <b>${query || statusFilter !== 'all' ? 'Ничего не нашлось' : 'Задач пока нет'}</b>
-        <p>${query || statusFilter !== 'all' ? 'Попробуй изменить запрос или фильтр.' : 'Добавь первую — статус и срочность видны сразу на карточке.'}</p>
-        ${query || statusFilter !== 'all' ? '' : '<button class="primary-btn" data-action="new-task">+ Задача</button>'}
+        <b>Задач пока нет</b>
+        <p>Добавь первую карточку — название, срок и стоимость по желанию.</p>
+        <button class="primary-btn" data-action="new-task">+ Задача</button>
       </div>`;
   };
-
-  const renderClients = () => {
-    const query = clientQuery.trim().toLowerCase();
-    const visible = data.clients.filter((c) => !query || `${c.name} ${c.contact} ${c.note}`.toLowerCase().includes(query));
-
-    byId('client-grid').innerHTML = visible.map((client) => {
-      const tasks = data.tasks.filter((t) => t.clientId === client.id);
-      const total = tasks.reduce((s, t) => s + t.price, 0);
-      const paid = tasks.reduce((s, t) => s + t.paid, 0);
-      const open = tasks.filter((t) => t.status !== 'done').length;
-      const percent = total > 0 ? Math.round(paid / total * 100) : 0;
-      return `
-        <article class="client-card" data-edit-client="${esc(client.id)}">
-          <div class="client-card__top">
-            <span class="avatar avatar--${client.color}">${esc(initials(client.name))}</span>
-            <div><b>${esc(client.name)}</b><small>${esc(client.contact || client.note || 'без контакта')}</small></div>
-            <button class="mini-btn" data-edit-client="${esc(client.id)}" aria-label="Редактировать">↗</button>
-          </div>
-          <div class="client-card__stats">
-            <div><small>Задач</small><b>${tasks.length}</b></div>
-            <div><small>Открыто</small><b>${open}</b></div>
-            <div><small>Заработано</small><b>${moneyShort(paid)}</b></div>
-          </div>
-          ${total > 0 ? `<div class="bar"><span style="width:${Math.min(100, percent)}%"></span></div><small class="client-card__hint">${paid < total ? `осталось получить ${money(total - paid)}` : 'всё оплачено'}</small>` : '<small class="client-card__hint">задачи без стоимости</small>'}
-          <button class="text-link" data-client-tasks="${esc(client.id)}">Показать задачи ↗</button>
-        </article>`;
-    }).join('') || `
-      <div class="empty">
-        <b>${query ? 'Никого не нашлось' : 'Клиентов пока нет'}</b>
-        <p>${query ? 'Попробуй другой запрос.' : 'Добавь первого — задачи можно будет к нему привязать.'}</p>
-        ${query ? '' : '<button class="primary-btn" data-action="new-client">+ Клиент</button>'}
-      </div>`;
-  };
-
-  const initials = (name) => String(name || '')
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase() || '?';
 
   /* ── Заметки ──────────────────────────────────────────────── */
   let selectedNoteId = '';
@@ -642,15 +496,13 @@
   /* ── Общий рендер ─────────────────────────────────────────── */
   const render = () => {
     renderWorkMetrics();
-    renderStatusFilter();
     renderTasks();
-    renderClients();
     renderNotesList();
     renderNoteEditor();
   };
 
   /* ── Навигация ────────────────────────────────────────────── */
-  const VIEW_TITLES = { work: 'Работа', notes: 'Заметки' };
+  const VIEW_TITLES = { work: 'Задачи', notes: 'Заметки' };
   const setView = (name) => {
     if (!VIEW_TITLES[name]) return;
     document.querySelectorAll('.view').forEach((el) => el.classList.toggle('is-visible', el.dataset.screen === name));
@@ -658,14 +510,6 @@
     byId('crumb').textContent = VIEW_TITLES[name];
     byId('sidebar').classList.remove('is-open');
     document.querySelector('.main').scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  const setTab = (name) => {
-    document.querySelectorAll('.tab').forEach((el) => {
-      const active = el.dataset.tab === name;
-      el.classList.toggle('is-active', active);
-      el.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
-    document.querySelectorAll('.tabpanel').forEach((el) => el.classList.toggle('is-visible', el.dataset.tabpanel === name));
   };
 
   /* ── Модалка ──────────────────────────────────────────────── */
@@ -675,22 +519,10 @@
       title: (edit) => (edit ? 'Редактировать задачу' : 'Новая задача'),
       fields: [
         { key: 'title', label: 'Что нужно сделать', type: 'text', required: true },
-        { key: 'clientId', label: 'Клиент', type: 'client' },
-        { key: 'urgent', label: 'Срочность', type: 'select', half: true, options: () => [{ value: '', label: 'Не срочно' }, { value: '1', label: 'Срочно' }] },
-        { key: 'status', label: 'Статус', type: 'select', half: true, options: () => STATUSES.map((s) => ({ value: s.id, label: s.label })) },
         { key: 'due', label: 'Дата', type: 'date', half: true },
         { key: 'time', label: 'Время', type: 'time', half: true },
         { key: 'price', label: 'Стоимость, ₽', type: 'number', half: true },
         { key: 'paid', label: 'Уже оплачено, ₽', type: 'number', half: true },
-        { key: 'note', label: 'Заметка', type: 'textarea' }
-      ]
-    },
-    client: {
-      kicker: 'Клиент',
-      title: (edit) => (edit ? 'Редактировать клиента' : 'Новый клиент'),
-      fields: [
-        { key: 'name', label: 'Имя или компания', type: 'text', required: true },
-        { key: 'contact', label: 'Контакт (почта, телеграм)', type: 'text' },
         { key: 'note', label: 'Заметка', type: 'textarea' }
       ]
     },
@@ -711,10 +543,6 @@
     let control = '';
     if (field.type === 'textarea') {
       control = `<textarea name="${name}" rows="3">${esc(value)}</textarea>`;
-    } else if (field.type === 'select') {
-      control = `<select name="${name}">${field.options().map((o) => `<option value="${esc(o.value)}"${String(o.value) === String(value) ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`;
-    } else if (field.type === 'client') {
-      control = `<select name="${name}"><option value="">— без клиента —</option>${data.clients.map((c) => `<option value="${esc(c.id)}"${c.id === value ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select>`;
     } else {
       const min = field.type === 'number' ? ' min="0" step="100"' : '';
       control = `<input name="${name}" type="${field.type}" value="${esc(value)}"${field.required ? ' required' : ''}${min}>`;
@@ -731,12 +559,9 @@
     byId('modal-title').textContent = config.title(Boolean(item.id));
     byId('modal-fields').innerHTML = config.fields.map((f) => {
       let value = item[f.key];
-      if (f.key === 'urgent') value = item.urgent ? '1' : '';
       if (value === undefined || value === null) value = '';
       return fieldHtml(f, value);
     }).join('');
-    const deleteBtn = byId('modal-delete');
-    deleteBtn.hidden = !(modal.id && (formName === 'task' || formName === 'client'));
     byId('modal').hidden = false;
     setTimeout(() => byId('modal-fields').querySelector('input, select, textarea')?.focus(), 30);
   };
@@ -753,13 +578,10 @@
     if (modal.form === 'task') {
       if (!String(raw.title || '').trim()) { toast('Нужно название задачи'); return; }
       const price = num(raw.price);
-      const task = modal.id ? data.tasks.find((t) => t.id === modal.id) : { id: uid('t') };
+      const task = modal.id ? data.tasks.find((t) => t.id === modal.id) : { id: uid('t'), createdAt: today() };
       if (!task) { closeModal(); return; }
       Object.assign(task, {
         title: String(raw.title).trim(),
-        clientId: String(raw.clientId || ''),
-        urgent: raw.urgent === '1',
-        status: STATUS_LABEL[raw.status] ? raw.status : 'new',
         due: fromIso(raw.due) ? raw.due : '',
         time: validTime(raw.time),
         price,
@@ -767,19 +589,6 @@
         note: String(raw.note || '').trim()
       });
       if (!modal.id) data.tasks.unshift(task);
-    }
-
-    if (modal.form === 'client') {
-      if (!String(raw.name || '').trim()) { toast('Нужно имя клиента'); return; }
-      const client = modal.id ? data.clients.find((c) => c.id === modal.id) : { id: uid('c'), createdAt: today() };
-      if (!client) { closeModal(); return; }
-      Object.assign(client, {
-        name: String(raw.name).trim(),
-        contact: String(raw.contact || '').trim(),
-        note: String(raw.note || '').trim(),
-        color: client.color || pickColor(raw.name)
-      });
-      if (!modal.id) data.clients.unshift(client);
     }
 
     if (modal.form === 'payment') {
@@ -796,20 +605,9 @@
     persist(); closeModal(); render(); toast('Сохранено');
   };
 
-  const deleteCurrent = () => {
-    if (!modal.id) return;
-    if (modal.form === 'task') {
-      data.tasks = data.tasks.filter((t) => t.id !== modal.id);
-    } else if (modal.form === 'client') {
-      data.clients = data.clients.filter((c) => c.id !== modal.id);
-      data.tasks.forEach((t) => { if (t.clientId === modal.id) t.clientId = ''; });
-    }
-    persist(); closeModal(); render(); toast('Удалено');
-  };
-
   /* ── Резервные копии ──────────────────────────────────────── */
   const exportBackup = () => {
-    const blob = new Blob([JSON.stringify({ version: 3, exportedAt: new Date().toISOString(), state: data }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ version: 4, exportedAt: new Date().toISOString(), state: data }, null, 2)], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `workspace-${today()}.json`;
@@ -836,8 +634,7 @@
 
   /* ── События ──────────────────────────────────────────────── */
   const openAction = (action) => {
-    if (action === 'new-task') { openModal('task', { status: 'new', due: today() }); return true; }
-    if (action === 'new-client') { openModal('client'); return true; }
+    if (action === 'new-task') { openModal('task', { due: today() }); return true; }
     if (action === 'new-note') { setView('notes'); notesTrash = false; createNote(); return true; }
     if (action === 'export') { exportBackup(); return true; }
     if (action === 'import') { byId('backup-file').click(); return true; }
@@ -850,9 +647,6 @@
     const modeBtn = target.closest('[data-view]');
     if (modeBtn) { setView(modeBtn.dataset.view); return; }
 
-    const tabBtn = target.closest('.tab');
-    if (tabBtn) { setTab(tabBtn.dataset.tab); return; }
-
     const actionBtn = target.closest('[data-action]');
     if (actionBtn && openAction(actionBtn.dataset.action)) {
       byId('add-sheet').hidden = true;
@@ -861,20 +655,10 @@
       return;
     }
 
-    const statusChip = target.closest('[data-status-filter]');
-    if (statusChip) { statusFilter = statusChip.dataset.statusFilter; renderStatusFilter(); renderTasks(); return; }
-
-    const toggleBtn = target.closest('[data-toggle-task]');
-    if (toggleBtn) {
-      const task = data.tasks.find((t) => t.id === toggleBtn.dataset.toggleTask);
-      if (task) { task.status = task.status === 'done' ? 'progress' : 'done'; persist(); render(); }
-      return;
-    }
-
-    const takeBtn = target.closest('[data-take-task]');
-    if (takeBtn) {
-      const task = data.tasks.find((t) => t.id === takeBtn.dataset.takeTask);
-      if (task) { task.status = 'progress'; persist(); render(); toast('Взято в работу'); }
+    const deleteBtn = target.closest('[data-delete-task]');
+    if (deleteBtn) {
+      data.tasks = data.tasks.filter((t) => t.id !== deleteBtn.dataset.deleteTask);
+      persist(); render(); toast('Карточка удалена');
       return;
     }
 
@@ -892,26 +676,10 @@
       return;
     }
 
-    const clientTasks = target.closest('[data-client-tasks]');
-    if (clientTasks) {
-      event.stopPropagation();
-      const client = clientById(clientTasks.dataset.clientTasks);
-      if (client) { taskQuery = client.name; byId('task-search').value = client.name; statusFilter = 'all'; setTab('tasks'); renderStatusFilter(); renderTasks(); }
-      return;
-    }
-
-    const editClient = target.closest('[data-edit-client]');
-    if (editClient) {
-      const client = clientById(editClient.dataset.editClient);
-      if (client) openModal('client', client);
-      return;
-    }
-
     const openNoteBtn = target.closest('[data-open-note]');
     if (openNoteBtn) { openNote(openNoteBtn.dataset.openNote); return; }
 
     if (target.closest('[data-modal-close]')) { closeModal(); return; }
-    if (target.closest('#modal-delete')) { deleteCurrent(); return; }
     if (target.closest('[data-sheet-close]')) { byId('add-sheet').hidden = true; return; }
 
     if (!target.closest('#profile')) {
@@ -919,15 +687,6 @@
       byId('profile-btn').setAttribute('aria-expanded', 'false');
     }
     if (!target.closest('#sidebar') && !target.closest('#burger')) byId('sidebar').classList.remove('is-open');
-  });
-
-  document.addEventListener('change', (event) => {
-    const select = event.target.closest('[data-task-status]');
-    if (!select) return;
-    const task = data.tasks.find((t) => t.id === select.dataset.taskStatus);
-    if (!task) return;
-    task.status = select.value;
-    persist(); render();
   });
 
   /* ── Метрики: сворачиваемая сводка ────────────────────────── */
@@ -1051,40 +810,19 @@
   /* Компактный снимок: модели нужны id и суть, а не всё подряд */
   const agentSnapshot = () => ({
     today: today(),
-    clients: data.clients.slice(0, 60).map((c) => ({ id: c.id, name: c.name, contact: c.contact })),
     tasks: data.tasks.slice(0, 80).map((t) => ({
-      id: t.id, title: t.title, client: clientName(t.clientId) || null,
-      status: t.status, urgent: t.urgent, price: t.price, paid: t.paid, due: t.due || null, time: t.time || null
+      id: t.id, title: t.title, price: t.price, paid: t.paid, due: t.due || null, time: t.time || null
     })),
     totals: { earned: earned(), awaiting: awaiting() }
   });
-
-  const findClientByNameOrId = (value) => {
-    const raw = String(value || '').trim();
-    if (!raw) return null;
-    return data.clients.find((c) => c.id === raw)
-      || data.clients.find((c) => c.name.toLowerCase() === raw.toLowerCase())
-      || null;
-  };
 
   /* Поля задачи из операции — общий разбор для create и update */
   const taskFieldsFrom = (op, task) => {
     const patch = {};
     if (op.title !== undefined && String(op.title).trim()) patch.title = String(op.title).trim();
-    if (op.status !== undefined && STATUS_LABEL[op.status]) patch.status = op.status;
-    if (op.urgent !== undefined) patch.urgent = Boolean(op.urgent);
     if (op.due !== undefined) patch.due = fromIso(op.due) ? op.due : '';
     if (op.time !== undefined) patch.time = validTime(op.time);
     if (op.note !== undefined) patch.note = String(op.note).trim();
-    if (op.client !== undefined) {
-      const existing = findClientByNameOrId(op.client);
-      if (existing) patch.clientId = existing.id;
-      else if (String(op.client).trim()) {
-        const created = { id: uid('c'), name: String(op.client).trim(), contact: '', note: '', color: pickColor(op.client), createdAt: today() };
-        data.clients.unshift(created);
-        patch.clientId = created.id;
-      } else patch.clientId = '';
-    }
     const price = op.price !== undefined ? num(op.price) : (task ? task.price : 0);
     if (op.price !== undefined) patch.price = price;
     if (op.paid !== undefined) patch.paid = Math.min(price, num(op.paid));
@@ -1096,7 +834,7 @@
     ops.forEach((op) => {
       try {
         if (op.op === 'task.create') {
-          const task = { id: uid('t'), title: 'Без названия', clientId: '', status: 'new', urgent: false, price: 0, paid: 0, due: '', time: '', note: '' };
+          const task = { id: uid('t'), title: 'Без названия', price: 0, paid: 0, due: '', time: '', note: '', createdAt: today() };
           Object.assign(task, taskFieldsFrom(op, task));
           data.tasks.unshift(task);
           done.push(`Задача «${task.title}»`);
@@ -1122,30 +860,6 @@
           if (!task) return;
           data.tasks = data.tasks.filter((t) => t.id !== op.id);
           done.push(`Удалена «${task.title}»`);
-          return;
-        }
-        if (op.op === 'client.create') {
-          const name = String(op.name || '').trim();
-          if (!name || findClientByNameOrId(name)) return;
-          data.clients.unshift({ id: uid('c'), name, contact: String(op.contact || '').trim(), note: String(op.note || '').trim(), color: pickColor(name), createdAt: today() });
-          done.push(`Клиент «${name}»`);
-          return;
-        }
-        if (op.op === 'client.update') {
-          const client = data.clients.find((c) => c.id === op.id);
-          if (!client) return;
-          if (op.name !== undefined && String(op.name).trim()) client.name = String(op.name).trim();
-          if (op.contact !== undefined) client.contact = String(op.contact).trim();
-          if (op.note !== undefined) client.note = String(op.note).trim();
-          done.push(`Изменён клиент «${client.name}»`);
-          return;
-        }
-        if (op.op === 'client.delete') {
-          const client = data.clients.find((c) => c.id === op.id);
-          if (!client) return;
-          data.clients = data.clients.filter((c) => c.id !== op.id);
-          data.tasks.forEach((t) => { if (t.clientId === op.id) t.clientId = ''; });
-          done.push(`Удалён клиент «${client.name}»`);
           return;
         }
       } catch (_) { /* одна кривая операция не должна ронять остальные */ }
@@ -1241,7 +955,7 @@
     if (open) {
       byId('agent-input').focus();
       if (!byId('agent-log').children.length) {
-        agentBubble('bot', 'Напиши обычным текстом, что записать или изменить. Например: «оплатили 30 тысяч по КП для Авито».');
+        agentBubble('bot', 'Напиши обычным текстом, что записать или изменить. Например: «оплатили 30 тысяч по КП».');
         fetch('/crm/agent.php?action=status', { credentials: 'same-origin' })
           .then((r) => r.json())
           .then((s) => { if (!s.ready) agentBubble('bot', 'Ассистент пока не настроен: добавь бесплатный API-ключ в config.php → ai.key. Как получить — написано в комментарии рядом.'); })
@@ -1285,8 +999,6 @@
   });
 
   byId('modal-form').addEventListener('submit', (event) => { event.preventDefault(); saveModal(event.currentTarget); });
-  byId('task-search').addEventListener('input', (event) => { taskQuery = event.target.value; renderTasks(); });
-  byId('client-search').addEventListener('input', (event) => { clientQuery = event.target.value; renderClients(); });
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
@@ -1312,6 +1024,7 @@
   if (migratedFromLegacy) {
     try {
       localStorage.setItem(KEY, JSON.stringify(data));
+      localStorage.removeItem(LEGACY_KEY_V3);
       localStorage.removeItem(LEGACY_KEY_V2);
       localStorage.removeItem(LEGACY_KEY_V1);
     } catch (_) {}

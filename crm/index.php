@@ -18,7 +18,7 @@ header('Cache-Control: no-store, private', true);
   <title>Workspace — PELENEV.DESIGN</title>
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <script>/* тема до первой отрисовки — иначе моргает */(function(){try{var t=localStorage.getItem('pelenev.crm.theme');if(t!=='light'&&t!=='dark')t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
-  <link rel="stylesheet" href="/crm/crm.css?v=26">
+  <link rel="stylesheet" href="/crm/crm.css?v=27">
 </head>
 <body class="crm-app">
 <div class="shell">
@@ -27,9 +27,9 @@ header('Cache-Control: no-store, private', true);
     <div class="brand"><span class="brand__mark">P</span><span class="brand__text"><strong>Workspace</strong><small>pelenev.design</small></span></div>
 
     <nav class="modes" aria-label="Основные режимы">
-      <button class="mode is-active" data-view="work" aria-label="Режим: работа, клиенты и задачи">
+      <button class="mode is-active" data-view="work" aria-label="Режим: задачи">
         <span class="mode__icon" aria-hidden="true">◇</span>
-        <span class="mode__text"><b>Работа</b><small>Клиенты и задачи</small></span>
+        <span class="mode__text"><b>Задачи</b><small>Добавил — удалил</small></span>
       </button>
       <button class="mode" data-view="notes" aria-label="Режим: заметки">
         <span class="mode__icon" aria-hidden="true">✎</span>
@@ -57,7 +57,7 @@ header('Cache-Control: no-store, private', true);
   <main class="main">
     <header class="topbar">
       <button class="icon-btn burger" id="burger" aria-label="Открыть меню">☰</button>
-      <div class="crumbs"><span>Workspace</span><i aria-hidden="true">/</i><strong id="crumb">Работа</strong></div>
+      <div class="crumbs"><span>Workspace</span><i aria-hidden="true">/</i><strong id="crumb">Задачи</strong></div>
       <div class="topbar__actions">
         <span class="sync" id="sync-state" title="Состояние хранилища"></span>
         <button class="icon-btn theme-btn" id="theme-toggle" aria-label="Переключить тему"><span id="theme-icon" aria-hidden="true">☾</span></button>
@@ -67,12 +67,11 @@ header('Cache-Control: no-store, private', true);
 
     <div class="content">
 
-      <!-- ── РЕЖИМ 1 · Работа ───────────────────────────────────────── -->
+      <!-- ── Задачи ───────────────────────────────────────────────── -->
       <section class="view is-visible" data-screen="work">
         <div class="page-head">
           <div>
-            <p class="eyebrow">Режим 1</p>
-            <h1>Клиенты и задачи</h1>
+            <h1>Задачи</h1>
             <p class="muted" id="work-subtitle">—</p>
           </div>
         </div>
@@ -85,36 +84,13 @@ header('Cache-Control: no-store, private', true);
           <div class="metrics" id="work-metrics" hidden></div>
         </div>
 
-        <div class="tabs" role="tablist">
-          <button class="tab is-active" role="tab" data-tab="tasks" aria-selected="true">Задачи <em id="tab-count-tasks">0</em></button>
-          <button class="tab" role="tab" data-tab="clients" aria-selected="false">Клиенты <em id="tab-count-clients">0</em></button>
-        </div>
-
-        <!-- Задачи -->
-        <div class="tabpanel is-visible" data-tabpanel="tasks">
-          <div class="toolbar">
-            <label class="search"><span aria-hidden="true">⌕</span><input id="task-search" type="search" placeholder="Поиск по задачам и клиентам"></label>
-            <button class="mini-btn mini-btn--add" data-action="new-task" aria-label="Добавить задачу" title="Добавить задачу">+</button>
-          </div>
-          <div class="chips chips--scroll" id="status-filter" role="group" aria-label="Фильтр по статусу"></div>
-          <div id="task-groups"></div>
-        </div>
-
-        <!-- Клиенты -->
-        <div class="tabpanel" data-tabpanel="clients">
-          <div class="toolbar">
-            <label class="search"><span aria-hidden="true">⌕</span><input id="client-search" type="search" placeholder="Поиск по клиентам"></label>
-            <button class="primary-btn" data-action="new-client">+ Клиент</button>
-          </div>
-          <div class="client-grid" id="client-grid"></div>
-        </div>
+        <div id="task-groups"></div>
       </section>
 
       <!-- ── Заметки ──────────────────────────────────────────────── -->
       <section class="view" data-screen="notes">
         <div class="page-head">
           <div>
-            <p class="eyebrow">Флагман</p>
             <h1>Заметки</h1>
             <p class="muted">Пиши, форматируй, собирай чек-листы — как в заметках на iPhone.</p>
           </div>
@@ -191,7 +167,6 @@ header('Cache-Control: no-store, private', true);
     <form id="modal-form" novalidate>
       <div id="modal-fields"></div>
       <div class="modal__actions">
-        <button type="button" class="danger-btn" id="modal-delete" hidden>Удалить</button>
         <span class="modal__spacer"></span>
         <button type="button" class="ghost-btn" data-modal-close>Отмена</button>
         <button type="submit" class="primary-btn">Сохранить</button>
@@ -203,12 +178,11 @@ header('Cache-Control: no-store, private', true);
 <div class="sheet" id="add-sheet" hidden>
   <div class="modal__backdrop" data-sheet-close></div>
   <div class="sheet__body" role="menu" aria-label="Что добавить">
-    <button data-action="new-task" role="menuitem"><b>Задача</b><small>срочность и статус — без обязательного клиента</small></button>
-    <button data-action="new-client" role="menuitem"><b>Клиент</b><small>контакт и заметка</small></button>
+    <button data-action="new-task" role="menuitem"><b>Задача</b><small>название, срок и стоимость по желанию</small></button>
     <button data-action="new-note" role="menuitem"><b>Заметка</b><small>текст, чек-лист, форматирование</small></button>
   </div>
 </div>
 
-<script src="/crm/crm.js?v=26"></script>
+<script src="/crm/crm.js?v=27"></script>
 </body>
 </html>
