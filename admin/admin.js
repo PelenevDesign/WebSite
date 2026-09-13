@@ -71,9 +71,31 @@ const TITLES = { dashboard: 'Дашборд', leads: 'Заявки', projects: '
 const loaded = {};
 const loaders = {}; // заполняются ниже
 
+/* Если открыт редактор записи (кейс/услуга/статья) и пользователь уходит
+   в другой раздел через сайдбар или назад в браузере — не через кнопку
+   «Отмена», — список без этой правки оставался бы скрытым, а крошки уже
+   показывали бы обычный список: рассинхрон между тем, что видно, и тем,
+   что написано наверху. Закрываем принудительно при любом переходе между
+   разделами; если ничего не было открыто — здесь просто нечего делать. */
+const EDITORS = [
+  ['#project-editor', '#project-list', '#project-new'],
+  ['#service-editor', '#service-list', '#service-new'],
+  ['#article-editor', '#article-list', '#article-new'],
+];
+const closeAnyOpenEditor = () => {
+  EDITORS.forEach(([edSel, listSel, newSel]) => {
+    const ed = $(edSel);
+    if (!ed || ed.hidden) return;
+    ed.hidden = true;
+    const list = $(listSel); if (list) list.hidden = false;
+    const nb = $(newSel); if (nb) nb.hidden = false;
+  });
+};
+
 const show = (name) => {
   if ($('#panel').hidden) return;          // до входа разделы не грузим
   if (!TITLES[name]) name = 'dashboard';
+  closeAnyOpenEditor();
   $$('.section').forEach((s) => { s.hidden = s.dataset.section !== name; });
   $$('.side__nav a').forEach((a) => a.classList.toggle('is-active', a.dataset.nav === name));
   $('#crumbs').innerHTML = `<a href="#dashboard">Панель</a><span>/</span><b>${TITLES[name]}</b>`;
