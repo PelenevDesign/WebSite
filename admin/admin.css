@@ -84,6 +84,17 @@ code{background:#eef0f3;padding:1px 6px;border-radius:6px;font-size:.85em}
 /* ---- Формы контента ---- */
 fieldset{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:18px 20px 20px;display:grid;gap:12px}
 legend{font-weight:600;padding:0 6px;font-size:.95rem}
+
+/* Разделы «Контент»/SEO: раньше — 11 <fieldset> подряд одной длинной
+   формой, теперь — сворачиваемые <details>, видно список названий,
+   поля открываются по клику на нужный. */
+.content-group{border:1px solid var(--line);border-radius:var(--r);background:var(--card);overflow:hidden}
+.content-group summary{list-style:none;cursor:pointer;padding:16px 20px;font-weight:600;font-size:.95rem;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.content-group summary::-webkit-details-marker{display:none}
+.content-group summary::after{content:'';width:8px;height:8px;border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);transform:rotate(45deg);transition:transform .18s}
+.content-group[open] summary::after{transform:rotate(-135deg)}
+.content-group summary:hover{background:var(--paper)}
+.content-group__body{display:grid;gap:12px;padding:4px 20px 20px}
 .field label{display:grid;gap:6px;font-size:.86rem;font-weight:500;color:#374151}
 .field input,.field textarea,.field select{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
 .field textarea{min-height:64px;resize:vertical}

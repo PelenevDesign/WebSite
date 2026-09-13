@@ -93,8 +93,16 @@ const applySearch = (q) => {
   const section = $('.section:not([hidden])');
   if (!section) return;
   const match = (el) => el.textContent.toLowerCase().includes(query) || $$('input,textarea', el).some((i) => (i.value || '').toLowerCase().includes(query));
-  $$('#leads-root tbody tr, .mcard, #project-list tbody tr, #service-list tbody tr, #article-list tbody tr, #content-form fieldset, #seo-form fieldset', section)
-    .forEach((el) => { el.style.display = !query || match(el) ? '' : 'none'; });
+  $$('#leads-root tbody tr, .mcard, #project-list tbody tr, #service-list tbody tr, #article-list tbody tr, .content-group', section)
+    .forEach((el) => {
+      const isMatch = !query || match(el);
+      el.style.display = isMatch ? '' : 'none';
+      /* При активном поиске раскрываем совпавшую группу — иначе видно
+         только её заголовок, а не то, что внутри реально совпало.
+         Закрывать обратно при очистке поиска не нужно — это уже
+         собственный выбор пользователя, что оставить открытым. */
+      if (query && isMatch && el.tagName === 'DETAILS') el.open = true;
+    });
 };
 $('#topsearch').addEventListener('input', (e) => applySearch(e.target.value));
 
@@ -203,13 +211,26 @@ async function buildContentForms() {
   const contentForm = $('#content-form');
   const seoForm = $('#seo-form');
   contentForm.innerHTML = ''; seoForm.innerHTML = '';
+  /* Раньше каждая группа схемы — это <fieldset>, все сразу развёрнуты и
+     видны одной длинной формой (для «Контента» — 11 групп подряд). Теперь
+     каждая — сворачиваемый <details>: список названий групп виден сразу,
+     а поля открываются по клику на нужную. Первая группа в каждой вкладке
+     открыта по умолчанию, чтобы вкладка не выглядела пустой при заходе. */
+  const firstIn = { content: true, seo: true };
   window.CMS_SCHEMA.forEach((group) => {
-    const target = group.section.startsWith('SEO') ? seoForm : contentForm;
-    const fs = document.createElement('fieldset');
-    fs.innerHTML = `<legend>${esc(group.section)}</legend>`;
+    const isSeo = group.section.startsWith('SEO');
+    const target = isSeo ? seoForm : contentForm;
+    const key = isSeo ? 'seo' : 'content';
+    const details = document.createElement('details');
+    details.className = 'content-group';
+    if (firstIn[key]) { details.open = true; firstIn[key] = false; }
+    details.innerHTML = `<summary>${esc(group.section)}</summary>`;
+    const body = document.createElement('div');
+    body.className = 'content-group__body';
     const doc = sources[group.page || 'home'];
-    group.fields.forEach((f) => fs.append(fieldRow(f, doc)));
-    target.append(fs);
+    group.fields.forEach((f) => body.append(fieldRow(f, doc)));
+    details.append(body);
+    target.append(details);
   });
   /* интеграции: подставляем сохранённые коды */
   $$('#integrations-form [data-id]').forEach((t) => { t.value = values[t.dataset.id] || ''; });
