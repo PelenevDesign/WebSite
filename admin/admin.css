@@ -38,21 +38,30 @@ code{background:#eef0f3;padding:1px 6px;border-radius:6px;font-size:.85em}
 .login__card input:focus{outline:2px solid var(--ink);outline-offset:-1px}
 #login-error{color:var(--accent);min-height:1em}
 
-/* ---- Каркас ---- */
-.shell{display:grid;grid-template-columns:230px 1fr;min-height:100svh}
-.side{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;background:var(--card);border-right:1px solid var(--line);padding:18px 12px}
-.side__brand{font-weight:700;letter-spacing:-.02em;padding:6px 10px 20px;display:flex;align-items:center;gap:8px}
+/* ---- Каркас ----
+   Сайдбар тёмный (--ink), как самые «дорогие» секции самого сайта
+   (герой/прайсинг/футер) — на светлом фоне он раньше сливался с
+   контентом и читался как плоский список ссылок, а не часть продукта. */
+.shell{display:grid;grid-template-columns:236px 1fr;min-height:100svh}
+.side{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;background:var(--ink);padding:20px 14px;gap:2px}
+.side__brand{font-weight:700;letter-spacing:-.02em;padding:6px 8px 22px;display:flex;align-items:center;gap:9px;color:#fff}
 .side__brand b{color:var(--accent)}
-.side__dot{width:10px;height:10px;border-radius:3px;background:var(--accent)}
+.side__dot{width:9px;height:9px;border-radius:3px;background:var(--accent);flex:none}
 .side__nav{display:grid;gap:2px}
-.side__nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-sm);color:#374151;font-weight:500;font-size:.93rem;transition:.15s}
-.side__nav a svg{width:17px;height:17px;fill:currentColor;opacity:.55;flex:none}
-.side__nav a:hover{background:#f1f2f5}
-.side__nav a.is-active{background:var(--accent-soft);color:var(--accent)}
-.side__nav a.is-active svg{opacity:1}
+/* Визуальная пауза между группами (Дашборд/Заявки → Кейсы/Услуги/Гайды →
+   Медиатека/Контент/SEO/Интеграции) — без подписей, просто воздух и линия,
+   чтобы 8 одинаковых пунктов не читались одной сплошной стеной. */
+.side__nav a.side__group-start{margin-top:14px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)}
+.side__nav a{position:relative;display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:var(--r-sm);color:rgba(255,255,255,.6);font-weight:500;font-size:.93rem;transition:.16s}
+.side__nav a svg{width:17px;height:17px;fill:none;opacity:.75;flex:none;transition:opacity .16s}
+.side__nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+.side__nav a:hover svg{opacity:1}
+.side__nav a.is-active{background:rgba(255,60,0,.14);color:#fff}
+.side__nav a.is-active svg{opacity:1;color:var(--accent)}
+.side__nav a.is-active::before{content:'';position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
 .side__badge{margin-left:auto;background:var(--accent);color:#fff;font-size:.7rem;font-weight:600;padding:1px 7px;border-radius:99px}
-.side__site{margin-top:auto;padding:10px;color:var(--muted);font-size:.85rem}
-.side__site:hover{color:var(--ink)}
+.side__site{margin-top:auto;padding:10px 12px;color:rgba(255,255,255,.4);font-size:.85rem}
+.side__site:hover{color:#fff}
 
 .main{min-width:0}
 /* Кнопка-гамбургер и подложка выезжающей панели — видны только на мобильном
