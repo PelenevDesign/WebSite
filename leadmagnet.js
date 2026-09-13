@@ -1,12 +1,12 @@
-/* Лид-магнит: виджет в углу → пошаговый сценарий → заявка.
-   Разметку строит скрипт, поэтому на страницу добавляются только
-   подключения css/js — дублировать HTML по шаблонам не нужно.
-   Ничего не редактируется через CMS: тексты живут здесь. */
+/* Квиз «Какой сайт нужен»: всплывает по таймеру/exit-intent, три вопроса,
+   готовая рекомендация и форма телефона. Разметку строит скрипт, поэтому
+   на страницу добавляются только подключения css/js. Ничего не редактируется
+   через CMS: тексты живут здесь. */
 (() => {
   'use strict';
 
   const KEY = 'pd-leadmagnet';               // 'closed' | 'sent' — на текущую сессию
-  const DELAY = 7000;                        // 6–8 с после первого просмотра
+  const DELAY = 25000;                       // условие 1: 25с на странице
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const seen = () => { try { return sessionStorage.getItem(KEY); } catch (e) { return null; } };
@@ -16,40 +16,58 @@
   /* Страницы, где виджет только мешает: там человек уже пишет заявку. */
   if (document.body.classList.contains('page-admin')) return;
 
-  /* Стили подключаем скриптом, а не <link> в <head>: тот блокировал первый
-     рендер страницы ради виджета, который всплывает лишь через 7 секунд.
-     К моменту показа файл давно загружен. */
+  /* Стили подключаем скриптом, а не <link> в <head>: тот блокировал бы первый
+     рендер страницы ради виджета, который всплывает не раньше чем через 25с. */
   if (!document.querySelector('link[data-lm-css]')) {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = '/leadmagnet.css?v=19';
+    css.href = '/leadmagnet.css?v=20';
     css.dataset.lmCss = '';
     document.head.appendChild(css);
   }
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  /* Компактная карточка пункта: номер + название + пояснение. Картинок нет
-     намеренно — раньше сценарий тянул семь иконок ради двух экранов. */
-  const li = (n, t, d) => `<li class="lm__card">
-      <span class="lm__card-num">${esc(n)}</span>
-      <span class="lm__card-title">${esc(t)}</span>
-      <span class="lm__card-text">${esc(d)}</span>
-    </li>`;
-
   const ARROW = '<svg class="lm__arrow" viewBox="0 0 18 12" width="18" height="12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  /* ---------- Виджет ---------- */
-  const card = document.createElement('aside');
-  card.className = 'lm-card';
-  card.setAttribute('role', 'complementary');
-  card.setAttribute('aria-label', 'Бесплатная концепция сайта');
-  card.innerHTML = `
-    <button type="button" class="lm-card__close" data-lm-dismiss aria-label="Закрыть">
-      <svg viewBox="0 0 20 20" width="14" height="14" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-    </button>
-    <p class="lm-card__title"><span class="lm-card__mark" aria-hidden="true"></span>Бесплатная концепция сайта</p>
-    <p class="lm-card__text">Хотите посмотреть, каким может быть ваш сайт? Подготовлю первый экран и покажу своё видение проекта.</p>
-    <button type="button" class="lm-card__cta" data-lm-open>Получить концепцию ${ARROW}</button>`;
+  /* ---------- Данные квиза ---------- */
+  const QUESTIONS = [
+    { key: 'q1', title: 'Что для вас важнее?', options: [
+      ['leads', 'Собрать заявки с одного предложения'],
+      ['showcase', 'Показать все услуги и информацию о компании'],
+      ['shop', 'Продавать товары онлайн'],
+    ] },
+    { key: 'q2', title: 'Сколько товаров или услуг нужно показать?', options: [
+      ['lt5', 'До 5'],
+      ['mid', 'От 5 до 20'],
+      ['gt20', 'Больше 20 (каталог)'],
+    ] },
+    { key: 'q3', title: 'Когда нужен готовый сайт?', options: [
+      ['asap', 'Как можно скорее'],
+      ['2w', 'В течение 2 недель'],
+      ['later', 'Не горит, могу подождать'],
+    ] },
+  ];
+  const QUESTION_COUNT = QUESTIONS.length;
+
+  const RESULTS = {
+    leads: { title: 'Вам подойдёт лендинг', text: 'Одна продающая страница под конкретное предложение. От 35 000 ₽, срок от 10 дней.' },
+    showcase: { title: 'Вам подойдёт многостраничный сайт', text: 'С разделами под каждую услугу и информацией о компании. От 40 000 ₽, срок от 14 дней.' },
+    shop: { title: 'Вам подойдёт интернет-магазин', text: 'С каталогом, корзиной и оплатой. От 80 000 ₽, срок от 21 дня.' },
+  };
+  /* Человекочитаемые подписи ответов — для текста заявки, не для UI. */
+  const ANSWER_LABELS = Object.fromEntries(QUESTIONS.map((q) => [q.key, Object.fromEntries(q.options)]));
+
+  const optionsHtml = (q) => `
+    <div class="lm__options" role="radiogroup" aria-label="${esc(q.title)}">
+      ${q.options.map(([value, label]) => `<button type="button" class="lm__option" data-quiz-option data-q="${esc(q.key)}" data-value="${esc(value)}">${esc(label)}</button>`).join('')}
+    </div>`;
+
+  const questionStepHtml = (q, index) => `
+    <section class="lm__step" data-step="${index}"${index ? ' hidden' : ''}>
+      <h2 class="lm__title">${esc(q.title)}</h2>
+      ${optionsHtml(q)}
+      ${index ? `<div class="lm__actions"><button type="button" class="lm__btn lm__btn--ghost" data-lm-prev>Назад</button></div>` : ''}
+    </section>`;
 
   /* ---------- Сценарий ---------- */
   const modal = document.createElement('div');
@@ -57,62 +75,34 @@
   modal.hidden = true;
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-label', 'Концепция вашего будущего сайта');
+  modal.setAttribute('aria-label', 'Какой сайт вам нужен');
   modal.innerHTML = `
     <div class="lm__bd" data-lm-close></div>
     <div class="lm__dialog" tabindex="-1">
       <div class="lm__head">
-        <p class="lm__count" data-lm-count><b>01</b><span>/ 04</span></p>
-        <span class="lm__track" aria-hidden="true"><span class="lm__bar" data-lm-bar></span></span>
+        <p class="lm__count" data-lm-count><b>01</b><span>/ 0${QUESTION_COUNT}</span></p>
+        <span class="lm__track" data-lm-track aria-hidden="true"><span class="lm__bar" data-lm-bar></span></span>
         <button type="button" class="lm__close" data-lm-close aria-label="Закрыть">
           <svg viewBox="0 0 20 20" width="15" height="15" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         </button>
       </div>
 
       <div class="lm__body" data-lenis-prevent>
-        <section class="lm__step" data-step="0">
-          <h2 class="lm__title">Концепция вашего будущего сайта</h2>
-          <p class="lm__text">Перед началом работы я подготовлю 1–2 варианта первого экрана специально под ваш проект.</p>
-          <p class="lm__text">Так вы сможете заранее увидеть моё видение и понять, в каком направлении можно развивать сайт.</p>
-          <div class="lm__actions"><button type="button" class="lm__btn lm__btn--primary" data-lm-next>Посмотреть, что получите ${ARROW}</button></div>
-        </section>
+        ${QUESTIONS.map(questionStepHtml).join('')}
 
-        <section class="lm__step" data-step="1" hidden>
-          <h2 class="lm__title">Что вы получите</h2>
-          <ul class="lm__cards lm__cards--4">
-            ${[['01', 'Первый экран', '1–2 варианта будущего сайта'],
-               ['02', 'Структура', 'Как можно выстроить информацию на странице'],
-               ['03', 'Визуал', 'Стиль и направление дизайна'],
-               ['04', 'Рекомендации', 'Несколько идей для дальнейшей работы']].map((a) => li(...a)).join('')}
-          </ul>
+        <section class="lm__step" data-step="${QUESTION_COUNT}" hidden>
+          <h2 class="lm__title" data-result-title></h2>
+          <p class="lm__text" data-result-text></p>
           <div class="lm__actions">
             <button type="button" class="lm__btn lm__btn--ghost" data-lm-prev>Назад</button>
-            <button type="button" class="lm__btn lm__btn--primary" data-lm-next>Понятно, продолжаем ${ARROW}</button>
+            <button type="button" class="lm__btn lm__btn--primary" data-lm-next>Узнать точные сроки и стоимость ${ARROW}</button>
           </div>
         </section>
 
-        <section class="lm__step" data-step="2" hidden>
-          <h2 class="lm__title">Что потребуется от вас</h2>
-          <ul class="lm__cards lm__cards--3">
-            ${[['01', '15–20 минут', 'Короткое интервью'],
-               ['02', 'Бриф', 'Несколько вопросов о проекте'],
-               ['03', 'Ваш проект', 'Немного информации о задаче']].map((a) => li(...a)).join('')}
-          </ul>
-          <p class="lm__note">Я готовлю каждую концепцию индивидуально, поэтому сначала мне важно немного узнать о вашем проекте.</p>
-          <div class="lm__actions">
-            <button type="button" class="lm__btn lm__btn--ghost" data-lm-prev>Назад</button>
-            <button type="button" class="lm__btn lm__btn--primary" data-lm-next>Оставить заявку ${ARROW}</button>
-          </div>
-        </section>
-
-        <section class="lm__step" data-step="3" hidden>
-          <h2 class="lm__title">Оставьте заявку</h2>
+        <section class="lm__step" data-step="${QUESTION_COUNT + 1}" hidden>
+          <h2 class="lm__title">Чтобы точно сориентировать по срокам и стоимости под ваш проект — оставьте телефон, перезвоню в удобное для вас время</h2>
           <form class="lm__form" novalidate>
-            <div class="lm__row">
-              <label class="lm__field"><span class="lm__label">Имя <em class="lm__opt">— по желанию</em></span><input class="lm__input" name="name" autocomplete="name"></label>
-              <label class="lm__field"><span class="lm__label">Телефон <em class="lm__req">— обязательно</em></span><input class="lm__input" type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 900 000-00-00" required aria-describedby="lm-err"></label>
-            </div>
-            <label class="lm__field"><span class="lm__label">Расскажите немного о проекте <em class="lm__opt">— по желанию</em></span><textarea class="lm__area" name="message" rows="3"></textarea></label>
+            <label class="lm__field"><span class="lm__label">Телефон</span><input class="lm__input" type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 900 000-00-00" required aria-describedby="lm-err"></label>
             <input class="lm__trap" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
             <label class="lm__consent">
               <input type="checkbox" name="consent" required>
@@ -124,19 +114,18 @@
             </label>
             <div class="lm__actions">
               <button type="button" class="lm__btn lm__btn--ghost" data-lm-prev>Назад</button>
-              <button type="submit" class="lm__btn lm__btn--primary" data-lm-submit>Получить концепцию</button>
+              <button type="submit" class="lm__btn lm__btn--primary" data-lm-submit>Перезвоните мне</button>
             </div>
             <p class="lm__error" id="lm-err" data-lm-error role="alert" hidden></p>
           </form>
         </section>
 
-        <section class="lm__step lm__done" data-step="4" hidden>
+        <section class="lm__step lm__done" data-step="${QUESTION_COUNT + 2}" hidden>
           <span class="lm__ok" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          <h2 class="lm__title">Спасибо! Заявка отправлена.</h2>
-          <p class="lm__text">Я свяжусь с вами, чтобы немного обсудить проект.</p>
+          <h2 class="lm__title">Заявка отправлена!</h2>
+          <p class="lm__text">Перезвоню в удобное время.</p>
           <div class="lm__actions">
-            <button type="button" class="lm__btn lm__btn--ghost" data-lm-close>Вернуться на сайт</button>
-            <a class="lm__btn lm__btn--primary" href="/work.php">Посмотреть кейсы</a>
+            <button type="button" class="lm__btn lm__btn--primary" data-lm-close>Вернуться на сайт</button>
           </div>
         </section>
       </div>
@@ -147,7 +136,7 @@
      отрывается от предыдущего слова, число не отрывается от единицы.
      Правим текстовые узлы уже собранной разметки — тогда правило само
      распространяется на любые будущие тексты, руками &nbsp; ставить не нужно. */
-  const NB = '\u00A0'; /* явный escape: голый U+00A0 в коде не виден и легко теряется */
+  const NB = ' '; /* явный escape: голый U+00A0 в коде не виден и легко теряется */
   /* Слова в 1–2 буквы в русском почти всегда служебные — клеим их скопом.
      Трёхбуквенные перечисляем поимённо: склеивать любое слово в три буквы
      нельзя, иначе «дом», «сад» и прочие существительные тоже прилипнут. */
@@ -168,19 +157,22 @@
     });
   };
 
-  applyTypo(card);
   applyTypo(modal);
 
-  /* В DOM ничего не кладём заранее. Виджет попадает туда в show(), модалка —
-     в openModal(). Иначе поисковик видит на каждой странице пять посторонних
-     <h2> из сценария и семь картинок, к содержанию страницы не относящихся. */
+  /* В DOM ничего не кладём заранее — модалка попадает туда в openModal().
+     Иначе поисковик видит на каждой странице посторонние <h2> из квиза,
+     к содержанию страницы не относящиеся. */
 
   const steps = [...modal.querySelectorAll('.lm__step')];
-  const FORM_STEPS = steps.length - 1;          // последний экран — подтверждение, в прогрессе не участвует
+  const RESULT_STEP = QUESTION_COUNT;
+  const FORM_STEP = QUESTION_COUNT + 1;
+  const DONE_STEP = QUESTION_COUNT + 2;
   const countBox = modal.querySelector('[data-lm-count]');
+  const track = modal.querySelector('[data-lm-track]');
   const bar = modal.querySelector('[data-lm-bar]');
   const form = modal.querySelector('.lm__form');
   const errorBox = modal.querySelector('[data-lm-error]');
+  const answers = {};
   let current = 0;
   let lastFocus = null;
   let sending = false;
@@ -197,15 +189,35 @@
     });
   };
 
+  /* На шаге результата — заголовок и текст по ответу на вопрос 1.
+     На шагах вопросов — подсветить ранее выбранный вариант, если вернулись назад. */
+  const onEnter = (index) => {
+    if (index < QUESTION_COUNT) {
+      const q = QUESTIONS[index];
+      const picked = answers[q.key];
+      steps[index].querySelectorAll('[data-quiz-option]').forEach((b) => {
+        b.classList.toggle('is-selected', b.dataset.value === picked);
+      });
+    } else if (index === RESULT_STEP) {
+      const r = RESULTS[answers.q1] || RESULTS.leads;
+      steps[index].querySelector('[data-result-title]').textContent = r.title;
+      steps[index].querySelector('[data-result-text]').textContent = r.text;
+    }
+  };
+
   const go = (index) => {
     if (index < 0 || index >= steps.length) return;
     steps[current].hidden = true;
     current = index;
     steps[current].hidden = false;
-    const done = current >= FORM_STEPS;
-    countBox.hidden = done;
-    if (!done) countBox.firstElementChild.textContent = String(current + 1).padStart(2, '0');
-    bar.style.width = ((done ? FORM_STEPS : current + 1) / FORM_STEPS * 100) + '%';
+    const isQuestion = current < QUESTION_COUNT;
+    countBox.hidden = !isQuestion;
+    track.hidden = !isQuestion;
+    if (isQuestion) {
+      countBox.firstElementChild.textContent = String(current + 1).padStart(2, '0');
+      bar.style.width = ((current + 1) / QUESTION_COUNT * 100) + '%';
+    }
+    onEnter(current);
     modal.querySelector('.lm__body').scrollTop = 0;
     revealStep(steps[current]);
     /* Фокус уводим на сам диалог, а не на первый элемент шага: скринридер
@@ -223,7 +235,6 @@
 
   const openModal = () => {
     lastFocus = document.activeElement;
-    hideCard();
     if (!modal.isConnected) document.body.appendChild(modal);
     modal.hidden = false;
     lockScroll(true);
@@ -232,7 +243,11 @@
        не наступить, и диалог останется с opacity: 0. */
     void modal.offsetWidth;
     modal.classList.add('is-open');
-    go(0);
+    current = 0;
+    steps.forEach((s, i) => { s.hidden = i !== 0; });
+    onEnter(0);
+    countBox.firstElementChild.textContent = '01';
+    bar.style.width = (1 / QUESTION_COUNT * 100) + '%';
     document.addEventListener('keydown', onKey);
   };
 
@@ -240,7 +255,7 @@
     modal.classList.remove('is-open');
     document.removeEventListener('keydown', onKey);
     lockScroll(false);
-    const done = current === steps.length - 1;
+    const done = current === DONE_STEP;
     setTimeout(() => { modal.hidden = true; }, reduce ? 0 : 420);
     remember(done ? 'sent' : 'closed');
     if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
@@ -259,19 +274,14 @@
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   };
 
-  const hideCard = () => { card.classList.remove('is-in'); card.classList.add('is-out'); };
-  const dismiss = () => { hideCard(); remember('closed'); setTimeout(() => card.remove(), reduce ? 0 : 500); };
-
   /* ---------- Отправка ---------- */
   const send = async (e) => {
     e.preventDefault();
     if (sending) return;                       // страховка от двойного клика/двойного submit
     const btn = form.querySelector('[data-lm-submit]');
-    const val = (n) => form.querySelector(`[name="${n}"]`).value.trim();
+    const phone = form.querySelector('[name="phone"]').value.trim();
 
-    /* Обязателен только телефон — имя и описание проекта по желанию. */
     form.querySelectorAll('.is-bad').forEach((n) => n.classList.remove('is-bad'));
-    const phone = val('phone');
     const digits = phone.replace(/\D/g, '');
     /* Пропускаем только то, что похоже на реальный номер: 10–15 цифр и никаких
        посторонних символов, кроме принятых в записи номера. */
@@ -295,14 +305,16 @@
     }
     errorBox.hidden = true;
 
-    /* Бэкенд требует name >= 2 и message >= 2 (api.php, action=lead) — за
-       необязательные поля подставляем заглушки, иначе заявка вернёт 422.
-       Первой строкой сообщения идёт источник: в письме и в админке сразу
-       видно, что заявка пришла из виджета концепции, а не из формы контактов. */
-    const name = val('name') || 'Без имени';
-    const own = val('message');
-    const message = 'Источник: виджет «Бесплатная концепция сайта» (lead-magnet-concept).'
-      + (own ? `\n\nО проекте:\n${own}` : '\n\nОписание проекта не заполнено.');
+    /* Бэкенд требует name >= 2 и message >= 2 (api.php, action=lead), но у
+       квиза нет полей имени и сообщения — подставляем заглушку под первое и
+       собираем понятный текст под второе. Источник и ответы на все три
+       вопроса кладём в message читаемым текстом: своего поля под них на
+       сервере нет (см. диагностику), а без этого в заявке не видно, что
+       отвечал человек. */
+    const message = 'Источник: квиз «Какой сайт нужен» (quiz-site-type).'
+      + `\n\nВажнее: ${esc(ANSWER_LABELS.q1[answers.q1] || '—')}`
+      + `\nОбъём: ${esc(ANSWER_LABELS.q2[answers.q2] || '—')}`
+      + `\nСроки: ${esc(ANSWER_LABELS.q3[answers.q3] || '—')}`;
 
     sending = true;
     btn.disabled = true;
@@ -313,11 +325,11 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name,
+          name: 'Без имени',
           contact: phone,
           message,
           type: 'phone',
-          source: 'lead-magnet-concept',
+          source: 'quiz-site-type',
           company: form.querySelector('[name="company"]').value,
           page: location.pathname + location.search,
         }),
@@ -334,7 +346,7 @@
       ym(111032105, 'reachGoal', 'form_submit');
       remember('sent');
       btn.textContent = label;
-      go(steps.length - 1);
+      go(DONE_STEP);
     } catch (err) {
       errorBox.textContent = (err && err.fromServer && err.message)
         || 'Не удалось отправить. Проверьте связь или напишите в Telegram — отвечу быстрее.';
@@ -347,14 +359,19 @@
   };
 
   /* ---------- Слушатели ---------- */
-  card.addEventListener('click', (e) => {
-    if (e.target.closest('[data-lm-open]')) { ym(111032105, 'reachGoal', 'popup_open'); openModal(); }
-    else if (e.target.closest('[data-lm-dismiss]')) dismiss();
-  });
   modal.addEventListener('click', (e) => {
-    if (e.target.closest('[data-lm-close]')) closeModal();
-    else if (e.target.closest('[data-lm-next]')) go(current + 1);
-    else if (e.target.closest('[data-lm-prev]')) go(current - 1);
+    const optBtn = e.target.closest('[data-quiz-option]');
+    if (optBtn) {
+      answers[optBtn.dataset.q] = optBtn.dataset.value;
+      steps[current].querySelectorAll('[data-quiz-option]').forEach((b) => b.classList.remove('is-selected'));
+      optBtn.classList.add('is-selected');
+      /* Небольшая пауза, чтобы был виден отмеченный вариант перед переходом. */
+      setTimeout(() => go(current + 1), reduce ? 0 : 220);
+      return;
+    }
+    if (e.target.closest('[data-lm-close]')) { closeModal(); return; }
+    if (e.target.closest('[data-lm-next]')) { go(current + 1); return; }
+    if (e.target.closest('[data-lm-prev]')) { go(current - 1); return; }
   });
   form.addEventListener('submit', send);
   form.querySelector('[name="phone"]').addEventListener('input', (e) => {
@@ -369,16 +386,23 @@
     }
   });
 
-  /* ---------- Показ виджета ----------
-     Ждём и загрузку страницы, и паузу: всплывать поверх недогруженного
-     экрана — худшее первое впечатление. */
-  const show = () => {
-    if (seen()) return;
-    document.body.appendChild(card);
-    void card.offsetWidth; /* см. openModal — на rAF полагаться нельзя */
-    card.classList.add('is-in');
+  /* ---------- Триггер показа ----------
+     Оба условия работают одновременно, срабатывает то, что раньше:
+     25 секунд на странице ИЛИ курсор уходит за верхнюю границу окна
+     (exit-intent, только там, где есть мышь — на тачскрине этого жеста
+     не бывает). После первого срабатывания оба слушателя снимаются. */
+  let shown = false;
+  const trigger = () => {
+    if (shown || seen()) return;
+    shown = true;
+    clearTimeout(timer);
+    document.removeEventListener('mouseleave', onExitIntent);
+    ym(111032105, 'reachGoal', 'popup_open');
+    openModal();
   };
-  const arm = () => setTimeout(show, DELAY);
-  if (document.readyState === 'complete') arm();
-  else window.addEventListener('load', arm, { once: true });
+  const onExitIntent = (e) => { if (e.clientY <= 0) trigger(); };
+  const timer = setTimeout(trigger, DELAY);
+  if (matchMedia('(pointer: fine)').matches) {
+    document.addEventListener('mouseleave', onExitIntent);
+  }
 })();

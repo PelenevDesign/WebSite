@@ -1,86 +1,16 @@
 /* ============================================
-   Лид-магнит: виджет в углу + пошаговый сценарий.
+   Квиз «Какой сайт нужен»: всплывает по таймеру/exit-intent.
    Токены (--ink, --accent, --r-card…) берутся из styles.css.
    Разметку строит leadmagnet.js — здесь только оформление.
    ============================================ */
-
-/* ---------- Виджет в правом нижнем углу ---------- */
-.lm-card{
-  position: fixed;
-  right: clamp(14px, 2vw, 26px);
-  bottom: clamp(14px, 2vh, 26px);
-  z-index: 1150;                 /* выше дока (900), ниже меню-оверлея (1100+) не нужно */
-  width: min(330px, calc(100vw - 28px));
-  padding: 16px 16px 14px;
-  border-radius: var(--r-card);
-  background: rgba(16,16,16,.72);
-  backdrop-filter: blur(26px) saturate(150%);
-  -webkit-backdrop-filter: blur(26px) saturate(150%);
-  border: 1px solid rgba(255,255,255,.12);
-  box-shadow: 0 24px 70px rgba(0,0,0,.42);
-  color: var(--on-dark);
-  opacity: 0;
-  transform: translateY(14px) scale(.98);
-  transition: opacity .5s cubic-bezier(.22,1,.36,1), transform .5s cubic-bezier(.22,1,.36,1);
-}
-.lm-card.is-in{ opacity: 1; transform: none; }
-.lm-card.is-out{ opacity: 0; transform: translateY(10px) scale(.98); pointer-events: none; }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
-  .lm-card{ background: rgba(16,16,16,.94); }
-}
 
 /* Переносы: заголовки бьём на строки равной длины, в текстах не оставляем
    одинокое слово на последней строке. Неразрывные пробелы после коротких
    предлогов ставит typo() в leadmagnet.js — CSS их не заменяет. */
 /* balance — короткие блоки: строки равной длины, без одинокого слова в конце.
    pretty — длинные абзацы: там balance выключается после нескольких строк. */
-.lm-card__title, .lm__title, .lm-card__cta, .lm__btn, .lm__card-text{ text-wrap: balance; }
-.lm-card__text, .lm__text, .lm__note, .lm__consent-text, .lm__error{ text-wrap: pretty; }
-
-/* Иерархия: заголовок — описание. Разный размер, вес и цвет, иначе на тёмном
-   фоне текст читается одной серой массой.
-   padding-right — чтобы длинный заголовок не заезжал под крестик. */
-.lm-card__title{
-  display: flex; align-items: center; gap: 8px;
-  padding-right: 30px;
-  font-size: 1rem; font-weight: 600; line-height: 1.25; letter-spacing: -.015em;
-  color: #fff;
-}
-/* Единственный акцент карточки — точка фирменного цвета, как в логотипе. */
-.lm-card__mark{
-  flex: none; width: 7px; height: 7px; border-radius: 50%;
-  background: var(--accent, #F5320E);
-  box-shadow: 0 0 0 4px rgba(245,50,14,.16);
-}
-.lm-card__text{
-  margin-top: 10px;
-  font-size: .82rem; line-height: 1.5; color: rgba(255,255,255,.6);
-}
-.lm-card__cta{
-  margin-top: 14px; width: 100%;
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 11px 18px; border: 0; border-radius: var(--r-pill);
-  background: #fff; color: var(--ink);
-  font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer;
-  transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease;
-}
-.lm-card__cta:hover{ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.35); }
-.lm-card__cta:active{ transform: translateY(0) scale(.985); }
-.lm__arrow{ flex: none; transition: transform .3s cubic-bezier(.22,1,.36,1); }
-.lm-card__cta:hover .lm__arrow, .lm__btn--primary:hover .lm__arrow{ transform: translateX(4px); }
-.lm-card__close{
-  position: absolute; top: 10px; right: 10px;
-  width: 28px; height: 28px; display: grid; place-items: center;
-  border: 0; border-radius: 50%; background: transparent;
-  color: rgba(255,255,255,.5); cursor: pointer; line-height: 1;
-  transition: background-color .25s ease, color .25s ease;
-}
-.lm-card__close:hover{ background: rgba(255,255,255,.1); color: #fff; }
-/* Кружок остаётся 28px, но палец попадает в 44px — видимый размер не меняем. */
-.lm-card__close::after{
-  content: ''; position: absolute; top: 50%; left: 50%;
-  width: 44px; height: 44px; transform: translate(-50%, -50%);
-}
+.lm__title, .lm__btn, .lm__option{ text-wrap: balance; }
+.lm__text, .lm__consent-text, .lm__error{ text-wrap: pretty; }
 
 /* ---------- Сценарий ---------- */
 .lm{
@@ -123,8 +53,8 @@
   display: flex; align-items: center; gap: 14px;
   padding: 16px clamp(18px, 3vw, 28px) 0;
 }
-/* Счётчик 01 / 04 + тонкая линейка прогресса — на всех шагах одна и та же
-   шапка, поэтому сценарий читается как единый интерфейс. */
+/* Счётчик 01 / 03 + тонкая линейка прогресса — видны только на трёх вопросах,
+   на результате/форме/спасибо шапка остаётся с одним крестиком (см. go() в JS). */
 .lm__count{
   flex: none; display: flex; gap: 4px; align-items: baseline;
   font-size: .78rem; font-variant-numeric: tabular-nums; letter-spacing: .04em;
@@ -136,6 +66,7 @@
   flex: 1 1 auto; height: 2px; border-radius: 2px;
   background: rgba(255,255,255,.14); overflow: hidden;
 }
+.lm__track[hidden]{ display: none; }
 .lm__bar{
   display: block; height: 100%; width: 25%;
   background: var(--on-dark);
@@ -146,6 +77,7 @@
   flex: none; width: 34px; height: 34px; display: grid; place-items: center;
   border: 0; border-radius: 50%; background: rgba(255,255,255,.08);
   color: rgba(255,255,255,.75); cursor: pointer;
+  margin-left: auto;   /* когда счётчик и полоса скрыты, крестик не уезжает влево */
   transition: background-color .25s ease, color .25s ease, transform .25s ease;
 }
 .lm__close:hover{ background: rgba(255,255,255,.16); color: #fff; transform: scale(1.06); }
@@ -164,39 +96,32 @@
 .lm__title{
   font-size: clamp(1.2rem, 2.4vw, 1.5rem);
   font-weight: 600; line-height: 1.2; letter-spacing: -.02em;
-  text-wrap: balance;
 }
 .lm__text{
   margin-top: 12px; max-width: 48ch;
   font-size: .94rem; line-height: 1.55; color: rgba(255,255,255,.72);
 }
-.lm__note{
-  margin-top: 14px; padding-top: 12px;
-  border-top: 1px dashed rgba(255,255,255,.16);
-  font-size: .82rem; line-height: 1.5; color: rgba(255,255,255,.55);
-}
 
-/* Карточки-пункты: 2×2 на шаге 2, три в ряд на шаге 3, одна колонка на телефоне */
-.lm__cards{
-  list-style: none; margin-top: 18px;
-  display: grid; gap: 8px;
+/* Варианты ответа: большие тап-таргеты, выбранный — заливается белым. */
+.lm__options{ margin-top: 18px; display: grid; gap: 9px; }
+.lm__option{
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  width: 100%; padding: 15px 18px; border-radius: 14px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  color: var(--on-dark); font: inherit; font-size: .95rem; font-weight: 500; text-align: left;
+  cursor: pointer;
+  transition: background-color .2s ease, border-color .2s ease, transform .2s cubic-bezier(.22,1,.36,1), color .2s ease;
 }
-.lm__cards--4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.lm__cards--3{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.lm__card{
-  display: grid; gap: 4px; align-content: start;
-  padding: 13px 14px 14px; border-radius: 14px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.09);
-  transition: background-color .25s ease, border-color .25s ease, transform .25s cubic-bezier(.22,1,.36,1);
+.lm__option:hover{ background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.2); transform: translateY(-1px); }
+.lm__option:active{ transform: translateY(0) scale(.99); }
+.lm__option::after{
+  content: ''; flex: none; width: 9px; height: 9px; border-radius: 50%;
+  border: 1.6px solid rgba(255,255,255,.35);
+  transition: background-color .2s ease, border-color .2s ease;
 }
-.lm__card:hover{ background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.16); transform: translateY(-1px); }
-.lm__card-num{
-  font-size: .68rem; font-weight: 600; letter-spacing: .08em;
-  font-variant-numeric: tabular-nums; color: rgba(255,255,255,.38);
-}
-.lm__card-title{ font-size: .95rem; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; color: #fff; }
-.lm__card-text{ font-size: .8rem; line-height: 1.4; color: rgba(255,255,255,.55); }
+.lm__option.is-selected{ background: #fff; color: var(--ink); border-color: #fff; }
+.lm__option.is-selected::after{ background: var(--ink); border-color: var(--ink); }
 
 /* Кнопки шага */
 .lm__actions{ margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap; }
@@ -212,15 +137,14 @@
 .lm__btn--ghost{ background: rgba(255,255,255,.08); color: var(--on-dark); }
 .lm__btn--ghost:hover{ background: rgba(255,255,255,.16); }
 .lm__btn[disabled]{ opacity: .6; cursor: default; transform: none; box-shadow: none; }
+.lm__arrow{ flex: none; transition: transform .3s cubic-bezier(.22,1,.36,1); }
+.lm__btn--primary:hover .lm__arrow{ transform: translateX(4px); }
 
-/* Форма */
+/* Форма телефона */
 .lm__form{ margin-top: 18px; display: grid; gap: 12px; }
-.lm__row{ display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .lm__field{ display: grid; gap: 6px; min-width: 0; }
 .lm__label{ font-size: .8rem; color: rgba(255,255,255,.6); }
-.lm__req{ font-style: normal; color: #FF7A4D; }
-.lm__opt{ font-style: normal; color: rgba(255,255,255,.35); }
-.lm__input, .lm__area{
+.lm__input{
   width: 100%; min-width: 0;
   padding: 13px 15px; border-radius: 12px;
   background: rgba(255,255,255,.06);
@@ -228,10 +152,9 @@
   color: var(--on-dark); font: inherit; font-size: .95rem;
   transition: border-color .25s ease, background-color .25s ease;
 }
-.lm__area{ resize: vertical; min-height: 84px; }
-.lm__input::placeholder, .lm__area::placeholder{ color: rgba(255,255,255,.35); }
-.lm__input:focus, .lm__area:focus{ outline: none; border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.09); }
-.lm__input.is-bad, .lm__area.is-bad{ border-color: #FF6A4D; }
+.lm__input::placeholder{ color: rgba(255,255,255,.35); }
+.lm__input:focus{ outline: none; border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.09); }
+.lm__input.is-bad{ border-color: #FF6A4D; }
 /* honeypot: людям не видно, боты заполняют */
 .lm__trap{ position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .lm__dialog:focus{ outline: none; }
@@ -257,10 +180,6 @@
 .lm__consent input:focus-visible + .lm__consent-box{ outline: 2px solid rgba(255,255,255,.7); outline-offset: 2px; }
 .lm__consent.is-bad .lm__consent-box{ border-color: #F59E0B; }
 .lm__consent a{ color: rgba(255,255,255,.85); text-decoration: underline; }
-.lm__legal{
-  margin-top: 12px; font-size: .78rem; line-height: 1.5; color: rgba(255,255,255,.5); text-align: center;
-}
-.lm__legal a{ color: rgba(255,255,255,.75); }
 .lm__error{ margin-top: 10px; font-size: .85rem; color: #FF8A6D; text-align: center; }
 .lm__error[hidden]{ display: none; }
 
@@ -277,10 +196,6 @@
 
 /* ---------- Телефон ---------- */
 @media (max-width: 560px){
-  .lm-card{
-    left: 10px; right: 10px; bottom: 10px;
-    width: auto; padding: 15px 14px 14px;
-  }
   .lm{ padding: 0; place-items: end stretch; }
   /* Лист снизу: контент прокручивается внутри, горизонтальной прокрутки нет */
   .lm__dialog{
@@ -288,15 +203,13 @@
     border-radius: 22px 22px 0 0;
     transform: translateY(28px);
   }
-  /* Одна колонка: карточки шагов 2–3 и поля формы */
-  .lm__cards--4, .lm__cards--3, .lm__row{ grid-template-columns: minmax(0, 1fr); }
   /* Главное действие сверху, «Назад» под ним — палец не тянется через экран */
   .lm__actions{ flex-direction: column-reverse; }
   .lm__btn{ width: 100%; padding: 14px 20px; }
-  .lm__input, .lm__area{ font-size: 1rem; } /* < 16px — iOS зумит страницу при фокусе */
+  .lm__input{ font-size: 1rem; } /* < 16px — iOS зумит страницу при фокусе */
 }
 
 @media (prefers-reduced-motion: reduce){
-  .lm-card, .lm__dialog, .lm__bd, .lm__btn, .lm-card__cta, .lm__bar, .lm__card, .lm__arrow{ transition: none; }
+  .lm__dialog, .lm__bd, .lm__btn, .lm__bar, .lm__option, .lm__arrow{ transition: none; }
   .lm__dialog{ filter: none; }
 }

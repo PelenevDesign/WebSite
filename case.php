@@ -384,6 +384,6 @@ $catNames = ['site' => 'Сайты', 'ai-site' => 'AI-сайты', 'ai-content' 
   <script src="/cms.js?v=5"></script>
   <script src="/case.js?v=7"></script>
   <script src="/cookie.js?v=1"></script>
-  <script src="/leadmagnet.js?v=19" defer></script>
+  <script src="/leadmagnet.js?v=20" defer></script>
 </body>
 </html>
