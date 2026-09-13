@@ -84,9 +84,11 @@ $canonical = $base . '/services/' . $slug . '/';
 $title = $s['seo_title'];
 $description = $s['seo_description'];
 
-/* Кейсы этой услуги: сначала своей категории, потом остальные — чтобы
-   сетка всегда была полной (на категориях с 1-2 кейсами раньше сетка
-   получалась пустой). Показываем до 6, чтобы масонри не разрасталось. */
+/* Кейсы этой услуги: только своя категория. Чужими кейсами достраиваем сетку
+   лишь когда своих совсем мало (меньше 3) — иначе на них показывать нечего,
+   но 5-6 релевантных кейсов не должны разбавляться посторонним кейсом
+   только чтобы дотянуть до круглого числа. Показываем до 6, чтобы масонри
+   не разрасталось. */
 $cases = [];
 try {
   $primaryCases = [];
@@ -95,7 +97,9 @@ try {
     if (in_array($s['cases_cat'], (array)$row['categories'], true)) $primaryCases[] = $row;
     else $otherCases[] = $row;
   }
-  $cases = array_slice(array_merge($primaryCases, $otherCases), 0, 6);
+  $cases = count($primaryCases) >= 3
+    ? array_slice($primaryCases, 0, 6)
+    : array_slice(array_merge($primaryCases, $otherCases), 0, 6);
 } catch (Throwable $e) { $cases = []; }
 $caseCatLabels = ['site' => 'Сайт', 'ai-site' => 'AI-сайт', 'ai-content' => 'AI-контент', 'graphic' => 'Дизайн'];
 
