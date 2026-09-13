@@ -1,0 +1,202 @@
+/* ============================================
+   Отзывы — бесконечная лента скриншотов
+   Модуль общий для главной (.section--dark) и страниц услуг
+   (.svc-card--dark): наружная плита у каждой страницы своя,
+   внутренности — эти. Разметку ленты рисует reviews.js.
+
+   Движение — на CSS-анимации, а не на GSAP: лента должна ехать
+   одинаково на обеих страницах и не падать, если CDN с GSAP
+   недоступен (в проекте это уже отмечено как риск).
+   ============================================ */
+
+.rvw{
+  --rvw-gap: clamp(14px, 1.4vw, 22px);
+  --rvw-card: clamp(196px, 19vw, 252px);
+
+  /* По умолчанию блок тёмный (главная, тёмная плита услуги). */
+  --rvw-fg-2: var(--on-dark-2);
+  --rvw-line: rgba(255, 255, 255, .12);
+  --rvw-line-hi: rgba(255, 255, 255, .34);
+  --rvw-surface: rgba(255, 255, 255, .04);
+  --rvw-shadow: 0 18px 44px rgba(0, 0, 0, .5);
+}
+
+/* На страницах услуг плиты чередуются светлая/тёмная. Если блок отзывов
+   попал на светлую — перекрашиваем, иначе белые рамки и вторичный
+   текст на белом просто исчезнут. */
+.svc-card:not(.svc-card--dark).rvw{
+  --rvw-fg-2: var(--muted);
+  --rvw-line: var(--paper-line);
+  --rvw-line-hi: #C9C9C9;
+  --rvw-surface: var(--paper-soft);
+  --rvw-shadow: 0 18px 44px rgba(0, 0, 0, .14);
+}
+
+/* Надзаголовок с акцентной точкой — тот же приём, что у «Избранных работ»
+   на странице кейсов. Вермилион здесь ровно в той дозе, в какой
+   он разрешён айдентикой: точка, а не плоскость. Заголовок и подпись
+   под ним убрали — лента отзывов говорит сама за себя. */
+.rvw__eyebrow{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  letter-spacing: .02em;
+  color: var(--rvw-fg-2);
+}
+.rvw__eyebrow::before{
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Лента во всю ширину плиты. Края растворяются в фоне —
+   иначе карточки обрубаются по краю как ножом. */
+.rvw__viewport{
+  position: relative;
+  margin-top: clamp(28px, 4vh, 52px);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+/* Лента продублирована ровно дважды и едет через rAF в reviews.js (не
+   CSS-анимацией — та не даёт руками перетаскивать трек одновременно).
+   Пауза при наведении/фокусе и сам драг — тоже там, здесь только курсор
+   и запрет выделения текста во время перетаскивания. */
+.rvw__viewport{ cursor: grab; touch-action: pan-y; }
+.rvw__viewport.is-dragging{ cursor: grabbing; user-select: none; }
+
+.rvw__track{
+  display: flex;
+  gap: var(--rvw-gap);
+  width: max-content;
+  padding-inline: var(--rvw-gap);
+  will-change: transform;
+}
+
+.rvw__card{
+  flex: 0 0 auto;
+  width: var(--rvw-card);
+  aspect-ratio: 3 / 4;              /* размер задан заранее — лента не прыгает при загрузке */
+  padding: 0;
+  border: 1px solid var(--rvw-line);
+  border-radius: var(--r-img);
+  background: var(--rvw-surface);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform .45s cubic-bezier(.22, 1, .36, 1),
+    border-color .45s ease,
+    box-shadow .45s ease;
+}
+.rvw__card:hover,
+.rvw__card:focus-visible{
+  transform: translateY(-6px);
+  border-color: var(--rvw-line-hi);
+  box-shadow: var(--rvw-shadow);
+}
+.rvw__card img{
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;              /* отзыв виден целиком, без обрезки текста */
+}
+
+/* ---------- Просмотр отзыва во весь экран ---------- */
+.rvw-pop{
+  position: fixed;
+  inset: 0;
+  z-index: 1300;                    /* выше меню (1100) и куки (1150), ниже лид-магнита (1400) */
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 48px);
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.rvw-pop.is-open{ opacity: 1; }
+.rvw-pop__bd{
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 6, 6, .9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.rvw-pop__img{
+  position: relative;
+  max-width: min(92vw, 520px);
+  max-height: 84svh;
+  object-fit: contain;
+  border-radius: var(--r-img);
+  transform: scale(.96);
+  transition: transform .4s cubic-bezier(.22, 1, .36, 1);
+  touch-action: pan-y;
+}
+.rvw-pop.is-open .rvw-pop__img{ transform: none; }
+
+.rvw-pop__btn{
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 48px;                      /* палец: не меньше 44px */
+  height: 48px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 50%;
+  background: rgba(20, 20, 20, .6);
+  color: var(--on-dark);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .25s ease, border-color .25s ease, transform .25s ease;
+}
+.rvw-pop__btn:hover{
+  background: rgba(40, 40, 40, .85);
+  border-color: rgba(255, 255, 255, .4);
+}
+.rvw-pop__btn:active{ transform: scale(.94); }
+.rvw-pop__prev{ left: clamp(10px, 3vw, 32px); }
+.rvw-pop__next{ right: clamp(10px, 3vw, 32px); }
+.rvw-pop__close{ top: clamp(10px, 3vw, 28px); right: clamp(10px, 3vw, 32px); }
+.rvw-pop__btn[hidden]{ display: none; }
+
+.rvw-pop__count{
+  position: absolute;
+  bottom: clamp(12px, 3vw, 28px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: var(--fs-caption);
+  color: var(--on-dark-2);
+  letter-spacing: .02em;
+}
+
+/* ---------- Телефон ---------- */
+@media (max-width: 640px){
+  .rvw{ --rvw-card: 172px; }
+  .rvw__viewport{
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  }
+}
+
+/* ---------- Меньше движения ----------
+   Ленту останавливаем, но не запираем: превращаем её в обычную
+   прокручиваемую пальцем строку, иначе часть отзывов станет недоступна. */
+@media (prefers-reduced-motion: reduce){
+  .rvw__viewport{
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    touch-action: auto;             /* родной горизонтальный скролл, а не JS-драг */
+    cursor: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .rvw__card{ scroll-snap-align: center; }
+  .rvw__card,
+  .rvw-pop,
+  .rvw-pop__img,
+  .rvw-pop__btn{ transition: none; }
+}

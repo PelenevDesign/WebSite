@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Заказать сайт под ключ — веб-дизайн, разработка и AI | PELENEV.DESIGN</title>
+  <meta name="description" content="Разработка сайтов под ключ для бизнеса и экспертов: веб-дизайн, лендинги, AI-контент и графический дизайн. Более 6 лет опыта, заказать сайт от 14 дней.">
+  <meta name="keywords" content="разработка сайтов, создание сайта под ключ, заказать сайт, веб-дизайн, разработка лендинга, AI-сайты, AI-контент, графический дизайн, веб-дизайнер, брендинг">
+  <link rel="canonical" href="https://pelenevdesign.ru/">
+
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#0A0A0A">
+
+  <!-- Open Graph / соцсети. Домен задан абсолютно — при смене домена обновите здесь и в config.php (site_url). -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="PELENEV.DESIGN">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:url" content="https://pelenevdesign.ru/">
+  <meta property="og:title" content="Заказать сайт под ключ — веб-дизайн, разработка и AI | PELENEV.DESIGN">
+  <meta property="og:description" content="Разработка сайтов под ключ для бизнеса и экспертов: веб-дизайн, лендинги, AI-контент и графический дизайн. Более 6 лет опыта.">
+  <meta property="og:image" content="https://pelenevdesign.ru/assets/og-preview.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Заказать сайт под ключ — PELENEV.DESIGN">
+  <meta name="twitter:description" content="Разработка сайтов, веб-дизайн, AI-контент и графический дизайн для бизнеса и экспертов.">
+  <meta name="twitter:image" content="https://pelenevdesign.ru/assets/og-preview.jpg">
+
+  <link rel="preconnect" href="https://rsms.me/" crossorigin>
+  <!-- Шрифт не должен задерживать первую отрисовку: грузим как preload,
+       затем сами превращаем в stylesheet. Без JS работает noscript-ветка. -->
+  <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
+
+  <link rel="stylesheet" href="styles.css?v=95">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ProfessionalService",
+        "@id": "https://pelenevdesign.ru/#business",
+        "name": "PELENEV.DESIGN",
+        "description": "Разработка сайтов под ключ, веб-дизайн, AI-контент и графический дизайн для бизнеса и экспертов.",
+        "url": "https://pelenevdesign.ru/",
+        "image": "https://pelenevdesign.ru/assets/og-preview.jpg",
+        "logo": "https://pelenevdesign.ru/assets/favicon.svg",
+        "email": "dmitrypelenev@gmail.com",
+        "priceRange": "$$",
+        "areaServed": { "@type": "Country", "name": "Россия" },
+        "founder": { "@id": "https://pelenevdesign.ru/#person" },
+        "sameAs": [
+          "https://t.me/dmitrypelenev",
+          "https://www.behance.net/Pelenev-design",
+          "https://www.instagram.com/dmitrii_pelenev/",
+          "https://vk.ru/pelenev_design"
+        ],
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Услуги",
+          "itemListElement": [
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Сайты под ключ", "description": "От идеи до запуска: структура, дизайн, сборка и наполнение — готовый сайт, который приводит клиентов." } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Веб-дизайн", "description": "Современные лендинги и многостраничники с продуманной типографикой, сеткой и анимацией." } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "AI-контент", "description": "Изображения, видео и тексты, созданные нейросетями под задачи бренда — быстро и в едином стиле." } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Вайб-кодинг", "description": "Быстрая AI-разработка: от прототипа до рабочего веб-приложения за дни, а не месяцы." } }
+          ]
+        }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://pelenevdesign.ru/#person",
+        "name": "Дмитрий Пеленев",
+        "jobTitle": "Веб-дизайнер и разработчик",
+        "url": "https://pelenevdesign.ru/",
+        "email": "dmitrypelenev@gmail.com",
+        "worksFor": { "@id": "https://pelenevdesign.ru/#business" },
+        "sameAs": [
+          "https://t.me/dmitrypelenev",
+          "https://www.behance.net/Pelenev-design",
+          "https://www.instagram.com/dmitrii_pelenev/",
+          "https://vk.ru/pelenev_design"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://pelenevdesign.ru/#website",
+        "url": "https://pelenevdesign.ru/",
+        "name": "PELENEV.DESIGN",
+        "inLanguage": "ru-RU",
+        "publisher": { "@id": "https://pelenevdesign.ru/#business" }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://pelenevdesign.ru/#faq",
+        "mainEntity": [
+          { "@type": "Question", "name": "У нас нет текстов и фото. Нужно ли готовить их заранее?", "acceptedAnswer": { "@type": "Answer", "text": "Нет. Я делаю сайты под ключ, поэтому беру контент на себя." } },
+          { "@type": "Question", "name": "Сколько времени займёт разработка?", "acceptedAnswer": { "@type": "Answer", "text": "От 14 дней в зависимости от сложности проекта." } },
+          { "@type": "Question", "name": "Сайт будет просто красивым или принесёт клиентов?", "acceptedAnswer": { "@type": "Answer", "text": "И то, и другое. Дизайн ведёт посетителя по правильному сценарию." } },
+          { "@type": "Question", "name": "Что будет после сдачи сайта?", "acceptedAnswer": { "@type": "Answer", "text": "Остаюсь на связи для технической поддержки и развития проекта." } },
+          { "@type": "Question", "name": "Смогу ли я сам редактировать сайт?", "acceptedAnswer": { "@type": "Answer", "text": "Да, без программирования через административную панель." } }
+        ]
+      }
+    ]
+  }
+  </script>
+  <script src="/metrika.js?v=1" defer></script>
+</head>
+<body>
+  <noscript><div><img src="https://mc.yandex.ru/watch/111032105" style="position:absolute;left:-9999px" alt=""></div></noscript>
+
+  <!-- Топбар -->
+  <header id="topbar">
+    <div class="topbar__inner">
+      <a href="#hero" class="wordmark">
+        <svg class="wordmark__logo" viewBox="0 0 249.08 176.4" fill="currentColor" aria-hidden="true"><path d="M201.77,0H0L47.83,47.84H182.34c12,0,19.43,26.9,0,32.88H106.05a77.76,77.76,0,0,0-75.63,95.67,77.53,77.53,0,0,1,67.1-55H98a20.61,20.61,0,0,0,3.42-.22h.12v-.06h100.2C268.53,119.58,261.06-1.48,201.77,0Z" transform="translate(0 0.01)"/></svg>
+        <span class="wordmark__text">PELENEV<span class="wordmark__dot">.</span>DESIGN</span>
+      </a>
+      <button id="burger" class="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu-overlay">
+        <span class="burger__line"></span>
+        <span class="burger__line"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Полноэкранное меню -->
+  <div id="menu-overlay" class="menu" aria-hidden="true" data-lenis-prevent>
+    <div class="menu__inner">
+      <div class="menu__cols">
+        <nav class="menu__col" aria-label="Навигация">
+          <p class="menu__label"><span class="menu__reveal">Навигация</span></p>
+          <ul class="menu__list">
+            <li class="menu__item"><a class="menu__link menu__reveal" href="#hero">Главная</a></li>
+            <li class="menu__item"><a class="menu__link menu__reveal" href="#services">Услуги</a></li>
+            <li class="menu__item"><a class="menu__link menu__reveal" href="/work.php">Кейсы</a></li>
+            <li class="menu__item"><a class="menu__link menu__reveal" href="/journal.php">Гайды</a></li>
+            <li class="menu__item"><a class="menu__link menu__reveal" href="#faq">FAQ</a></li>
+          </ul>
+        </nav>
+        <nav class="menu__col" aria-label="Соцсети">
+          <p class="menu__label"><span class="menu__reveal">Соцсети</span></p>
+          <ul class="menu__list">
+            <li class="menu__item"><a data-cms="link-telegram" class="menu__link menu__reveal" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer">Telegram</a></li>
+            <li class="menu__item"><a data-cms="link-behance" class="menu__link menu__reveal" href="https://www.behance.net/Pelenev-design" target="_blank" rel="noopener noreferrer">Behance</a></li>
+            <li class="menu__item"><a data-cms="link-vk" class="menu__link menu__reveal" href="https://vk.ru/pelenev_design" target="_blank" rel="noopener noreferrer">ВК</a></li>
+          </ul>
+        </nav>
+        <div class="menu__chat">
+          <p class="menu__label"><span class="menu__reveal">Напишите в чат</span></p>
+          <div class="menu__actions">
+            <span class="menu__item"><a data-cms="link-telegram" class="pill pill--light menu__reveal" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer">Написать в ТГ <svg class="pill__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M14.5 1.7 7.3 9M14.5 1.7l-4.4 12.8-2.8-5.5L2 6.1 14.5 1.7Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></a></span>
+            <span class="menu__item"><a class="pill pill--outline menu__reveal" href="#" data-contact>Оставить заявку <svg class="pill__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M9 2H3.5A1.5 1.5 0 0 0 2 3.5v9A1.5 1.5 0 0 0 3.5 14h9a1.5 1.5 0 0 0 1.5-1.5V7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="m6 9 8-8M14 4V1h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a></span>
+          </div>
+        </div>
+      </div>
+      <p class="menu__giant" aria-hidden="true">PELENEV<span class="giant-dot">.</span>DESIGN</p>
+    </div>
+  </div>
+
+  <main>
+    <section id="hero">
+      <div class="hero__bg">
+        <!-- заказчик: положить файл assets/video/hero.mp4 — подключится на всех устройствах -->
+        <video class="hero__media" data-video="assets/video/hero.mp4" poster="assets/hero-poster.svg" autoplay muted loop playsinline preload="metadata"></video>
+      </div>
+      <div class="hero__content">
+        <div class="hero__top">
+          <div class="hero__left">
+            <h1 class="hero__sub">
+              <span class="mask"><span class="hero__sub-line">Сайты под ключ<span class="hero__mobile-break"><br></span> для бизнеса</span></span>
+              <span class="mask"><span class="hero__sub-line">и экспертов от&nbsp;14&nbsp;дней</span></span>
+            </h1>
+            <p class="hero__lead">Современный <span class="nb">веб-дизайн</span>, графика, <span class="nb">AI-контент</span> и&nbsp;<span class="nb">вайб-кодинг</span> для&nbsp;компаний и&nbsp;личных брендов.</p>
+            <a href="#" class="btn-slide hero__cta" data-contact>
+              <span class="btn-slide__label">Обсудить проект</span>
+              <svg class="btn-slide__chevron" viewBox="0 0 20 12" fill="none" aria-hidden="true"><path d="M1 6h17m0 0-6-5m6 5-6 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+          <ul class="hero__services">
+            <li class="hero__service">Сайты под ключ</li>
+            <li class="hero__service">Веб-дизайн</li>
+            <li class="hero__service">AI-контент</li>
+            <li class="hero__service">Вайб-кодинг</li>
+            <li class="hero__service hero__service-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+                <circle class="hero__service-dot" cx="10" cy="10" r="3" fill="currentColor"/>
+              </svg>
+            </li>
+          </ul>
+        </div>
+        <p class="hero__giant" aria-hidden="true">
+          <span class="mask hero__giant-mask"><span class="hero__giant-word">PELENEV<span class="giant-dot hero__giant-dot">.</span>DESIGN</span></span>
+        </p>
+      </div>
+    </section>
+
+    <section id="about" class="section">
+      <div class="container">
+        <div class="about__grid">
+          <div class="about__left">
+            <h2 class="about__title">Более 6 лет создаю сайты для бизнеса и экспертов</h2>
+            <p class="about__body">Каждый проект начинается с понимания бизнеса, а не с выбора шрифтов и цветов. Сначала разбираемся в задачах, аудитории и смыслах. Затем проектируем структуру, создаём современный дизайн и превращаем идею в рабочий инструмент для привлечения клиентов.</p>
+            <ul class="about__tags">
+              <li class="tag">Сайты под ключ</li>
+              <li class="tag">Веб-дизайн</li>
+              <li class="tag">AI-контент</li>
+              <li class="tag">Вайб-кодинг</li>
+            </ul>
+          </div>
+          <div class="about__right">
+            <div class="about__photo">
+              <img class="about__img" src="assets/about-duo.svg" alt="Плейсхолдер — фото дуэта" decoding="async" loading="lazy">
+            </div>
+          </div>
+        </div>
+        <div class="about__stats">
+          <div class="stat">
+            <span class="stat__num" data-count="6" data-suffix="+">6+</span>
+            <span class="stat__label">Лет опыта</span>
+          </div>
+          <div class="stat">
+            <span class="stat__num" data-count="500" data-suffix="+">500+</span>
+            <span class="stat__label">Дизайн-проектов</span>
+          </div>
+          <div class="stat">
+            <span class="stat__num" data-count="24" data-suffix=" ч">24 ч</span>
+            <span class="stat__label">Среднее время подготовки концепции</span>
+          </div>
+          <div class="stat">
+            <span class="stat__num" data-count="100" data-suffix="%">100%</span>
+            <span class="stat__label">Индивидуальный подход</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="services" class="section">
+      <div class="container">
+      <div class="services__head">
+        <h2 class="services__h2"><span class="services__h2-word">Услуги</span></h2>
+      </div>
+      <div class="srow-sep" aria-hidden="true"></div>
+      <article class="srow">
+        <span class="srow__num">01</span>
+        <div class="srow__mid">
+          <p class="srow__desc">От идеи до запуска: структура, дизайн, сборка и наполнение — готовый сайт, который приводит клиентов.</p>
+          <div class="srow__imgs">
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/site-1.jpg" alt="Посадочная страница приложения MegaNotes" loading="lazy" width="480" height="360" decoding="async"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/site-2.jpg" alt="Сайт транспортной компании «Абсолют»" loading="lazy" width="480" height="360" decoding="async"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/site-3.jpg" alt="Сайт курса для администраторов Mila Akimenko" loading="lazy" width="480" height="360" decoding="async"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/site-4.jpg" alt="Дизайн-макет главной страницы MegaNotes" loading="lazy" width="480" height="360" decoding="async"></div>
+          </div>
+        </div>
+        <div class="srow__right">
+          <h3 class="srow__title"><span class="mask"><span class="srow__title-word">Сайты под ключ</span></span></h3>
+          <!-- Главная кнопка ведёт на SEO-страницу услуги, вторичная — в портфолио
+               с уже выбранной категорией (фильтр читается из хэша в portfolio.js). -->
+          <div class="srow__actions">
+            <a class="pill pill--dark srow__cta pill--calc" href="/services/websites/">Смотреть предложение <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
+            <a class="pill pill--outline-dark srow__cta srow__cta--sub" href="/work.php#site">Смотреть кейсы</a>
+          </div>
+        </div>
+      </article>
+      <div class="srow-sep" aria-hidden="true"></div>
+      <article class="srow">
+        <span class="srow__num">02</span>
+        <div class="srow__mid">
+          <p class="srow__desc">Современные лендинги и многостраничники с продуманной типографикой, сеткой и анимацией.</p>
+          <div class="srow__imgs">
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s2.svg" alt="Веб-дизайн — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s1.svg" alt="Веб-дизайн — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s4.svg" alt="Веб-дизайн — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s5.svg" alt="Веб-дизайн — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+          </div>
+        </div>
+        <div class="srow__right">
+          <h3 class="srow__title"><span class="mask"><span class="srow__title-word">Веб-дизайн</span></span></h3>
+          <div class="srow__actions">
+            <a class="pill pill--dark srow__cta pill--calc" href="/services/web-design/">Смотреть предложение <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
+            <a class="pill pill--outline-dark srow__cta srow__cta--sub" href="/work.php#site">Смотреть кейсы</a>
+          </div>
+        </div>
+      </article>
+      <div class="srow-sep" aria-hidden="true"></div>
+      <article class="srow">
+        <span class="srow__num">03</span>
+        <div class="srow__mid">
+          <p class="srow__desc">Изображения, видео и тексты, созданные нейросетями под задачи бренда — быстро и в едином стиле.</p>
+          <div class="srow__imgs">
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s3.svg" alt="AI-контент — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s4.svg" alt="AI-контент — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s5.svg" alt="AI-контент — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s6.svg" alt="AI-контент — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+          </div>
+        </div>
+        <div class="srow__right">
+          <h3 class="srow__title"><span class="mask"><span class="srow__title-word">AI-контент</span></span></h3>
+          <div class="srow__actions">
+            <a class="pill pill--dark srow__cta pill--calc" href="/services/ai-content/">Смотреть предложение <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
+            <a class="pill pill--outline-dark srow__cta srow__cta--sub" href="/work.php#ai-content">Смотреть кейсы</a>
+          </div>
+        </div>
+      </article>
+      <div class="srow-sep" aria-hidden="true"></div>
+      <!-- Статический фолбэк для случая, когда CMS_SERVER_CONTENT не подгрузился
+           (см. cms-schema.js: service-4-title/text/image-*) — реальные текст и
+           фото уже загружены через админку («Продвижение сайтов», 4 фото из
+           /uploads/), здесь дублируем то же самое, чтобы и без JS страница
+           была честной, а не про вайб-кодинг. -->
+      <article class="srow">
+        <span class="srow__num">04</span>
+        <div class="srow__mid">
+          <p class="srow__desc">Сайт без рекламы — просто визитка в интернете. Настрою трафик, который приносит заявки</p>
+          <div class="srow__imgs">
+            <div class="srow__imgwrap"><img class="srow__img" src="/uploads/20260725-162551-37f635f5.jpg" alt="Продвижение сайтов — пример работы" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="/uploads/20260725-162557-54ac222a.jpg" alt="Продвижение сайтов — пример работы" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="/uploads/20260725-162604-e17257e4.jpg" alt="Продвижение сайтов — пример работы" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="/uploads/20260725-162745-e3d19b6c.jpg" alt="Продвижение сайтов — пример работы" decoding="async" loading="lazy" width="480" height="360"></div>
+          </div>
+        </div>
+        <div class="srow__right">
+          <h3 class="srow__title"><span class="mask"><span class="srow__title-word">Продвижение сайтов</span></span></h3>
+          <div class="srow__actions">
+            <a class="pill pill--dark srow__cta pill--calc" href="/services/vibe-coding/">Смотреть предложение <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
+            <a class="pill pill--outline-dark srow__cta srow__cta--sub" href="/work.php">Смотреть кейсы</a>
+          </div>
+        </div>
+      </article>
+      </div>
+    </section>
+
+        <!-- ФАЗА 7 -->
+    <section id="pricing" class="section section--dark">
+      <div class="container">
+        <div class="pricing__row">
+          <!-- тёмная карточка с ценой -->
+          <div class="pricing__card">
+            <div class="pricing__card-bg" aria-hidden="true">
+            </div>
+            <div class="pricing__card-inner">
+              <div class="ptoggle-head">
+                <span class="ptoggle-head__label">Выберите нужную услугу</span>
+                <svg class="ptoggle-head__arrow" viewBox="0 0 44 34" fill="none" aria-hidden="true"><path d="M3 5c16 1 25 8 27 22" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M23 24.5 30.5 28l1.5-7.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="ptoggle" id="ptoggle" role="tablist" aria-label="Выберите услугу">
+                <button class="ptoggle__opt is-active" data-plan="site" role="tab" aria-selected="true"><span class="ptoggle__opt-label">Сайт</span><span class="ptoggle__dot" aria-hidden="true"></span></button>
+                <button class="ptoggle__opt" data-plan="ai" role="tab" aria-selected="false"><span class="ptoggle__opt-label">AI-Контент</span><span class="ptoggle__dot" aria-hidden="true"></span></button>
+                <button class="ptoggle__opt" data-plan="promo" role="tab" aria-selected="false"><span class="ptoggle__opt-label">Продвижение</span><span class="ptoggle__dot" aria-hidden="true"></span></button>
+              </div>
+
+              <p class="pricing__label">Стоимость проекта</p>
+              <p class="pricing__price">
+                <span class="pricing__from">от</span>
+                <span class="mask"><span class="pricing__price-val" id="price-val">35 000</span></span>
+                <span class="pricing__cur">&#8381;</span>
+                <span class="pricing__period" aria-hidden="true"></span>
+              </p>
+              <p class="pricing__desc">Каждый проект рассчитывается индивидуально после обсуждения ваших целей и задач.</p>
+
+              <a href="#" class="pill pill--light pricing__cta" data-contact>Обсудить проект <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
+
+              <div class="pricing__facts">
+                <div class="pfact">
+                  <span class="pfact__head"><svg class="pfact__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6v4l2.5 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Сроки</span>
+                  <span class="pfact__val">от 14 дней</span>
+                </div>
+                <div class="pfact">
+                  <span class="pfact__head"><svg class="pfact__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3" y="4.5" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 8h14M7 3v3M13 3v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Старт</span>
+                  <span class="pfact__val">Отвечаю на заявки в течение дня</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- белая панель «Что входит в работу» -->
+          <div class="pricing__panel">
+            <p class="pricing__panel-title">Что входит в работу</p>
+            <ul class="pincl">
+              <li class="pincl__item">
+                <span class="pincl__icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.3" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg></span>
+                <span class="pincl__text"><strong>Анализ ниши и конкурентов</strong><span>Погружаемся в ваш бизнес и цели</span></span>
+              </li>
+              <li class="pincl__item">
+                <span class="pincl__icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.6" stroke="currentColor" stroke-width="1.7"/></svg></span>
+                <span class="pincl__text"><strong>Структура и прототип</strong><span>Продумываем удобный и логичный путь клиента</span></span>
+              </li>
+              <li class="pincl__item">
+                <span class="pincl__icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20s.5-3 2.5-5 5.5-2.5 5.5-2.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12.5c0-2.5 1.5-5.5 4-7.5 1.5-1.2 4-2 4-2s-.8 2.5-2 4c-2 2.5-5 4-6 5.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
+                <span class="pincl__text"><strong>Уникальный дизайн</strong><span>Современный, чистый и запоминающийся дизайн</span></span>
+              </li>
+              <li class="pincl__item">
+                <span class="pincl__icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 8-4 4 4 4M15 8l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span class="pincl__text"><strong>Разработка и адаптив</strong><span>Качественная вёрстка и адаптация под все устройства</span></span>
+              </li>
+              <li class="pincl__item">
+                <span class="pincl__icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="m20 20-4.6-4.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+                <span class="pincl__text"><strong>Базовое SEO и скорость</strong><span>Техническая оптимизация для роста позиций</span></span>
+              </li>
+            </ul>
+            <div class="pricing__quote">
+              <svg class="pricing__quote-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 7c-3 1-5 3.5-5 7v3h5v-5H7.5c.2-1.7 1.3-2.8 2.5-3.3L10 7Zm9 0c-3 1-5 3.5-5 7v3h5v-5h-2.5c.2-1.7 1.3-2.8 2.5-3.3L19 7Z"/></svg>
+              <p class="pricing__quote-text">Работаем на результат, а не просто закрываем задачи. Ваш проект&nbsp;&mdash; как наш собственный.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ФАЗА 8 -->
+    <section id="faq" class="section">
+      <div class="container">
+        <div class="faq__grid">
+          <div class="faq__left">
+            <h2 class="faq__h2"><span class="mask"><span class="faq__h2-word">FAQ</span></span></h2>
+            <p class="faq__sub">Часто задаваемые вопросы</p>
+            <a href="#" class="pill pill--dark" data-contact>Обсудить проект <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
+          </div>
+          <div class="faq__list">
+          <div class="faq__item">
+            <button class="faq__q" aria-expanded="false">
+              <span class="faq__q-text">У нас нет текстов и фото. Нужно ли готовить их заранее?</span>
+              <svg class="faq__icon" viewBox="0 0 22 22" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="10" stroke="currentColor" stroke-width="1.4"/><path d="M11 6.5v9M6.5 11h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+            <div class="faq__a"><div class="faq__a-inner"><p>Нет. Я делаю сайты под ключ, поэтому беру контент на себя. С помощью AI-инструментов и маркетинговых формул я напишу продающие тексты и подберу визуал. Вам нужно будет только подтвердить готовый результат.</p></div></div>
+          </div>
+          <div class="faq__item">
+            <button class="faq__q" aria-expanded="false">
+              <span class="faq__q-text">Сколько времени займёт разработка?</span>
+              <svg class="faq__icon" viewBox="0 0 22 22" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="10" stroke="currentColor" stroke-width="1.4"/><path d="M11 6.5v9M6.5 11h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+            <div class="faq__a"><div class="faq__a-inner"><p>От 14 дней в зависимости от сложности проекта. При этом первую концепцию дизайна вы увидите уже в первые 24 часа после старта работы.</p></div></div>
+          </div>
+          <div class="faq__item">
+            <button class="faq__q" aria-expanded="false">
+              <span class="faq__q-text">Сайт будет просто красивым или принесёт клиентов?</span>
+              <svg class="faq__icon" viewBox="0 0 22 22" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="10" stroke="currentColor" stroke-width="1.4"/><path d="M11 6.5v9M6.5 11h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+            <div class="faq__a"><div class="faq__a-inner"><p>И то, и другое. Я не делаю «арт-объекты». Дизайн проектируется на основе UX-логики: мы ведём посетителя по правильному сценарию, чтобы он совершил целевое действие — оставил заявку или купил.</p></div></div>
+          </div>
+          <div class="faq__item">
+            <button class="faq__q" aria-expanded="false">
+              <span class="faq__q-text">Что будет после сдачи сайта? Вы пропадёте?</span>
+              <svg class="faq__icon" viewBox="0 0 22 22" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="10" stroke="currentColor" stroke-width="1.4"/><path d="M11 6.5v9M6.5 11h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+            <div class="faq__a"><div class="faq__a-inner"><p>Нет. Я не бросаю клиентов после запуска. Обучаю вас управлять сайтом, записываю короткие видеоинструкции и остаюсь на связи для технической поддержки и развития проекта.</p></div></div>
+          </div>
+          <div class="faq__item">
+            <button class="faq__q" aria-expanded="false">
+              <span class="faq__q-text">Смогу ли я сам редактировать сайт? Нужно ли программировать?</span>
+              <svg class="faq__icon" viewBox="0 0 22 22" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="10" stroke="currentColor" stroke-width="1.4"/><path d="M11 6.5v9M6.5 11h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+            <div class="faq__a"><div class="faq__a-inner"><p>Да, сможете без программирования. Я разрабатываю сайты на современных и понятных CMS. Вы легко сможете менять тексты, цены и картинки самостоятельно, как в обычном текстовом редакторе.</p></div></div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Модалка чат-формы (открывается со всех CTA «обсудить/оставить заявку») -->
+  <div class="modal" id="contact-modal" aria-hidden="true">
+    <div class="modal__backdrop" aria-hidden="true"></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-label="Написать Дмитрию">
+      <button class="modal__close" id="contact-close" type="button" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+
+      <div class="chat" id="chat">
+        <div class="chat__head">
+            <span class="chat__avatar" aria-hidden="true">
+              <span class="chat__avatar-txt">DP</span>
+              <span class="chat__presence"></span>
+            </span>
+            <span class="chat__id">
+              <span class="chat__name">Dmitry Pelenev</span>
+              <span class="chat__status"><span class="chat__online">Online</span> · обычно отвечаю в течение&nbsp;30&nbsp;минут</span>
+            </span>
+            <!-- заказчик: вписать реальную ссылку t.me/... -->
+            <a data-cms="link-telegram" class="chat__tg" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer" aria-label="Написать в Telegram" title="Написать в Telegram">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22 3 2 10.5l6.4 2.3M22 3l-3.2 16.2c-.2.9-1.2 1.2-1.9.6L12.4 15M22 3 8.4 12.8m0 0V19c0 .9 1.1 1.3 1.7.6l2.3-2.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+
+          <div class="chat__body" id="chat-body" data-lenis-prevent>
+            <div class="msg msg--in">Здравствуйте! 👋</div>
+            <div class="msg msg--in">Расскажите немного о вашем проекте — что за бизнес и какая задача?</div>
+          </div>
+
+          <form class="chat__form" id="chat-form" novalidate autocomplete="off">
+            <!-- шаг 1 — сообщение -->
+            <div class="cfield cfield--msg" data-step="message">
+              <span class="cfield__label">Сообщение</span>
+              <div class="composer__box">
+                <textarea class="composer__input" id="c-msg" rows="1" autocomplete="off"></textarea>
+                <span class="cfield__ph" aria-hidden="true"></span>
+              </div>
+              <span class="cfield__hint" aria-hidden="true"></span>
+            </div>
+
+            <!-- шаг 2 — имя -->
+            <div class="cfield is-locked" data-step="name">
+              <span class="cfield__label">Имя</span>
+              <div class="cfield__box">
+                <input class="cfield__input" id="c-name" type="text" autocomplete="off" spellcheck="false">
+                <span class="cfield__ph" aria-hidden="true"></span>
+                <span class="cfield__check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+              </div>
+              <span class="cfield__hint" aria-hidden="true"></span>
+            </div>
+
+            <!-- шаг 3 — контакт -->
+            <div class="cfield is-locked" data-step="contact">
+              <span class="cfield__label">Контакт</span>
+              <div class="ctype" id="ctype" role="tablist" aria-label="Способ связи">
+                <span class="ctype__ind" aria-hidden="true"></span>
+                <button type="button" class="ctype__opt is-active" data-type="telegram" role="tab" aria-selected="true">Telegram</button>
+                <button type="button" class="ctype__opt" data-type="phone" role="tab" aria-selected="false">Телефон</button>
+                <button type="button" class="ctype__opt" data-type="email" role="tab" aria-selected="false">Email</button>
+              </div>
+              <div class="cfield__box">
+                <button class="ccountry" id="ccountry" type="button" aria-label="Код страны" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="ccountry__flag">🇷🇺</span>
+                  <span class="ccountry__dial">+7</span>
+                  <svg class="ccountry__chev" viewBox="0 0 12 8" fill="none"><path d="m1 1.5 5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <span class="cfield__inwrap">
+                  <input class="cfield__input" id="c-contact" type="text" autocomplete="off" spellcheck="false">
+                  <span class="cfield__ph" aria-hidden="true"></span>
+                </span>
+                <span class="cfield__check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <div class="ccountry__menu" id="ccountry-menu" role="listbox" aria-label="Выбор страны" hidden></div>
+              </div>
+              <span class="cfield__hint" aria-hidden="true"></span>
+            </div>
+
+            <!-- honeypot: скрыто от людей, боты заполняют — такие заявки отбрасываются -->
+            <input class="cfield__trap" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <!-- футер: согласие + отправка -->
+            <div class="cfield chat__foot is-locked" data-step="foot">
+              <div class="foot__row">
+                <label class="consent">
+                  <input type="checkbox" class="consent__input" id="c-consent">
+                  <span class="consent__box" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </span>
+                  <span class="consent__text">Соглашаюсь с <a href="privacy.html" target="_blank" rel="noopener">политикой&nbsp;конфиденциальности</a> и обработкой персональных данных</span>
+                </label>
+                <button type="submit" class="composer__send" id="c-send" aria-label="Отправить сообщение">
+                  <svg class="composer__arrow" viewBox="0 0 24 24" fill="none"><path d="M5 12h13M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="composer__spinner" aria-hidden="true"></span>
+                </button>
+              </div>
+              <span class="cfield__hint" aria-hidden="true"></span>
+            </div>
+          </form>
+        </div>
+      </div>
+  </div>
+
+  <footer id="footer" class="footer">
+    <div class="footer__bg" aria-hidden="true">
+      <img src="assets/hero-poster.svg" alt="" decoding="async" loading="lazy">
+    </div>
+
+    <div class="footer__marquee" aria-hidden="true">
+      <div class="footer__track">
+        <span class="footer__chunk">PELENEV.DESIGN <span class="footer__sep">&#9670;</span> САЙТЫ ПОД КЛЮЧ <span class="footer__sep">&#9670;</span>&nbsp;</span>
+        <span class="footer__chunk">PELENEV.DESIGN <span class="footer__sep">&#9670;</span> САЙТЫ ПОД КЛЮЧ <span class="footer__sep">&#9670;</span>&nbsp;</span>
+        <span class="footer__chunk">PELENEV.DESIGN <span class="footer__sep">&#9670;</span> САЙТЫ ПОД КЛЮЧ <span class="footer__sep">&#9670;</span>&nbsp;</span>
+        <span class="footer__chunk">PELENEV.DESIGN <span class="footer__sep">&#9670;</span> САЙТЫ ПОД КЛЮЧ <span class="footer__sep">&#9670;</span>&nbsp;</span>
+      </div>
+    </div>
+
+    <div class="footer__menu">
+      <nav class="footer__col" aria-label="Навигация">
+        <p class="footer__label">Навигация</p>
+        <ul class="footer__list">
+          <li><a class="footer__link" href="#hero">Главная</a></li>
+          <li><a class="footer__link" href="#services">Услуги</a></li>
+          <li><a class="footer__link" href="/work.php">Кейсы</a></li>
+          <li><a class="footer__link" href="/journal.php">Гайды</a></li>
+          <li><a class="footer__link" href="#faq">FAQ</a></li>
+        </ul>
+      </nav>
+      <nav class="footer__col" aria-label="Соцсети">
+        <p class="footer__label">Соцсети</p>
+        <ul class="footer__list">
+          <li><a data-cms="link-telegram" class="footer__link" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer">Telegram</a></li>
+          <li><a data-cms="link-behance" class="footer__link" href="https://www.behance.net/Pelenev-design" target="_blank" rel="noopener noreferrer">Behance</a></li>
+          <li><a data-cms="link-instagram" class="footer__link" href="https://www.instagram.com/dmitrii_pelenev/" target="_blank" rel="noopener noreferrer">Instagram<sup class="footer__sup">*</sup></a></li>
+          <li><a data-cms="link-vk" class="footer__link" href="https://vk.ru/pelenev_design" target="_blank" rel="noopener noreferrer">ВК</a></li>
+        </ul>
+        <p class="footer__disclaimer">*&nbsp;Instagram принадлежит Meta Platforms Inc. — организации, признанной экстремистской и запрещённой на территории Российской Федерации.</p>
+      </nav>
+      <div class="footer__chat">
+        <p class="footer__chat-title">Напишите в чат</p>
+        <div class="footer__actions">
+          <a data-cms="link-telegram" class="pill pill--light" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer">Написать в ТГ <svg class="pill__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M14.5 1.7 7.3 9M14.5 1.7l-4.4 12.8-2.8-5.5L2 6.1 14.5 1.7Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></a>
+          <a class="pill pill--outline" href="#" data-contact>Оставить заявку <svg class="pill__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M9 2H3.5A1.5 1.5 0 0 0 2 3.5v9A1.5 1.5 0 0 0 3.5 14h9a1.5 1.5 0 0 0 1.5-1.5V7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="m6 9 8-8M14 4V1h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="footer__legal">
+      <span>&copy; <span class="footer__year">2026</span> PELENEV.DESIGN</span>
+      <a href="privacy.html">Политика конфиденциальности</a>
+    </div>
+
+    <div class="footer__line" id="footer-line" aria-hidden="true">
+      <svg preserveAspectRatio="none">
+        <path fill="none" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+    </div>
+
+    <p class="footer__giant" aria-hidden="true">
+      <span class="mask"><span class="footer__giant-word">PELENEV<span class="giant-dot">.</span>DESIGN</span></span>
+    </p>
+  </footer>
+
+  <!-- Плавающий док навигации. Лежит после #menu-overlay, чтобы прятаться под открытым меню. -->
+  <nav class="dock dock--nav" aria-label="Разделы страницы">
+    <div class="dock__shell">
+      <div class="dock__inner">
+        <div class="wtabs">
+          <span class="dock__pill" aria-hidden="true"></span>
+          <a class="wtab is-active" href="#hero" data-section="hero">Главная</a>
+          <a class="wtab" href="#services" data-section="services">Услуги</a>
+          <a class="wtab" href="/work.php">Кейсы</a>
+          <a class="wtab" href="/journal.php">Гайды</a>
+        </div>
+        <span class="dock__sep" aria-hidden="true"></span>
+        <a class="dock__action" href="#" data-contact aria-label="Связаться" title="Связаться">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M17.5 13.9v2.3a1.5 1.5 0 0 1-1.6 1.5 14.9 14.9 0 0 1-6.5-2.3 14.6 14.6 0 0 1-4.5-4.5A14.9 14.9 0 0 1 2.6 4.3 1.5 1.5 0 0 1 4.1 2.7h2.3a1.5 1.5 0 0 1 1.5 1.3c.1.7.3 1.4.5 2a1.5 1.5 0 0 1-.3 1.6l-1 1a12 12 0 0 0 4.4 4.4l1-1a1.5 1.5 0 0 1 1.6-.3c.6.2 1.3.4 2 .5a1.5 1.5 0 0 1 1.4 1.5Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" crossorigin="anonymous"></script>
+  <script src="cms-schema.js?v=4"></script>
+  <script src="cms.js?v=5"></script>
+  <script src="main.js?v=67"></script>
+
+  <!-- Уведомление о cookie. Показывается один раз, выбор хранится в localStorage. -->
+  <div class="cookie" id="cookie" role="dialog" aria-live="polite" aria-label="Уведомление о cookie" hidden>
+    <p class="cookie__text">Мы используем cookie, чтобы сайт работал корректно. <a href="privacy.html" target="_blank" rel="noopener noreferrer">Подробнее</a></p>
+    <button class="cookie__ok" type="button" id="cookie-ok">Окей</button>
+  </div>
+  <script src="cookie.js?v=1"></script>
+  <script src="/leadmagnet.js?v=19" defer></script>
+</body>
+</html>

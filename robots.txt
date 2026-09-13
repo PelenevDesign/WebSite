@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Технические разделы — закрыты от индексации.
+Disallow: /admin
+Disallow: /admin/
+Disallow: /crm
+Disallow: /crm/
+Disallow: /api.php
+Disallow: /install.php
+Disallow: /mail-check.php
+
+# Коммерческие страницы, изображения кейсов и услуг остаются открытыми.
+
+Sitemap: https://pelenevdesign.ru/sitemap.xml

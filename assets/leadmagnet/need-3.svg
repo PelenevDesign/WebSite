@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#33333A"/><stop offset="1" stop-color="#17171A"/>
+    </linearGradient>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#B9BAC2"/>
+    </linearGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9A9BA5"/><stop offset="1" stop-color="#6A6B75"/>
+    </linearGradient>
+    <linearGradient id="hot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF7A4D"/><stop offset="1" stop-color="#F5320E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".3" cy=".22" r=".8">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="400" rx="96" fill="url(#tile)"/>
+  <rect width="400" height="400" rx="96" fill="url(#glow)"/>
+  <ellipse cx="200" cy="322" rx="112" ry="20" fill="#000" opacity=".33"/>
+  <g>
+    <path d="M200 302L118 222a56 56 0 0 1 82-76 56 56 0 0 1 82 76z" fill="url(#hot)" transform="translate(6,10)" opacity=".55"/>
+    <path d="M200 296L118 216a56 56 0 0 1 82-76 56 56 0 0 1 82 76z" fill="url(#hot)"/>
+    <path d="M158 156a34 34 0 0 0-16 40c8 18 30 12 24-8-4-14 4-24 10-28 6-5 0-9-18-4z" fill="#fff" opacity=".42"/>
+  </g>
+</svg>

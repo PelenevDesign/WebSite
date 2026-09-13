@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid slice">
+  <!-- плейсхолдер ч/б фото дуэта — заказчик заменит -->
+  <defs>
+    <radialGradient id="a" cx="35%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#4a4a4a"/>
+      <stop offset="100%" stop-color="#141414"/>
+    </radialGradient>
+    <radialGradient id="b" cx="70%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#3c3c3c" stop-opacity=".9"/>
+      <stop offset="100%" stop-color="#141414" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="1000" fill="#141414"/>
+  <rect width="1200" height="1000" fill="url(#a)"/>
+  <rect width="1200" height="1000" fill="url(#b)"/>
+</svg>

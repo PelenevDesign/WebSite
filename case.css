@@ -1,0 +1,657 @@
+/* ============================================
+   Страница кейса — editorial-статья
+   Токены и утилиты (.pill, .wordmark) берутся из styles.css.
+   ============================================ */
+
+/* Три ширины, на которых держится вся страница:
+   --w-text  — колонка чтения, ~68 символов в строке;
+   --w-wide  — контейнер статьи, по нему выравниваются заголовки и фото;
+   --w-full  — выход «во всю ширину» для крупных кадров. */
+.case-page{
+  --w-text: 68ch;
+  --w-wide: 1180px;
+  --w-full: 1560px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* ---------- Индикатор прочитанного ---------- */
+.case-progress{
+  position: fixed;
+  inset: 0 0 auto;
+  height: 2px;
+  z-index: 1200;
+  pointer-events: none;
+}
+.case-progress span{
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transform-origin: left;
+}
+
+/* ---------- Шапка ---------- */
+.case-top{
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-bottom: 1px solid var(--paper-line);
+}
+.case-top__inner{
+  max-width: var(--w-full);
+  margin-inline: auto;
+  padding: 14px var(--pad-x);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.top-left{ display: flex; align-items: center; gap: 14px; min-width: 0; }
+.back-btn{
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border: 1px solid var(--paper-line);
+  border-radius: 50%;
+  color: var(--ink);
+  transition: background-color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.back-btn svg{ width: 16px; height: 16px; }
+.back-btn:hover{ background: var(--paper-soft); border-color: var(--ink); transform: translateX(-2px); }
+
+.case-top__mark{ color: var(--ink); text-decoration: none; }
+.case-top__nav{ display: flex; align-items: center; gap: clamp(14px, 1.8vw, 28px); white-space: nowrap; }
+.case-top__link{
+  color: var(--muted);
+  text-decoration: none;
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  transition: color .25s ease;
+}
+.case-top__link:hover{ color: var(--ink); }
+.case-top__cta{ padding: 12px 22px; font-size: var(--fs-caption); }
+
+/* ---------- Общая раскладка статьи ----------
+   Одна grid-колонка по центру + именованные линии, чтобы отдельные блоки
+   (фото на всю ширину) выходили за пределы колонки чтения без отрицательных
+   отступов и без ломки потока. */
+.case{
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(var(--pad-x), 1fr)
+    [wide-start] minmax(0, calc((var(--w-full) - var(--w-wide)) / 2))
+    [text-start] minmax(0, var(--w-text)) [text-end]
+    minmax(0, calc((var(--w-full) - var(--w-wide)) / 2)) [wide-end]
+    minmax(var(--pad-x), 1fr) [full-end];
+  padding-block: clamp(48px, 7vh, 88px) clamp(64px, 9vh, 120px);
+}
+.case > *{ grid-column: text; }
+
+/* ---------- Хиро ---------- */
+.case__hero{
+  grid-column: wide;
+  margin-bottom: clamp(20px, 3vh, 32px);
+}
+
+/* ---------- Раскладка «закреплённый текст + лента фото» ----------
+   Левая колонка стоит на месте (sticky), правая прокручивается,
+   пока не кончатся фото. align-items:start обязателен: при растяжении
+   по высоте sticky не за что цеплять — панель поедет вместе со скроллом. */
+.case__split{
+  grid-column: wide;
+  display: grid;
+  /* Левая колонка почти вровень с галереей: в неё встают три плитки достижений
+     без сжатия. Уже — и подписи в плитках начинают ломаться по слогам. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: clamp(20px, 2.4vw, 36px);
+  align-items: start;
+}
+/* Без галереи делить нечего — карточка занимает всю ширину. */
+.case__split--solo{ grid-template-columns: minmax(0, 1fr); }
+
+.case__aside{
+  position: sticky;
+  top: clamp(84px, 11vh, 108px);
+  min-width: 0;
+}
+
+.case__card{
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-card);
+  background: var(--paper-soft);
+  padding: clamp(26px, 2.8vw, 44px);
+}
+
+/* Лента фото: одна колонка, естественные пропорции кадра. */
+.case__shots{
+  display: grid;
+  gap: clamp(14px, 1.6vw, 22px);
+  min-width: 0;
+}
+.case__shot{
+  margin: 0;
+  border-radius: var(--r-img);
+  overflow: hidden;
+  background: var(--paper-soft);
+}
+.case__shot img{
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform .5s cubic-bezier(.22,1,.36,1);
+}
+.case__shot:hover img{ transform: scale(1.03); }
+
+.case__badge{
+  align-self: start;
+  padding: 8px 18px;
+  margin-bottom: clamp(20px, 3vh, 32px);
+  border-radius: var(--r-pill);
+  background: rgba(255,60,0,.10);
+  color: var(--accent);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+}
+
+/* Факты прижаты к низу карточки — как подпись автора в референсе. */
+.case__card-foot{
+  margin-top: auto;
+  padding-top: clamp(24px, 4vh, 40px);
+}
+
+.case__crumbs{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  margin-bottom: 28px;
+}
+.case__crumbs a{ color: var(--muted); text-decoration: none; transition: color .25s ease; }
+.case__crumbs a:hover{ color: var(--ink); }
+.case__crumbs [aria-current]{ color: var(--ink); }
+.case__crumbs span[aria-hidden]{ opacity: .45; }
+
+.case__tags{ display: flex; flex-wrap: wrap; gap: 8px; list-style: none; }
+.case__tags--badge{ margin-bottom: clamp(20px, 3vh, 32px); }
+.case__tags a{
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  transition: background-color .25s ease, color .25s ease;
+}
+.case__tags a:hover{ background: var(--ink); color: var(--on-dark); }
+
+/* Заголовки кейсов — целые фразы из базы, поэтому кегль сдержанный:
+   3–5 слов в строке, длинное название укладывается в две-три строки. */
+/* Заголовок держим в 3–4 строки даже у длинных названий: кегль сдержанный,
+   balance выравнивает строки по длине, чтобы не было «лесенки» в одно слово. */
+.case__title{
+  font-size: clamp(1.45rem, 1.9vw, 1.95rem);
+  font-weight: 600;
+  line-height: 1.16;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  hyphens: none;
+}
+
+/* Описание — комфортная колонка чтения: ~60 символов, крупный интерлиньяж. */
+.case__lead{
+  margin-top: 22px;
+  max-width: 46ch;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #43474C;
+}
+.case__lead-p + .case__lead-p,
+.case__lead-list + .case__lead-p{ margin-top: .85em; }
+.case__lead-list{
+  list-style: none;
+  margin-top: .7em;
+  display: grid;
+  gap: 7px;
+}
+.case__lead-list li{
+  position: relative;
+  padding-left: 18px;
+}
+/* Маркер — короткое тире в цвете акцента: единственная цветная деталь блока. */
+.case__lead-list li::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .72em;
+  width: 9px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* ---------- Достижения проекта ---------- */
+.case__wins{
+  list-style: none;
+  margin-top: clamp(28px, 4vh, 40px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.case__win{
+  min-width: 0;
+  padding: 16px 14px 18px;
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 1px 2px rgba(10,10,10,.05), 0 10px 26px rgba(10,10,10,.05);
+  transition: transform .45s cubic-bezier(.22,1,.36,1), box-shadow .45s cubic-bezier(.22,1,.36,1);
+}
+.case__win:hover{
+  transform: translateY(-4px);
+  box-shadow: 0 2px 4px rgba(10,10,10,.07), 0 18px 40px rgba(10,10,10,.11);
+}
+.case__win-value{
+  font-size: clamp(1.3rem, 1.8vw, 1.65rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  /* Цифры не «прыгают» по ширине во время счётчика */
+  font-variant-numeric: tabular-nums;
+}
+.case__win-title{
+  margin-top: 9px;
+  font-size: .82rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.case__win-text{
+  margin-top: 5px;
+  font-size: .76rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.case__visit{ margin-top: 24px; }
+.case__visit .pill{ padding: 14px 26px; }
+
+/* Факты — пунктирная таблица, а не строка через слэши */
+.case__facts{ display: grid; gap: 0; min-width: 0; }
+.case__fact{
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+  padding-block: 11px;
+  border-top: 1px dashed var(--paper-line);
+}
+.case__fact:last-child{ border-bottom: 1px dashed var(--paper-line); }
+.case__fact dt{ color: var(--muted); font-size: var(--fs-caption); flex-shrink: 0; }
+.case__fact dd{ font-weight: 600; text-align: right; font-size: .95rem; }
+
+/* ---------- Тело статьи ---------- */
+.case__body{ display: contents; }
+
+.case__h2{
+  grid-column: text;
+  margin: clamp(48px, 7vh, 88px) 0 20px;
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.case__h2:first-child{ margin-top: 0; }
+
+.case__p{
+  grid-column: text;
+  margin-bottom: 1.15em;
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: #262626;
+}
+
+.case__quote{
+  grid-column: text;
+  margin: clamp(40px, 6vh, 72px) 0;
+  padding-left: clamp(20px, 3vw, 32px);
+  border-left: 2px solid var(--accent);
+}
+.case__quote blockquote{
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.case__quote figcaption{ margin-top: 16px; color: var(--muted); font-size: var(--fs-caption); }
+
+/* Фото: три степени выхода из колонки чтения — отсюда берётся ритм страницы */
+.case__fig{ margin: clamp(40px, 6vh, 72px) 0; }
+.case__fig img{
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--r-img);
+  background: var(--paper-soft);
+}
+.case__fig figcaption{ margin-top: 14px; color: var(--muted); font-size: var(--fs-caption); line-height: 1.45; }
+.case__fig--inset{ grid-column: text; }
+.case__fig--wide{ grid-column: wide; }
+.case__fig--full{ grid-column: full; }
+.case__fig--full img{ border-radius: var(--r-card); }
+
+.case__duo{
+  grid-column: wide;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(16px, 2vw, 28px);
+  margin: clamp(40px, 6vh, 72px) 0;
+}
+.case__duo .case__fig{ margin: 0; }
+
+.case__stats{
+  grid-column: wide;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  margin: clamp(40px, 6vh, 72px) 0;
+  background: var(--paper-line);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--r-stat);
+  overflow: hidden;
+}
+.case__stat{ background: var(--paper); padding: clamp(24px, 3vw, 36px); }
+.case__stat dt{
+  font-size: clamp(2rem, 3.4vw, 3rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.case__stat dd{ margin-top: 10px; color: var(--muted); font-size: var(--fs-caption); line-height: 1.4; }
+
+/* Клик по любому фото открывает просмотрщик */
+[data-zoom]{ cursor: zoom-in; }
+
+/* ---------- Соседние кейсы ---------- */
+.case-around{
+  max-width: var(--w-full);
+  margin: 0 auto;
+  padding: 0 var(--pad-x) clamp(64px, 9vh, 120px);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+}
+.case-around__card{
+  position: relative;
+  display: block;
+  min-height: 220px;
+  padding: clamp(24px, 3vw, 36px);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--on-dark);
+  text-decoration: none;
+  isolation: isolate;
+}
+.case-around__img{
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .42;
+  transition: transform .6s cubic-bezier(.22,1,.36,1), opacity .4s ease;
+}
+.case-around__card:hover .case-around__img{ transform: scale(1.05); opacity: .55; }
+/* Обложка соседнего кейса может быть видео — те же правила, что у картинки. */
+video.case-around__img{ object-fit: cover; }
+.case-around__label{ display: block; color: var(--on-dark-2); font-size: var(--fs-caption); margin-bottom: 12px; }
+.case-around__title{
+  display: block;
+  font-size: clamp(1.25rem, 1.8vw, 1.6rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.case-around__card--next{ text-align: right; }
+
+/* ---------- CTA ---------- */
+.case-cta{
+  max-width: var(--w-full);
+  margin: 0 auto clamp(56px, 8vh, 96px);
+  padding: clamp(48px, 7vw, 88px) var(--pad-x);
+  width: calc(100% - var(--pad-x) * 2);
+  border-radius: var(--r-card);
+  background: var(--ink);
+  color: var(--on-dark);
+  text-align: center;
+}
+.case-cta__title{
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.case-cta__text{ margin: 18px auto 0; max-width: 40em; color: var(--on-dark-2); font-size: 1.0625rem; line-height: 1.55; }
+.case-cta__actions{ margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+
+/* ---------- Футер ---------- */
+.case-foot{ border-top: 1px solid var(--paper-line); }
+.case-foot__inner{
+  max-width: var(--w-full);
+  margin-inline: auto;
+  padding: clamp(28px, 4vh, 44px) var(--pad-x);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px clamp(24px, 4vw, 48px);
+}
+.case-foot__nav{ display: flex; flex-wrap: wrap; gap: 16px; }
+.case-foot__inner a{ color: var(--muted); text-decoration: none; font-size: var(--fs-caption); transition: color .25s ease; }
+.case-foot__inner a:hover{ color: var(--ink); }
+.case-foot__legal{ margin-left: auto; color: var(--muted); font-size: var(--fs-caption); }
+
+/* ---------- Просмотрщик фото ---------- */
+.zoom{
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 56px);
+}
+.zoom__bd{
+  position: absolute;
+  inset: 0;
+  background: rgba(10,10,10,.6);
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.zoom.is-open .zoom__bd{ opacity: 1; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.zoom__img{
+  position: relative;
+  max-width: min(94vw, 1400px);
+  max-height: 86svh;
+  object-fit: contain;
+  border-radius: var(--r-img);
+  box-shadow: 0 40px 120px rgba(0,0,0,.5);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.zoom__btn{
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,.94);
+  color: #111;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,.22);
+  transition: opacity .25s ease .1s, transform .25s ease;
+}
+.zoom.is-open .zoom__btn{ opacity: 1; }
+.zoom__btn:hover{ transform: scale(1.07); }
+.zoom__close{ top: clamp(14px, 3vw, 28px); right: clamp(14px, 3vw, 28px); }
+.zoom__prev{ left: clamp(10px, 3vw, 28px); top: 50%; margin-top: -24px; }
+.zoom__next{ right: clamp(10px, 3vw, 28px); top: 50%; margin-top: -24px; }
+.zoom__btn[hidden]{ display: none; }
+.zoom__count{
+  position: absolute;
+  z-index: 2;
+  bottom: clamp(14px, 3vw, 28px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  background: rgba(10,10,10,.6);
+  color: #fff;
+  font-size: .8rem;
+  opacity: 0;
+  transition: opacity .25s ease .1s;
+}
+.zoom.is-open .zoom__count{ opacity: 1; }
+
+/* ---------- Планшет и телефон ---------- */
+@media (max-width: 900px){
+  /* В одну колонку закреплять нечего: карточка сверху, фото под ней. */
+  .case__split{ grid-template-columns: minmax(0, 1fr); }
+  .case__aside{ position: static; }
+  .case-around__card--next{ text-align: left; }
+
+  /* Пять пунктов меню + кнопка в планшет уже не помещаются: ужимаем текст
+     и убираем словесную часть логотипа — значок остаётся. */
+  .case-top__nav{ gap: 12px; }
+  .case-top__link{ font-size: .8rem; }
+  .case-top__cta{ padding: 11px 18px; font-size: .8rem; }
+  .case-top__mark .wordmark__text{ display: none; }
+}
+
+@media (max-width: 640px){
+  .case-page{ --w-text: 100%; }
+  .case-top__link{ display: none; }
+  /* Пункты скрыты — место под название бренда снова есть. */
+  .case-top__mark .wordmark__text{ display: block; }
+  .case-top__cta{ padding: 12px 18px; font-size: .8rem; white-space: nowrap; }
+  .case__duo{ grid-template-columns: 1fr; }
+  .case__p{ font-size: 1.0625rem; }
+  .case-foot__legal{ margin-left: 0; width: 100%; }
+
+  /* Телефон: заголовок компактнее, описание на всю ширину карточки. */
+  .case__title{ font-size: clamp(1.35rem, 5.6vw, 1.6rem); }
+  .case__lead{ max-width: none; font-size: .9875rem; }
+}
+
+/* Плитки: три в ряд, пока подписи не начали ломаться. Ниже 560px — одна в ряд:
+   две дают 130px на колонку, туда не влезает ни одна осмысленная подпись. */
+@media (max-width: 560px){
+  .case__wins{ grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .case__win{ display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 4px 14px; padding: 14px 16px; }
+  .case__win-value{ grid-row: span 2; font-size: 1.4rem; }
+  .case__win-title{ margin-top: 0; align-self: end; }
+  .case__win-text{ margin-top: 0; grid-column: 2; }
+  /* На одной плитке без пояснения число не должно висеть в две строки */
+  .case__win-title:last-child{ align-self: center; }
+}
+
+/* Логотип + CTA вдвоём не помещаются в самые узкие экраны (320–360px) —
+   сжимаем обе стороны шапки, а не только кнопку, иначе логотип "распирает" вёрстку. */
+@media (max-width: 400px){
+  /* Кнопка «Назад» добавляет ещё один элемент в ту же строку — на самых узких
+     экранах текст логотипа убираем совсем, оставляя только значок. */
+  .top-left{ gap: 8px; }
+  .back-btn{ width: 34px; height: 34px; }
+  .case-top__mark .wordmark__text{ display: none; }
+  .case-top__cta{ padding: 10px 14px; font-size: .74rem; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .case-around__img, .zoom__bd, .zoom__btn, .zoom__count, .case__shot img{ transition: none; }
+}
+
+/* ---------- Видео в галерее кейса ----------
+   Окно то же, что у фото: те же скругление и пропорции задаёт .case__shot. */
+.case__shot--video{ position: relative; isolation: isolate; }
+.case__shot-video{
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--paper-soft);
+}
+
+/* Панель управления: появляется по наведению, лежит поверх кадра.
+   pointer-events отключены у контейнера — клики ловят только кнопки,
+   иначе прозрачная панель перехватывала бы курсор на всём видео. */
+.case__vctl{
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .32s cubic-bezier(.22,1,.36,1), transform .32s cubic-bezier(.22,1,.36,1);
+  pointer-events: none;
+}
+.case__shot--video:hover .case__vctl,
+.case__shot--video:focus-within .case__vctl{
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.case__vbtn{
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  /* Стекло, а не плотная плашка: кадр под кнопкой должен просвечивать */
+  background: rgba(10,10,10,.42);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color .25s ease, transform .25s cubic-bezier(.22,1,.36,1);
+}
+.case__vbtn:hover{ background: rgba(10,10,10,.62); transform: scale(1.06); }
+.case__vbtn:active{ transform: scale(.96); }
+.case__vbtn svg{ width: 18px; height: 18px; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+  .case__vbtn{ background: rgba(10,10,10,.72); }
+}
+
+/* Иконка звука: показываем ту, что соответствует текущему состоянию */
+.case__vicon{ display: none; }
+.case__shot--video .case__vicon--off{ display: block; }
+.case__shot--video.is-unmuted .case__vicon--off{ display: none; }
+.case__shot--video.is-unmuted .case__vicon--on{ display: block; }
+
+/* На тач-устройствах наведения нет — показываем панель сразу, но приглушённо */
+@media (hover: none){
+  .case__vctl{ opacity: .85; transform: none; pointer-events: auto; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .case__vctl, .case__vbtn{ transition: none; }
+}

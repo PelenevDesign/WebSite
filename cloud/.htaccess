@@ -1,0 +1,4 @@
+Options -Indexes
+# PHP-файлы cloud — это серверная часть приложения и должны выполняться.
+# Пользовательские файлы хранятся вне public_html (cloud/config.php -> cloud-storage).
+# Поэтому прямой доступ к storage невозможен на уровне web root.

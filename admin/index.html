@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Админка — PELENEV.DESIGN</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="admin.css?v=8">
+</head>
+<body>
+
+<!-- Экран входа -->
+<section id="login" class="login">
+  <form id="login-form" class="login__card">
+    <p class="eyebrow">PELENEV.DESIGN</p>
+    <h1>Управление сайтом</h1>
+    <p class="login__hint">Тексты, кейсы, заявки и настройки — без кода.</p>
+    <label>Пароль<input id="password" type="password" autocomplete="current-password" required autofocus></label>
+    <button class="btn btn--primary">Войти</button>
+    <small id="login-error"></small>
+  </form>
+</section>
+
+<!-- Оболочка панели -->
+<div id="panel" class="shell" hidden>
+  <aside class="side">
+    <div class="side__brand"><span class="side__dot"></span>PELENEV<b>.</b>DESIGN</div>
+    <nav class="side__nav">
+      <a href="#dashboard" data-nav="dashboard"><svg viewBox="0 0 20 20"><path d="M3 3h6v8H3zM11 3h6v5h-6zM11 10h6v7h-6zM3 13h6v4H3z"/></svg>Дашборд</a>
+      <a href="#leads" data-nav="leads"><svg viewBox="0 0 20 20"><path d="M3 4h14v10H7l-4 3z"/></svg>Заявки<span class="side__badge" id="nav-leads-badge" hidden></span></a>
+      <a href="#projects" data-nav="projects"><svg viewBox="0 0 20 20"><path d="M3 5h5l2 2h7v8H3z"/></svg>Кейсы</a>
+      <a href="#services" data-nav="services"><svg viewBox="0 0 20 20"><path d="M3 4h14v4H3zM3 10h6v6H3zM11 10h6v6h-6z"/></svg>Услуги</a>
+      <a href="#journal" data-nav="journal"><svg viewBox="0 0 20 20"><path d="M4 3h9l3 3v11H4z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 3v4h4M7 10h6M7 13h6M7 16h4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>Гайды</a>
+      <a href="#media" data-nav="media"><svg viewBox="0 0 20 20"><path d="M3 4h14v12H3zM6 12l3-3 2 2 3-4 3 5H6z"/></svg>Медиатека</a>
+      <a href="#content" data-nav="content"><svg viewBox="0 0 20 20"><path d="M4 3h12v2H4zM4 7h12v2H4zM4 11h8v2H4zM4 15h10v2H4z"/></svg>Контент</a>
+      <a href="#seo" data-nav="seo"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l4 4" stroke="currentColor" stroke-width="2"/></svg>SEO</a>
+      <a href="#integrations" data-nav="integrations"><svg viewBox="0 0 20 20"><path d="M8 3v4H4v6h4v4h6v-4h4V7h-4V3z"/></svg>Интеграции</a>
+    </nav>
+    <a class="side__site" href="/" target="_blank" rel="noopener">Открыть сайт ↗</a>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <nav class="crumbs" id="crumbs" aria-label="Хлебные крошки"></nav>
+      <input class="topsearch" id="topsearch" type="search" placeholder="Поиск в разделе…" autocomplete="off">
+    </header>
+
+    <main class="content">
+      <section class="section" data-section="dashboard"><div id="dashboard-root" class="stack"></div></section>
+
+      <section class="section" data-section="leads" hidden>
+        <div class="section__head"><h2>Заявки</h2><div class="chips" id="lead-filters"></div></div>
+        <div id="leads-root" class="card"></div>
+      </section>
+
+      <section class="section" data-section="services" hidden>
+        <div class="section__head"><h2>Услуги</h2><button type="button" class="btn btn--primary" id="service-new">Создать услугу</button></div>
+        <p class="muted">Страницы услуг на сайте: /services/&lt;адрес&gt;/. Пока услуга не сохранена здесь, страница берёт текст из файла-заготовки.</p>
+        <div id="service-list" class="pgrid"></div>
+        <form id="service-editor" class="card editor" hidden></form>
+      </section>
+
+      <section class="section" data-section="projects" hidden>
+        <div class="section__head"><h2>Кейсы</h2><button type="button" class="btn btn--primary" id="project-new">Создать кейс</button></div>
+        <p class="muted">Перетаскивайте карточки, чтобы менять порядок на сайте.</p>
+        <div id="project-list" class="pgrid"></div>
+        <form id="project-editor" class="card editor" hidden></form>
+      </section>
+
+      <section class="section" data-section="journal" hidden>
+        <div class="section__head"><h2>Гайды</h2></div>
+        <div class="chips jtabs">
+          <button type="button" class="chip is-active" data-jtab="articles">Статьи</button>
+          <button type="button" class="chip" data-jtab="taxonomy">Категории и теги</button>
+          <button type="button" class="chip" data-jtab="analytics">Аналитика</button>
+        </div>
+
+        <div class="jtab-panel" data-jtab-panel="articles">
+          <div class="section__head"><p class="muted">Экспертные статьи для органического трафика.</p><button type="button" class="btn btn--primary" id="article-new">Создать статью</button></div>
+          <div id="article-list" class="pgrid"></div>
+          <form id="article-editor" class="card editor" hidden></form>
+        </div>
+
+        <div class="jtab-panel" data-jtab-panel="taxonomy" hidden>
+          <div class="dcols">
+            <div class="card">
+              <h3>Категории</h3>
+              <p class="muted">У категории можно указать родителя — так получаются подкатегории.</p>
+              <div id="category-list" class="stack"></div>
+              <form id="category-form" class="jtax-form">
+                <input name="name" placeholder="Название категории" required>
+                <select name="parent_id"><option value="0">Без родителя</option></select>
+                <button type="submit" class="btn btn--primary">Добавить</button>
+              </form>
+            </div>
+            <div class="card">
+              <h3>Теги</h3>
+              <div id="tag-list" class="stack"></div>
+              <form id="tag-form" class="jtax-form">
+                <input name="name" placeholder="Название тега" required>
+                <button type="submit" class="btn btn--primary">Добавить</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="jtab-panel" data-jtab-panel="analytics" hidden>
+          <div id="journal-analytics-root" class="stack"></div>
+        </div>
+      </section>
+
+      <section class="section" data-section="media" hidden>
+        <div class="section__head"><h2>Медиатека</h2>
+          <label class="btn btn--primary btn--file">Загрузить файлы<input id="media-upload" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden></label>
+        </div>
+        <p class="muted">Файлы из <code>/uploads</code>. Занятые в кейсах или контенте защищены от удаления.</p>
+        <div id="media-root" class="mgrid"></div>
+      </section>
+
+      <section class="section" data-section="content" hidden>
+        <div class="section__head"><h2>Контент сайта</h2><button type="button" class="btn btn--primary" data-save>Сохранить</button></div>
+        <form id="content-form" class="stack"></form>
+      </section>
+
+      <section class="section" data-section="seo" hidden>
+        <div class="section__head"><h2>SEO</h2><button type="button" class="btn btn--primary" data-save>Сохранить</button></div>
+        <form id="seo-form" class="stack"></form>
+      </section>
+
+      <section class="section" data-section="integrations" hidden>
+        <div class="section__head"><h2>Интеграции</h2><button type="button" class="btn btn--primary" data-save>Сохранить</button></div>
+        <p class="muted">Вставьте код счётчика целиком (со всеми тегами &lt;script&gt;) — он автоматически подключится на всех страницах сайта.</p>
+        <div class="stack" id="integrations-form">
+          <fieldset><legend>Яндекс Метрика</legend><div class="field"><textarea data-id="integration-metrika" rows="6" placeholder="<script> ... </script>"></textarea></div></fieldset>
+          <fieldset><legend>Google Analytics</legend><div class="field"><textarea data-id="integration-ga" rows="6" placeholder="<script> ... </script>"></textarea></div></fieldset>
+          <fieldset><legend>Google Tag Manager</legend><div class="field"><textarea data-id="integration-gtm" rows="6" placeholder="<script> ... </script>"></textarea></div></fieldset>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<span id="status" class="sr-only" aria-live="polite"></span>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="/cms-schema.js?v=5"></script>
+<script src="admin.js?v=19"></script>
+<script src="gallery-tools.js?v=3"></script>
+</body>
+</html>

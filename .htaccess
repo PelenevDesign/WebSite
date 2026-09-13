@@ -1,0 +1,110 @@
+# Переименуйте этот файл в .htaccess перед загрузкой на хостинг.
+# Разместите его в корневой папке сайта — рядом с index.php и work.php.
+
+DirectoryIndex index.php index.html
+Options -Indexes
+
+# Кеш для статики: PageSpeed отдельно ругался на короткое время хранения.
+# Все css/js подключаются с ?v=N, поэтому длинный кеш безопасен —
+# после правки версия меняется и браузер забирает новый файл.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css                "access plus 1 year"
+  ExpiresByType application/javascript  "access plus 1 year"
+  ExpiresByType text/javascript         "access plus 1 year"
+  ExpiresByType image/jpeg              "access plus 1 year"
+  ExpiresByType image/png               "access plus 1 year"
+  ExpiresByType image/webp              "access plus 1 year"
+  ExpiresByType image/avif              "access plus 1 year"
+  ExpiresByType image/svg+xml           "access plus 1 year"
+  ExpiresByType video/mp4               "access plus 1 year"
+  ExpiresByType font/woff2              "access plus 1 year"
+  # HTML не кешируем: страницы собираются из CMS, правки должны быть видны сразу
+  ExpiresByType text/html               "access plus 0 seconds"
+  ExpiresDefault                        "access plus 2 days"
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "\.(php|html)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# Сжатие текстовых ответов — на многих хостингах по умолчанию выключено.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml
+  AddOutputFilterByType DEFLATE application/javascript text/javascript
+  AddOutputFilterByType DEFLATE application/json application/xml image/svg+xml
+</IfModule>
+
+# Заголовки безопасности — их отсутствие снижало оценку «Рекомендации».
+# CSP намеренно не добавляю: вслепую она ломает счётчики и инлайн-скрипты.
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  # HSTS включаем только когда сайт уже стабильно работает по https
+  Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
+</IfModule>
+
+# Внутренние файлы наружу не отдаём: документация, дампы БД, архивы с
+# исходниками, логи, служебный JSON. Через архив с исходниками, лежавший
+# в корне, уже утекал config.php с паролями — не повторяем.
+<FilesMatch "\.(md|sql|zip|tar|gz|tgz|log|bak|old|json|ini|yml|yaml)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Одно зеркало для Яндекса: только https и только без www.
+  # Без этого поисковик видит несколько копий сайта и склеивает их сам,
+  # теряя часть страниц. Условия написаны так, чтобы не зациклиться,
+  # если хостинг уже сам переводит на https.
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+  # Старые адреса файлов → чистые URL.
+  RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
+  RewriteRule ^ /? [R=301,L]
+
+  # index.php тоже отдавал главную вторым адресом — склеиваем.
+  RewriteCond %{THE_REQUEST} \s/+index\.php[\s?] [NC]
+  RewriteRule ^ /? [R=301,L]
+
+  RewriteCond %{THE_REQUEST} \s/+work\.(html|php)[\s?] [NC]
+  RewriteRule ^ /work? [R=301,L]
+
+  # Редирект со старого адреса case.php?id=N теперь делает сам case.php (301
+  # сразу на актуальный slug), а не Apache — иначе получится лишний
+  # промежуточный хоп на числовой /case/N без ключевых слов.
+
+  RewriteCond %{THE_REQUEST} \s/+journal\.php[\s?] [NC]
+  RewriteRule ^ /journal? [R=301,L]
+
+  RewriteCond %{THE_REQUEST} \s/+article\.php\s [NC]
+  RewriteCond %{QUERY_STRING} ^slug=([a-z0-9-]+)$
+  RewriteRule ^ /journal/%1? [R=301,L]
+
+  # Чистые URL → реальные PHP-файлы.
+  # Числовое правило обязано идти раньше общего — иначе оно не сработает:
+  # [a-z0-9-]+ ниже матчит цифры тоже.
+  RewriteRule ^work/?$ work.php [L]
+  RewriteRule ^case/([0-9]+)/?$ case.php?id=$1 [L,QSA]
+  RewriteRule ^case/([a-z0-9-]+)/?$ case.php?slug=$1 [L,QSA]
+  RewriteRule ^journal/?$ journal.php [L]
+  RewriteRule ^journal/([a-z0-9-]+)/?$ article.php?slug=$1 [L,QSA]
+  RewriteRule ^sitemap\.xml$ sitemap.php [L]
+  RewriteRule ^rss\.xml$ rss.php [L]
+</IfModule>
