@@ -39,6 +39,33 @@ const statusEl = $('#status');
 new MutationObserver(() => { if (statusEl.textContent) { toast(statusEl.textContent); statusEl.textContent = ''; } })
   .observe(statusEl, { childList: true, characterData: true, subtree: true });
 
+/* ---------- Модалка подтверждения (замена нативного confirm()) ----------
+   Единственная точка правки для всех 6 мест удаления — было `if (!confirm(...))
+   return;`, теперь `if (!(await confirmModal(...))) return;`. Возвращает
+   Promise<boolean>, поэтому все вызовы остаются внутри уже async-обработчиков. */
+function confirmModal(message, confirmLabel = 'Удалить') {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card" role="alertdialog" aria-modal="true">
+        <p>${esc(message)}</p>
+        <div class="modal-card__actions">
+          <button type="button" class="btn" data-modal-cancel>Отмена</button>
+          <button type="button" class="btn btn--danger" data-modal-ok>${esc(confirmLabel)}</button>
+        </div>
+      </div>`;
+    document.body.append(overlay);
+    const close = (result) => { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(result); };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+    $('[data-modal-cancel]', overlay).onclick = () => close(false);
+    $('[data-modal-ok]', overlay).onclick = () => close(true);
+    const onKey = (e) => { if (e.key === 'Escape') close(false); };
+    document.addEventListener('keydown', onKey);
+    $('[data-modal-ok]', overlay).focus();
+  });
+}
+
 /* ---------- Роутер разделов ---------- */
 const TITLES = { dashboard: 'Дашборд', leads: 'Заявки', projects: 'Кейсы', services: 'Услуги', journal: 'Гайды', media: 'Медиатека', content: 'Контент сайта', seo: 'SEO', integrations: 'Интеграции' };
 const loaded = {};
@@ -66,10 +93,47 @@ const applySearch = (q) => {
   const section = $('.section:not([hidden])');
   if (!section) return;
   const match = (el) => el.textContent.toLowerCase().includes(query) || $$('input,textarea', el).some((i) => (i.value || '').toLowerCase().includes(query));
-  $$('#leads-root tbody tr, .mcard, .project-admin-card, #content-form fieldset, #seo-form fieldset', section)
+  $$('#leads-root tbody tr, .mcard, #project-list tbody tr, #service-list tbody tr, #article-list tbody tr, #content-form fieldset, #seo-form fieldset', section)
     .forEach((el) => { el.style.display = !query || match(el) ? '' : 'none'; });
 };
 $('#topsearch').addEventListener('input', (e) => applySearch(e.target.value));
+
+/* ---------- Редактор записи как отдельный экран ----------
+   Общий помощник для Кейсов/Услуг/Статей: список и кнопка «Создать»
+   прячутся, пока открыта форма, крошки получают третий уровень с
+   названием записи. Логика самих editX()/сохранения/удаления не
+   меняется ни на строчку — это только видимость элементов вокруг.
+   Ссылка «назад» в крошках программно кликает ту же кнопку «Отмена»,
+   что и обычно, — гарантированно то же поведение, без дублирования
+   логики закрытия для каждого раздела отдельно. */
+function enterRecordEditor(sectionName, listSel, newBtnSel, cancelBtnSel, title) {
+  const list = $(listSel); if (list) list.hidden = true;
+  const nb = $(newBtnSel); if (nb) nb.hidden = true;
+  $('#crumbs').innerHTML = `<a href="#dashboard">Панель</a><span>/</span><a href="#" id="crumb-back">${esc(TITLES[sectionName] || '')}</a><span>/</span><b>${esc(title || 'Новая запись')}</b>`;
+  const back = $('#crumb-back');
+  if (back) back.onclick = (e) => { e.preventDefault(); $(cancelBtnSel)?.click(); };
+}
+function exitRecordEditor(sectionName, listSel, newBtnSel) {
+  const list = $(listSel); if (list) list.hidden = false;
+  const nb = $(newBtnSel); if (nb) nb.hidden = false;
+  $('#crumbs').innerHTML = `<a href="#dashboard">Панель</a><span>/</span><b>${esc(TITLES[sectionName] || '')}</b>`;
+}
+
+/* ---------- Мобильный сайдбар: выезжающая панель по гамбургеру ----------
+   Кнопка и подложка видны только на мобильном (см. медиа-запрос в admin.css) —
+   на десктопе сайдбар всегда открыт как раньше, этот код там просто не
+   срабатывает визуально (класс есть, но CSS его не показывает). */
+(() => {
+  const toggle = $('#side-toggle');
+  const backdrop = $('#side-backdrop');
+  const side = $('.side');
+  if (!toggle || !backdrop || !side) return;
+  const close = () => { side.classList.remove('is-open'); backdrop.hidden = true; toggle.setAttribute('aria-expanded', 'false'); };
+  const open = () => { side.classList.add('is-open'); backdrop.hidden = false; toggle.setAttribute('aria-expanded', 'true'); };
+  toggle.onclick = () => (side.classList.contains('is-open') ? close() : open());
+  backdrop.onclick = close;
+  $$('.side__nav a', side).forEach((a) => a.addEventListener('click', close));
+})();
 
 /* ---------- Вход ---------- */
 async function openPanel() {
@@ -315,36 +379,41 @@ async function loadProjects() {
 function renderProjects() {
   const list = $('#project-list');
   const pl = (s) => PSTATUSES.find(([v]) => v === s)?.[1] || s;
-  list.innerHTML = projects.map((p) => `
-    <article class="project-admin-card" draggable="true" data-id="${p.id}">
-      <img src="${esc(p.cover || (p.gallery || [])[0] || '')}" alt="">
-      <div class="grow"><h3>${esc(p.title)}</h3>
-        <p>${esc((p.categories || []).map((c) => CATS.find(([v]) => v === c)?.[1] || c).join(', ') || 'Без категории')}</p></div>
-      <span class="pbadge" data-v="${esc(p.status || 'published')}">${pl(p.status || 'published')}</span>
-      <div class="project-admin-actions">
-        <button type="button" data-edit="${p.id}">Изменить</button>
-        <button type="button" data-delete="${p.id}">Удалить</button>
-      </div>
-    </article>`).join('') || '<p class="lempty">Кейсов пока нет — создайте первый.</p>';
+  list.innerHTML = projects.length ? `
+    <table class="atable">
+      <thead><tr><th></th><th>Название</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+        ${projects.map((p) => `
+        <tr draggable="true" data-id="${p.id}">
+          <td class="atable__thumb"><img src="${esc(p.cover || (p.gallery || [])[0] || '')}" alt=""></td>
+          <td class="grow"><h3>${esc(p.title)}</h3><p>${esc((p.categories || []).map((c) => CATS.find(([v]) => v === c)?.[1] || c).join(', ') || 'Без категории')}</p></td>
+          <td><span class="pbadge" data-v="${esc(p.status || 'published')}">${pl(p.status || 'published')}</span></td>
+          <td class="atable__actions">
+            <button type="button" data-edit="${p.id}">Изменить</button>
+            <button type="button" data-delete="${p.id}">Удалить</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p class="lempty">Кейсов пока нет — создайте первый.</p>';
 
   $$('[data-edit]', list).forEach((b) => b.onclick = () => editProject(projects.find((p) => p.id == b.dataset.edit)));
   $$('[data-delete]', list).forEach((b) => b.onclick = async () => {
-    if (!confirm('Удалить этот кейс безвозвратно?')) return;
+    if (!(await confirmModal('Удалить этот кейс безвозвратно?'))) return;
     const r = await apiFetch(`/api.php?action=project&id=${b.dataset.delete}`, { method: 'DELETE' });
     if (!r.ok) { toast('Не удалось удалить кейс', 'err'); return; }
     toast('Кейс удалён', 'ok');
     await loadProjects();
   });
 
-  /* порядок drag & drop */
+  /* порядок drag & drop — теперь строки таблицы вместо карточек, логика та же */
   let dragId = null;
-  $$('.project-admin-card', list).forEach((card) => {
-    card.ondragstart = () => { dragId = card.dataset.id; card.classList.add('dragging'); };
-    card.ondragend = () => card.classList.remove('dragging');
-    card.ondragover = (e) => e.preventDefault();
-    card.ondrop = async () => {
-      const ids = $$('.project-admin-card', list).map((x) => x.dataset.id);
-      const from = ids.indexOf(dragId), to = ids.indexOf(card.dataset.id);
+  $$('tbody tr[data-id]', list).forEach((row) => {
+    row.ondragstart = () => { dragId = row.dataset.id; row.classList.add('dragging'); };
+    row.ondragend = () => row.classList.remove('dragging');
+    row.ondragover = (e) => e.preventDefault();
+    row.ondrop = async () => {
+      const ids = $$('tbody tr[data-id]', list).map((x) => x.dataset.id);
+      const from = ids.indexOf(dragId), to = ids.indexOf(row.dataset.id);
       if (from < 0 || to < 0 || from === to) return;
       ids.splice(to, 0, ids.splice(from, 1)[0]);
       const r = await apiFetch('/api.php?action=projects-order', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
@@ -360,6 +429,7 @@ function editProject(project = {}) {
   const editor = $('#project-editor');
   let gallery = [...(project.gallery || [])];
   editor.hidden = false;
+  enterRecordEditor('projects', '#project-list', '#project-new', '#project-cancel', project.id ? project.title : 'Новый кейс');
   editor.dataset.projectId = project.id || '0';
   editor.innerHTML = `
     <h3>${project.id ? 'Редактировать кейс' : 'Новый кейс'}</h3>
@@ -539,7 +609,7 @@ function editProject(project = {}) {
   ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove('is-dragover'); }));
   drop.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
 
-  $('#project-cancel', editor).onclick = () => { editor.hidden = true; };
+  $('#project-cancel', editor).onclick = () => { editor.hidden = true; exitRecordEditor('projects', '#project-list', '#project-new'); };
   editor.onsubmit = async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(editor));
@@ -559,6 +629,7 @@ function editProject(project = {}) {
       const r = await apiFetch('/api.php?action=project', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       if (!r.ok) { toast((await r.json()).error || 'Не удалось сохранить', 'err'); return; }
       editor.hidden = true;
+      exitRecordEditor('projects', '#project-list', '#project-new');
       toast(data.status === 'draft' ? 'Черновик сохранён' : 'Кейс сохранён и опубликован', 'ok');
       await loadProjects();
     } catch (err) { toast(err.message || 'Не удалось сохранить', 'err'); }
@@ -611,7 +682,7 @@ function renderTaxonomy() {
       <button type="button" data-del-cat="${c.id}">Удалить</button>
     </div>`).join('') : '<p class="lempty">Категорий пока нет.</p>';
   $$('[data-del-cat]', catList).forEach((b) => b.onclick = async () => {
-    if (!confirm('Удалить категорию?')) return;
+    if (!(await confirmModal('Удалить категорию?'))) return;
     const r = await apiFetch(`/api.php?action=journal-categories&id=${b.dataset.delCat}`, { method: 'DELETE' });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { toast(d.error || 'Не удалось удалить категорию', 'err'); return; }
@@ -628,7 +699,7 @@ function renderTaxonomy() {
       <button type="button" data-del-tag="${t.id}">Удалить</button>
     </div>`).join('') : '<p class="lempty">Тегов пока нет.</p>';
   $$('[data-del-tag]', tagList).forEach((b) => b.onclick = async () => {
-    if (!confirm('Удалить тег?')) return;
+    if (!(await confirmModal('Удалить тег?'))) return;
     const r = await apiFetch(`/api.php?action=journal-tags&id=${b.dataset.delTag}`, { method: 'DELETE' });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { toast(d.error || 'Не удалось удалить тег', 'err'); return; }
@@ -697,18 +768,23 @@ async function loadArticles() {
 function renderArticles() {
   const list = $('#article-list');
   const catNames = Object.fromEntries(jCategories.map((c) => [c.id, c.name]));
-  list.innerHTML = articlesCache.length ? articlesCache.map((a) => `
-    <article class="project-admin-card" data-id="${a.id}">
-      <img src="${esc(a.cover)}" alt="">
-      <div class="grow"><h3>${esc(a.title)}</h3>
-        <p>${esc((a.category_ids || []).map((id) => catNames[id]).filter(Boolean).join(', ') || 'Без категории')} · ${a.views} просм. · ${a.reading_time_min} мин чтения</p></div>
-      <span class="pbadge" data-v="${a.status === 'published' ? 'published' : (a.status === 'draft' ? 'draft' : 'hidden')}">${STATUS_LABELS[a.status] || a.status}</span>
-      <div class="project-admin-actions">
-        <button type="button" data-edit-article="${a.id}">Изменить</button>
-        <button type="button" data-dup-article="${a.id}">Дублировать</button>
-        <button type="button" data-del-article="${a.id}">Удалить</button>
-      </div>
-    </article>`).join('') : '<p class="lempty">Статей пока нет — создайте первую.</p>';
+  list.innerHTML = articlesCache.length ? `
+    <table class="atable">
+      <thead><tr><th></th><th>Название</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+        ${articlesCache.map((a) => `
+        <tr data-id="${a.id}">
+          <td class="atable__thumb"><img src="${esc(a.cover)}" alt=""></td>
+          <td class="grow"><h3>${esc(a.title)}</h3><p>${esc((a.category_ids || []).map((id) => catNames[id]).filter(Boolean).join(', ') || 'Без категории')} · ${a.views} просм. · ${a.reading_time_min} мин чтения</p></td>
+          <td><span class="pbadge" data-v="${a.status === 'published' ? 'published' : (a.status === 'draft' ? 'draft' : 'hidden')}">${STATUS_LABELS[a.status] || a.status}</span></td>
+          <td class="atable__actions">
+            <button type="button" data-edit-article="${a.id}">Изменить</button>
+            <button type="button" data-dup-article="${a.id}">Дублировать</button>
+            <button type="button" data-del-article="${a.id}">Удалить</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p class="lempty">Статей пока нет — создайте первую.</p>';
 
   $$('[data-edit-article]', list).forEach((b) => b.onclick = () => editArticle(articlesCache.find((a) => a.id == b.dataset.editArticle)));
   $$('[data-dup-article]', list).forEach((b) => b.onclick = async () => {
@@ -718,7 +794,7 @@ function renderArticles() {
     await loadArticles();
   });
   $$('[data-del-article]', list).forEach((b) => b.onclick = async () => {
-    if (!confirm('Удалить эту статью безвозвратно?')) return;
+    if (!(await confirmModal('Удалить эту статью безвозвратно?'))) return;
     const r = await apiFetch(`/api.php?action=article&id=${b.dataset.delArticle}`, { method: 'DELETE' });
     if (!r.ok) { toast('Не удалось удалить статью', 'err'); return; }
     toast('Статья удалена', 'ok');
@@ -749,6 +825,7 @@ const NEW_ARTICLE_BLOCK = {
 function editArticle(article = {}) {
   const editor = $('#article-editor');
   editor.hidden = false;
+  enterRecordEditor('journal', '#article-list', '#article-new', '#article-cancel', article.id ? article.title : 'Новая статья');
   editor.dataset.articleId = article.id || '0';
   const isScheduled = article.status === 'scheduled';
   const toLocalInput = (s) => { if (!s) return ''; const d = new Date(s.replace(' ', 'T')); const pad = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
@@ -976,7 +1053,7 @@ function editArticle(article = {}) {
     catch (err) { toast(err.message, 'err'); }
   };
 
-  $('#article-cancel', editor).onclick = () => { editor.hidden = true; window.getArticleBlocksForSave = () => []; };
+  $('#article-cancel', editor).onclick = () => { editor.hidden = true; window.getArticleBlocksForSave = () => []; exitRecordEditor('journal', '#article-list', '#article-new'); };
 
   /* Статус обычно берётся из select (draft/scheduled/published/hidden — как
      в редакторе кейса). «Сохранить черновик» — быстрый оверрайд для случая,
@@ -994,6 +1071,7 @@ function editArticle(article = {}) {
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { toast(d.error || 'Не удалось сохранить статью', 'err'); return; }
       editor.hidden = true;
+      exitRecordEditor('journal', '#article-list', '#article-new');
       toast(data.status === 'published' ? 'Статья опубликована' : 'Статья сохранена', 'ok');
       await loadArticles();
     } catch (err) { toast(err.message || 'Не удалось сохранить', 'err'); }
@@ -1030,7 +1108,7 @@ async function loadMedia() {
     catch (_) { toast(b.dataset.copy); }
   });
   $$('#media-root [data-del]').forEach((b) => b.onclick = async () => {
-    if (!confirm(`Удалить файл ${b.dataset.del}?`)) return;
+    if (!(await confirmModal(`Удалить файл ${b.dataset.del}?`))) return;
     const r = await apiFetch(`/api.php?action=media-delete&name=${encodeURIComponent(b.dataset.del)}`, { method: 'DELETE' });
     const d2 = await r.json().catch(() => ({}));
     if (!r.ok) { toast(d2.error || 'Не удалось удалить', 'err'); return; }
@@ -1067,22 +1145,26 @@ async function loadServices() {
 function renderServices() {
   const list = $('#service-list');
   if (!services.length) { list.innerHTML = '<p class="lempty">Услуг пока нет. Создайте первую — страница появится по адресу /services/&lt;адрес&gt;/.</p>'; return; }
-  list.innerHTML = services.map((x) => `
-    <article class="project-admin-card" data-id="${x.id}">
-      <div class="grow">
-        <h3>${esc(x.h1 || x.title)}</h3>
-        <p class="muted">/services/${esc(x.slug)}/ · ${esc(SSTATUSES.find(([v]) => v === x.status)?.[1] || x.status)}</p>
-      </div>
-      <div class="pcard__actions">
-        <a class="btn" href="/services/${encodeURIComponent(x.slug)}/" target="_blank" rel="noopener">Открыть</a>
-        <button type="button" class="btn" data-edit-service="${x.id}">Редактировать</button>
-        <button type="button" class="btn btn--danger" data-del-service="${x.id}">Удалить</button>
-      </div>
-    </article>`).join('');
+  list.innerHTML = `
+    <table class="atable">
+      <thead><tr><th>Название</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+        ${services.map((x) => `
+        <tr data-id="${x.id}">
+          <td class="grow"><h3>${esc(x.h1 || x.title)}</h3><p class="muted">/services/${esc(x.slug)}/</p></td>
+          <td><span class="pbadge" data-v="${x.status === 'published' ? 'published' : (x.status === 'hidden' ? 'hidden' : 'draft')}">${esc(SSTATUSES.find(([v]) => v === x.status)?.[1] || x.status)}</span></td>
+          <td class="atable__actions">
+            <a class="btn" href="/services/${encodeURIComponent(x.slug)}/" target="_blank" rel="noopener">Открыть</a>
+            <button type="button" class="btn" data-edit-service="${x.id}">Редактировать</button>
+            <button type="button" class="btn btn--danger" data-del-service="${x.id}">Удалить</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
 
   $$('[data-edit-service]', list).forEach((b) => b.onclick = () => editService(services.find((x) => String(x.id) === b.dataset.editService)));
   $$('[data-del-service]', list).forEach((b) => b.onclick = async () => {
-    if (!confirm('Удалить услугу? Страница перестанет открываться.')) return;
+    if (!(await confirmModal('Удалить услугу? Страница перестанет открываться.'))) return;
     const r = await apiFetch(`/api.php?action=service&id=${b.dataset.delService}`, { method: 'DELETE' });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { toast(d.error || 'Не удалось удалить', 'err'); return; }
@@ -1097,6 +1179,7 @@ function editService(item = {}) {
   const editor = $('#service-editor');
   const calc = item.calc || {};
   editor.hidden = false;
+  enterRecordEditor('services', '#service-list', '#service-new', '#service-cancel', item.id ? (item.h1 || item.title) : 'Новая услуга');
   editor.innerHTML = `
     <h3>${item.id ? 'Редактировать услугу' : 'Новая услуга'}</h3>
     <div class="project-editor__grid">
@@ -1223,7 +1306,7 @@ function editService(item = {}) {
   wireUpload('svc-hero-upload', 'svc-hero-file', 'hero_image');
   wireUpload('svc-og-upload', 'svc-og-file', 'og_image');
 
-  $('#service-cancel', editor).onclick = () => { editor.hidden = true; };
+  $('#service-cancel', editor).onclick = () => { editor.hidden = true; exitRecordEditor('services', '#service-list', '#service-new'); };
 
   editor.onsubmit = async (e) => {
     e.preventDefault();
@@ -1247,6 +1330,7 @@ function editService(item = {}) {
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { toast(d.error || `Ошибка сохранения (${r.status})`, 'err'); return; }
       editor.hidden = true;
+      exitRecordEditor('services', '#service-list', '#service-new');
       toast('Услуга сохранена', 'ok');
       await loadServices();
     } catch (err) { toast(err.message || 'Не удалось сохранить', 'err'); }
