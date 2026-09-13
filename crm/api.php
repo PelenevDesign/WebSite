@@ -27,8 +27,7 @@ try {
     $data = crmBody();
     $state = $data['state'] ?? null;
     if (!is_array($state)) crmJson(422, ['error' => 'Некорректное состояние CRM.']);
-    foreach (['clients','tasks'] as $key) if (!isset($state[$key]) || !is_array($state[$key])) crmJson(422, ['error' => 'Некорректная структура CRM.']);
-    if (!isset($state['vietnam']) || !is_array($state['vietnam'])) crmJson(422, ['error' => 'Некорректная структура CRM.']);
+    foreach (['clients','tasks','notes'] as $key) if (!isset($state[$key]) || !is_array($state[$key])) crmJson(422, ['error' => 'Некорректная структура CRM.']);
     $payload = json_encode($state, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if (!is_string($payload) || strlen($payload) > 2 * 1024 * 1024) crmJson(422, ['error' => 'Состояние CRM слишком большое.']);
     $statement = db()->prepare('INSERT INTO crm_workspace_state (id, payload) VALUES (1, ?) ON DUPLICATE KEY UPDATE payload=VALUES(payload)');

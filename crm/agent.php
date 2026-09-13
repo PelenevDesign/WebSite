@@ -67,10 +67,6 @@ $system = <<<PROMPT
 - {"op":"client.create","name":"...","contact":"...","note":"..."}
 - {"op":"client.update","id":"<id клиента>","name":"...","contact":"...","note":"..."}
 - {"op":"client.delete","id":"<id клиента>"}
-- {"op":"vietnam.deposit","amount":0,"date":"YYYY-MM-DD","note":"..."}
-- {"op":"vietnam.expense","amount":0,"date":"YYYY-MM-DD","note":"..."}
-- {"op":"vietnam.delete","id":"<id операции>"}
-- {"op":"goal.update","title":"...","target":0,"deadline":"YYYY-MM-DD","tagline":"..."}
 
 Правила:
 1. Ссылайся только на id, которые есть в снимке данных ниже. Не выдумывай id.
@@ -174,7 +170,7 @@ try {
   }
   if (!is_array($parsed)) aiJson(502, ['error' => 'Модель вернула не JSON. Попробуй переформулировать.']);
 
-  $allowed = ['task.create','task.update','task.pay','task.delete','client.create','client.update','client.delete','vietnam.deposit','vietnam.expense','vietnam.delete','goal.update'];
+  $allowed = ['task.create','task.update','task.pay','task.delete','client.create','client.update','client.delete'];
   $ops = [];
   foreach ((array)($parsed['ops'] ?? []) as $op) {
     if (is_array($op) && in_array((string)($op['op'] ?? ''), $allowed, true)) $ops[] = $op;
