@@ -2553,10 +2553,17 @@ h1, h2, h3, h4{
   }
 
   /* Services: название сверху строки, картинки в 2 колонки */
+  /* На телефоне запас высоты (clamp(...,12vh,...) + отдельный padding-top
+     у первой карточки) складывался в пустой экран между заголовком и
+     первой услугой — здесь оба зазора уже, десктопа не касается. */
   .services__head{
     flex-direction: column;
     align-items: flex-start;
     gap: 20px;
+    margin-bottom: 32px;
+  }
+  .services__head + .srow-sep + .srow{
+    padding-top: 8px;
   }
   .srow{
     display: flex;

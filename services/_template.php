@@ -69,6 +69,13 @@ $s += [
   'hero_primary_label' => 'Обсудить проект', 'hero_secondary_label' => 'Смотреть кейсы',
 ];
 
+/* «Кейсы на странице» в админке для этого слага упорно возвращались к «Сайты»
+   (после трёх правок через /admin страница всё ещё показывала сайтовые кейсы
+   вместо дизайнерских) — жёстко фиксируем категорию здесь, чтобы не зависеть
+   от поля в БД. Если позже понадобится снова управлять этим через админку,
+   просто удалите эту строку. */
+if ($slug === 'web-design') $s['cases_cat'] = 'graphic';
+
 try { $siteContent = allContent(); } catch (Throwable $e) { $siteContent = []; }
 $integrationsHtml = '';
 foreach (['integration-metrika', 'integration-ga', 'integration-gtm'] as $k) {
@@ -202,7 +209,7 @@ $svcStatement = [
        затем сами превращаем в stylesheet. Без JS работает noscript-ветка. -->
   <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
-  <link rel="stylesheet" href="/styles.css?v=91">
+  <link rel="stylesheet" href="/styles.css?v=92">
   <link rel="stylesheet" href="/case.css?v=13">
   <link rel="stylesheet" href="/service.css?v=21">
   <link rel="stylesheet" href="/reviews.css?v=2">
@@ -541,7 +548,7 @@ $svcStatement = [
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" crossorigin="anonymous"></script>
   <script src="/cms-schema.js?v=4"></script>
-  <script src="/cms.js?v=5"></script>
+  <script src="/cms.js?v=6"></script>
   <script src="/service.js?v=11"></script>
   <script src="/reviews.js?v=2" defer></script>
   <script src="/cookie.js?v=1"></script>
