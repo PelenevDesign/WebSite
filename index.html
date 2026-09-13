@@ -304,28 +304,28 @@
           </div>
         </div>
       </article>
-      <div class="srow-sep" aria-hidden="true"></div>
-      <!-- Статический фолбэк для случая, когда CMS_SERVER_CONTENT не подгрузился
-           (см. cms-schema.js: service-4-title/text/image-*) — реальные текст и
-           фото уже загружены через админку («Продвижение сайтов», 4 фото из
-           /uploads/), здесь дублируем то же самое, чтобы и без JS страница
-           была честной, а не про вайб-кодинг. -->
-      <article class="srow">
+      <div class="srow-sep" aria-hidden="true" hidden></div>
+      <!-- Услуга временно скрыта: страница /services/vibe-coding/ ещё не
+           переписана под контекстную рекламу (текущий контент — старый,
+           про вайб-кодинг), а на главной название уже поменяли на
+           «Продвижение сайтов» через CMS. Разметку не удаляю — просто
+           прячем hidden, чтобы вернуть одной правкой, когда страница будет готова. -->
+      <article class="srow" hidden>
         <span class="srow__num">04</span>
         <div class="srow__mid">
-          <p class="srow__desc">Сайт без рекламы — просто визитка в интернете. Настрою трафик, который приносит заявки</p>
+          <p class="srow__desc">Быстрая AI-разработка: от прототипа до рабочего веб-приложения за дни, а не месяцы.</p>
           <div class="srow__imgs">
-            <div class="srow__imgwrap"><img class="srow__img" src="/uploads/20260725-162551-37f635f5.jpg" alt="Продвижение сайтов — пример работы" decoding="async" loading="lazy" width="480" height="360"></div>
-            <div class="srow__imgwrap"><img class="srow__img" src="/uploads/20260725-162557-54ac222a.jpg" alt="Продвижение сайтов — пример работы" decoding="async" loading="lazy" width="480" height="360"></div>
-            <div class="srow__imgwrap"><img class="srow__img" src="/uploads/20260725-162604-e17257e4.jpg" alt="Продвижение сайтов — пример работы" decoding="async" loading="lazy" width="480" height="360"></div>
-            <div class="srow__imgwrap"><img class="srow__img" src="/uploads/20260725-162745-e3d19b6c.jpg" alt="Продвижение сайтов — пример работы" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s4.svg" alt="Вайб-кодинг — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s6.svg" alt="Вайб-кодинг — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s3.svg" alt="Вайб-кодинг — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
+            <div class="srow__imgwrap"><img class="srow__img" src="assets/services/s1.svg" alt="Вайб-кодинг — плейсхолдер" decoding="async" loading="lazy" width="480" height="360"></div>
           </div>
         </div>
         <div class="srow__right">
-          <h3 class="srow__title"><span class="mask"><span class="srow__title-word">Продвижение сайтов</span></span></h3>
+          <h3 class="srow__title"><span class="mask"><span class="srow__title-word">Вайб-кодинг</span></span></h3>
           <div class="srow__actions">
             <a class="pill pill--dark srow__cta pill--calc" href="/services/vibe-coding/">Смотреть предложение <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
-            <a class="pill pill--outline-dark srow__cta srow__cta--sub" href="/work.php">Смотреть кейсы</a>
+            <a class="pill pill--outline-dark srow__cta srow__cta--sub" href="/work.php#ai-site">Смотреть кейсы</a>
           </div>
         </div>
       </article>
@@ -611,7 +611,7 @@
 
 
     <div class="footer__legal">
-      <span>&copy; <span class="footer__year">2026</span> PELENEV.DESIGN</span>
+      <span>&copy; <span class="footer__year">2026</span> PELENEV.DESIGN 1</span>
       <a href="privacy.html">Политика конфиденциальности</a>
     </div>
 

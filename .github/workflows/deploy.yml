@@ -1,0 +1,39 @@
+name: Deploy to Beget (FTP)
+
+# Заливает изменённые файлы на хостинг при каждом push в main.
+# Секреты (хост/логин/пароль от FTP) хранятся в настройках репозитория
+# GitHub — Settings → Secrets and variables → Actions — сюда в код никогда
+# не попадают.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # позволяет запустить деплой вручную, кнопкой в GitHub
+
+jobs:
+  ftp-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: FTP Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ./dmitr2yj.beget.tech/public_html/
+          # Секреты, медиатека и служебные файлы — как в .gitignore:
+          # никогда не трогаем их на сервере при деплое.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            config.php
+            cloud/config.php
+            uploads/**
+            .htlead-attempts.json
+            .htlogin-attempts.json
+            install.lock
+            __MACOSX/**
+            *.zip
