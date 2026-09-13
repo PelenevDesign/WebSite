@@ -358,16 +358,21 @@ p { margin: 0; }
 .tabpanel { display: none; }
 .tabpanel.is-visible { display: block; }
 
-.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .search { display: flex; align-items: center; gap: 9px; flex: 1 1 240px; max-width: 340px; padding: 11px 17px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--quiet); transition: border-color .18s; }
 .search:focus-within { border-color: var(--accent-line); }
 .search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font-size: 14px; }
 .search input::placeholder { color: var(--quiet); }
+.mini-btn--add { flex: none; font-size: 17px; font-weight: 600; }
 .chips { display: flex; gap: 7px; flex-wrap: wrap; }
 .chip { display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 500; transition: all .18s; }
 .chip:hover { border-color: var(--accent-line); color: var(--accent-soft); }
 .chip.is-active { color: #fff; background: linear-gradient(180deg, var(--accent-hi) 0%, var(--accent) 100%); border-color: transparent; box-shadow: var(--shadow-accent); }
 .chip em { font-style: normal; opacity: .7; font-size: 11.5px; }
+/* Одна строка вместо переноса на несколько рядов — фильтр не должен занимать пол-экрана */
+.chips--scroll { flex-wrap: nowrap; overflow-x: auto; margin-bottom: 20px; scrollbar-width: none; }
+.chips--scroll::-webkit-scrollbar { display: none; }
+.chips--scroll .chip { flex: none; }
 
 /* ══ Задачи: плоская сетка карточек — сразу видно всё, без группировки ══ */
 .task-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
@@ -649,6 +654,7 @@ p { margin: 0; }
   .metrics { grid-template-columns: 1fr 1fr; gap: 10px; }
   .metric { padding: 16px; border-radius: var(--r-md); }
   .metric strong { font-size: 22px; }
+  .chips--scroll .chip { padding: 7px 12px; font-size: 12.5px; }
 
   .panel { padding: 16px; border-radius: var(--r-md); }
   .task { padding: 15px 16px; border-radius: var(--r-md); }

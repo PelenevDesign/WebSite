@@ -94,9 +94,9 @@ header('Cache-Control: no-store, private', true);
         <div class="tabpanel is-visible" data-tabpanel="tasks">
           <div class="toolbar">
             <label class="search"><span aria-hidden="true">⌕</span><input id="task-search" type="search" placeholder="Поиск по задачам и клиентам"></label>
-            <div class="chips" id="status-filter" role="group" aria-label="Фильтр по статусу"></div>
-            <button class="primary-btn" data-action="new-task">+ Задача</button>
+            <button class="mini-btn mini-btn--add" data-action="new-task" aria-label="Добавить задачу" title="Добавить задачу">+</button>
           </div>
+          <div class="chips chips--scroll" id="status-filter" role="group" aria-label="Фильтр по статусу"></div>
           <div id="task-groups"></div>
         </div>
 
