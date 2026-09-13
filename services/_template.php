@@ -204,7 +204,7 @@ $svcStatement = [
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
   <link rel="stylesheet" href="/styles.css?v=91">
   <link rel="stylesheet" href="/case.css?v=13">
-  <link rel="stylesheet" href="/service.css?v=20">
+  <link rel="stylesheet" href="/service.css?v=21">
   <link rel="stylesheet" href="/reviews.css?v=2">
 <?= $integrationsHtml ?>
   <script src="/metrika.js?v=1" defer></script>
@@ -354,6 +354,22 @@ $svcStatement = [
         <a class="pill pill--outline svc__cases-more" href="/work.php#<?= $esc($s['cases_cat']) ?>">Все работы <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
       </div>
     </section>
+
+    <?php if ($slug === 'websites'): $forcePlate(true); ?>
+    <!-- Промо-акция: только на «Сайты под ключ», сразу после кейсов. -->
+    <section class="svc-card svc-card--dark svc-promo" data-card aria-labelledby="svc-promo">
+      <div class="svc-card__inner" data-reveal>
+        <h2 class="svc__h2 svc-promo__title" id="svc-promo">Сайт под ключ за 35 000 ₽</h2>
+        <p class="svc-promo__text">Плюс административная панель — в подарок, чтобы обновлять тексты, фото и кейсы самостоятельно, без моей помощи.</p>
+        <ul class="svc-promo__perks">
+          <li>Дизайн под ваш бренд — без шаблонов</li>
+          <li>Админ-панель в подарок</li>
+          <li>Фиксированная цена, без доплат</li>
+        </ul>
+        <a class="pill pill--light svc-promo__cta" href="#brief">Обсудить проект <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
+      </div>
+    </section>
+    <?php endif; ?>
 
     <!-- Отзывы: та же лента, что на главной, и всегда на тёмной плите —
          как на главной (.section--dark). Наполняет reviews.js
