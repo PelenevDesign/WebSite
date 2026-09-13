@@ -76,26 +76,33 @@ Options -Indexes
   RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
 
   # Старые адреса файлов → чистые URL.
+  # Абсолютный https://%{HTTP_HOST}/... вместо относительного /? — на этом
+  # хостинге за прокси mod_rewrite достраивал относительный редирект как
+  # http://, а не https://. Браузер такой Location в fetch()/XHR блокирует
+  # как небезопасный переход (mixed content) с «Failed to fetch» без
+  # подробностей — обычная навигация по ссылке при этом молча всё сносит,
+  # поэтому баг был незаметен, пока на эти адреса не понадобился fetch()
+  # (загрузка формы контента в админке).
   RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
-  RewriteRule ^ /? [R=301,L]
+  RewriteRule ^ https://%{HTTP_HOST}/? [R=301,L]
 
   # index.php тоже отдавал главную вторым адресом — склеиваем.
   RewriteCond %{THE_REQUEST} \s/+index\.php[\s?] [NC]
-  RewriteRule ^ /? [R=301,L]
+  RewriteRule ^ https://%{HTTP_HOST}/? [R=301,L]
 
   RewriteCond %{THE_REQUEST} \s/+work\.(html|php)[\s?] [NC]
-  RewriteRule ^ /work? [R=301,L]
+  RewriteRule ^ https://%{HTTP_HOST}/work? [R=301,L]
 
   # Редирект со старого адреса case.php?id=N теперь делает сам case.php (301
   # сразу на актуальный slug), а не Apache — иначе получится лишний
   # промежуточный хоп на числовой /case/N без ключевых слов.
 
   RewriteCond %{THE_REQUEST} \s/+journal\.php[\s?] [NC]
-  RewriteRule ^ /journal? [R=301,L]
+  RewriteRule ^ https://%{HTTP_HOST}/journal? [R=301,L]
 
   RewriteCond %{THE_REQUEST} \s/+article\.php\s [NC]
   RewriteCond %{QUERY_STRING} ^slug=([a-z0-9-]+)$
-  RewriteRule ^ /journal/%1? [R=301,L]
+  RewriteRule ^ https://%{HTTP_HOST}/journal/%1? [R=301,L]
 
   # Чистые URL → реальные PHP-файлы.
   # Числовое правило обязано идти раньше общего — иначе оно не сработает:
