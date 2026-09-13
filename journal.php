@@ -205,6 +205,6 @@ function articleCardHTML(array $a, array $catNames, callable $esc): string {
   <script src="/cms.js?v=5"></script>
   <script src="/journal.js?v=2"></script>
   <script src="/cookie.js?v=1"></script>
-  <script src="/leadmagnet.js?v=20" defer></script>
+  <script src="/leadmagnet.js?v=21" defer></script>
 </body>
 </html>

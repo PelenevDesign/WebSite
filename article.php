@@ -368,6 +368,6 @@ function imgSize(string $src): string {
 <?php if (!$isPreview): ?>
   <script>fetch('/api.php?action=article-view', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: <?= (int)$article['id'] ?> }), keepalive: true }).catch(() => {});</script>
 <?php endif; ?>
-  <script src="/leadmagnet.js?v=20" defer></script>
+  <script src="/leadmagnet.js?v=21" defer></script>
 </body>
 </html>

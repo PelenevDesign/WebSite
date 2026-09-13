@@ -529,6 +529,6 @@ $svcStatement = [
   <script src="/service.js?v=11"></script>
   <script src="/reviews.js?v=2" defer></script>
   <script src="/cookie.js?v=1"></script>
-  <script src="/leadmagnet.js?v=20" defer></script>
+  <script src="/leadmagnet.js?v=21" defer></script>
 </body>
 </html>

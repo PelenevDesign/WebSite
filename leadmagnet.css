@@ -1,16 +1,81 @@
 /* ============================================
-   Квиз «Какой сайт нужен»: всплывает по таймеру/exit-intent.
+   Виджет в углу («Сайт под ключ за 35 000 ₽») + квиз «Какой сайт нужен».
    Токены (--ink, --accent, --r-card…) берутся из styles.css.
    Разметку строит leadmagnet.js — здесь только оформление.
    ============================================ */
+
+/* ---------- Виджет в правом нижнем углу ---------- */
+.lm-card{
+  position: fixed;
+  right: clamp(14px, 2vw, 26px);
+  bottom: clamp(14px, 2vh, 26px);
+  z-index: 1150;                 /* выше дока (900), ниже меню-оверлея (1100+) не нужно */
+  width: min(330px, calc(100vw - 28px));
+  padding: 16px 16px 14px;
+  border-radius: var(--r-card);
+  background: rgba(16,16,16,.72);
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 24px 70px rgba(0,0,0,.42);
+  color: var(--on-dark);
+  opacity: 0;
+  transform: translateY(14px) scale(.98);
+  transition: opacity .5s cubic-bezier(.22,1,.36,1), transform .5s cubic-bezier(.22,1,.36,1);
+}
+.lm-card.is-in{ opacity: 1; transform: none; }
+.lm-card.is-out{ opacity: 0; transform: translateY(10px) scale(.98); pointer-events: none; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+  .lm-card{ background: rgba(16,16,16,.94); }
+}
+.lm-card__title{
+  display: flex; align-items: center; gap: 8px;
+  padding-right: 30px;
+  font-size: 1rem; font-weight: 600; line-height: 1.25; letter-spacing: -.015em;
+  color: #fff;
+}
+/* Единственный акцент карточки — точка фирменного цвета, как в логотипе. */
+.lm-card__mark{
+  flex: none; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent, #F5320E);
+  box-shadow: 0 0 0 4px rgba(245,50,14,.16);
+}
+.lm-card__text{
+  margin-top: 10px;
+  font-size: .82rem; line-height: 1.5; color: rgba(255,255,255,.6);
+}
+.lm-card__cta{
+  margin-top: 14px; width: 100%;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 18px; border: 0; border-radius: var(--r-pill);
+  background: #fff; color: var(--ink);
+  font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer;
+  transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease;
+}
+.lm-card__cta:hover{ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.35); }
+.lm-card__cta:active{ transform: translateY(0) scale(.985); }
+.lm-card__cta:hover .lm__arrow{ transform: translateX(4px); }
+.lm-card__close{
+  position: absolute; top: 10px; right: 10px;
+  width: 28px; height: 28px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: transparent;
+  color: rgba(255,255,255,.5); cursor: pointer; line-height: 1;
+  transition: background-color .25s ease, color .25s ease;
+}
+.lm-card__close:hover{ background: rgba(255,255,255,.1); color: #fff; }
+/* Кружок остаётся 28px, но палец попадает в 44px — видимый размер не меняем. */
+.lm-card__close::after{
+  content: ''; position: absolute; top: 50%; left: 50%;
+  width: 44px; height: 44px; transform: translate(-50%, -50%);
+}
 
 /* Переносы: заголовки бьём на строки равной длины, в текстах не оставляем
    одинокое слово на последней строке. Неразрывные пробелы после коротких
    предлогов ставит typo() в leadmagnet.js — CSS их не заменяет. */
 /* balance — короткие блоки: строки равной длины, без одинокого слова в конце.
    pretty — длинные абзацы: там balance выключается после нескольких строк. */
-.lm__title, .lm__btn, .lm__option{ text-wrap: balance; }
-.lm__text, .lm__consent-text, .lm__error{ text-wrap: pretty; }
+.lm-card__title, .lm-card__cta, .lm__title, .lm__btn, .lm__option{ text-wrap: balance; }
+.lm-card__text, .lm__text, .lm__consent-text, .lm__error{ text-wrap: pretty; }
 
 /* ---------- Сценарий ---------- */
 .lm{
@@ -196,6 +261,10 @@
 
 /* ---------- Телефон ---------- */
 @media (max-width: 560px){
+  .lm-card{
+    left: 10px; right: 10px; bottom: 10px;
+    width: auto; padding: 15px 14px 14px;
+  }
   .lm{ padding: 0; place-items: end stretch; }
   /* Лист снизу: контент прокручивается внутри, горизонтальной прокрутки нет */
   .lm__dialog{
@@ -210,6 +279,6 @@
 }
 
 @media (prefers-reduced-motion: reduce){
-  .lm__dialog, .lm__bd, .lm__btn, .lm__bar, .lm__option, .lm__arrow{ transition: none; }
+  .lm-card, .lm__dialog, .lm__bd, .lm__btn, .lm-card__cta, .lm__bar, .lm__option, .lm__arrow{ transition: none; }
   .lm__dialog{ filter: none; }
 }

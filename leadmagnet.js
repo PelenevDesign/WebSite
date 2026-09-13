@@ -1,12 +1,12 @@
-/* Квиз «Какой сайт нужен»: всплывает по таймеру/exit-intent, три вопроса,
-   готовая рекомендация и форма телефона. Разметку строит скрипт, поэтому
-   на страницу добавляются только подключения css/js. Ничего не редактируется
-   через CMS: тексты живут здесь. */
+/* Виджет в углу («Сайт под ключ за 35 000 ₽») → по клику квиз из трёх
+   вопросов → готовая рекомендация и форма телефона. Разметку строит скрипт,
+   поэтому на страницу добавляются только подключения css/js. Ничего не
+   редактируется через CMS: тексты живут здесь. */
 (() => {
   'use strict';
 
   const KEY = 'pd-leadmagnet';               // 'closed' | 'sent' — на текущую сессию
-  const DELAY = 25000;                       // условие 1: 25с на странице
+  const DELAY = 10000;                       // условие 1: 10с на странице
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const seen = () => { try { return sessionStorage.getItem(KEY); } catch (e) { return null; } };
@@ -17,17 +17,30 @@
   if (document.body.classList.contains('page-admin')) return;
 
   /* Стили подключаем скриптом, а не <link> в <head>: тот блокировал бы первый
-     рендер страницы ради виджета, который всплывает не раньше чем через 25с. */
+     рендер страницы ради виджета, который всплывает не раньше чем через 10с. */
   if (!document.querySelector('link[data-lm-css]')) {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = '/leadmagnet.css?v=20';
+    css.href = '/leadmagnet.css?v=21';
     css.dataset.lmCss = '';
     document.head.appendChild(css);
   }
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const ARROW = '<svg class="lm__arrow" viewBox="0 0 18 12" width="18" height="12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  /* ---------- Виджет в углу ---------- */
+  const card = document.createElement('aside');
+  card.className = 'lm-card';
+  card.setAttribute('role', 'complementary');
+  card.setAttribute('aria-label', 'Сайт под ключ за 35 000 ₽');
+  card.innerHTML = `
+    <button type="button" class="lm-card__close" data-lm-dismiss aria-label="Закрыть">
+      <svg viewBox="0 0 20 20" width="14" height="14" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+    <p class="lm-card__title"><span class="lm-card__mark" aria-hidden="true"></span>Сайт под ключ за 35 000 ₽</p>
+    <p class="lm-card__text">Плюс админ-панель в подарок. Ответьте на пару вопросов — подскажу, что подойдёт именно вам.</p>
+    <button type="button" class="lm-card__cta" data-lm-open>Ответить на пару вопросов ${ARROW}</button>`;
 
   /* ---------- Данные квиза ---------- */
   const QUESTIONS = [
@@ -157,6 +170,7 @@
     });
   };
 
+  applyTypo(card);
   applyTypo(modal);
 
   /* В DOM ничего не кладём заранее — модалка попадает туда в openModal().
@@ -233,8 +247,12 @@
     if (window.lenis && typeof window.lenis.stop === 'function') on ? window.lenis.stop() : window.lenis.start();
   };
 
+  const hideCard = () => { card.classList.remove('is-in'); card.classList.add('is-out'); setTimeout(() => card.remove(), reduce ? 0 : 500); };
+  const dismissCard = () => { hideCard(); remember('closed'); };
+
   const openModal = () => {
     lastFocus = document.activeElement;
+    if (card.isConnected) hideCard();
     if (!modal.isConnected) document.body.appendChild(modal);
     modal.hidden = false;
     lockScroll(true);
@@ -359,6 +377,10 @@
   };
 
   /* ---------- Слушатели ---------- */
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('[data-lm-open]')) { ym(111032105, 'reachGoal', 'popup_open'); openModal(); }
+    else if (e.target.closest('[data-lm-dismiss]')) dismissCard();
+  });
   modal.addEventListener('click', (e) => {
     const optBtn = e.target.closest('[data-quiz-option]');
     if (optBtn) {
@@ -386,19 +408,25 @@
     }
   });
 
-  /* ---------- Триггер показа ----------
+  /* ---------- Показ виджета ----------
      Оба условия работают одновременно, срабатывает то, что раньше:
-     25 секунд на странице ИЛИ курсор уходит за верхнюю границу окна
+     10 секунд на странице ИЛИ курсор уходит за верхнюю границу окна
      (exit-intent, только там, где есть мышь — на тачскрине этого жеста
-     не бывает). После первого срабатывания оба слушателя снимаются. */
+     не бывает). После первого срабатывания оба слушателя снимаются —
+     дальше виджет открывает квиз только по клику на его кнопку. */
+  const showCard = () => {
+    if (seen()) return;
+    document.body.appendChild(card);
+    void card.offsetWidth; /* см. openModal — на rAF полагаться нельзя */
+    card.classList.add('is-in');
+  };
   let shown = false;
   const trigger = () => {
     if (shown || seen()) return;
     shown = true;
     clearTimeout(timer);
     document.removeEventListener('mouseleave', onExitIntent);
-    ym(111032105, 'reachGoal', 'popup_open');
-    openModal();
+    showCard();
   };
   const onExitIntent = (e) => { if (e.clientY <= 0) trigger(); };
   const timer = setTimeout(trigger, DELAY);
