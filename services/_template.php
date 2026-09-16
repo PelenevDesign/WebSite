@@ -69,6 +69,13 @@ $s += [
   'hero_primary_label' => 'Обсудить проект', 'hero_secondary_label' => 'Смотреть кейсы',
 ];
 
+/* «Кейсы на странице» в админке для этого слага упорно возвращались к «Сайты»
+   (после трёх правок через /admin страница всё ещё показывала сайтовые кейсы
+   вместо дизайнерских) — жёстко фиксируем категорию здесь, чтобы не зависеть
+   от поля в БД. Если позже понадобится снова управлять этим через админку,
+   просто удалите эту строку. */
+if ($slug === 'web-design') $s['cases_cat'] = 'graphic';
+
 try { $siteContent = allContent(); } catch (Throwable $e) { $siteContent = []; }
 $integrationsHtml = '';
 foreach (['integration-metrika', 'integration-ga', 'integration-gtm'] as $k) {
@@ -84,9 +91,11 @@ $canonical = $base . '/services/' . $slug . '/';
 $title = $s['seo_title'];
 $description = $s['seo_description'];
 
-/* Кейсы этой услуги: сначала своей категории, потом остальные — чтобы
-   сетка всегда была полной (на категориях с 1-2 кейсами раньше сетка
-   получалась пустой). Показываем до 6, чтобы масонри не разрасталось. */
+/* Кейсы этой услуги: только своя категория. Чужими кейсами достраиваем сетку
+   лишь когда своих совсем мало (меньше 3) — иначе на них показывать нечего,
+   но 5-6 релевантных кейсов не должны разбавляться посторонним кейсом
+   только чтобы дотянуть до круглого числа. Показываем до 6, чтобы масонри
+   не разрасталось. */
 $cases = [];
 try {
   $primaryCases = [];
@@ -95,7 +104,9 @@ try {
     if (in_array($s['cases_cat'], (array)$row['categories'], true)) $primaryCases[] = $row;
     else $otherCases[] = $row;
   }
-  $cases = array_slice(array_merge($primaryCases, $otherCases), 0, 6);
+  $cases = count($primaryCases) >= 3
+    ? array_slice($primaryCases, 0, 6)
+    : array_slice(array_merge($primaryCases, $otherCases), 0, 6);
 } catch (Throwable $e) { $cases = []; }
 $caseCatLabels = ['site' => 'Сайт', 'ai-site' => 'AI-сайт', 'ai-content' => 'AI-контент', 'graphic' => 'Дизайн'];
 
@@ -198,9 +209,9 @@ $svcStatement = [
        затем сами превращаем в stylesheet. Без JS работает noscript-ветка. -->
   <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
-  <link rel="stylesheet" href="/styles.css?v=91">
+  <link rel="stylesheet" href="/styles.css?v=92">
   <link rel="stylesheet" href="/case.css?v=13">
-  <link rel="stylesheet" href="/service.css?v=20">
+  <link rel="stylesheet" href="/service.css?v=21">
   <link rel="stylesheet" href="/reviews.css?v=2">
 <?= $integrationsHtml ?>
   <script src="/metrika.js?v=1" defer></script>
@@ -350,6 +361,22 @@ $svcStatement = [
         <a class="pill pill--outline svc__cases-more" href="/work.php#<?= $esc($s['cases_cat']) ?>">Все работы <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
       </div>
     </section>
+
+    <?php if ($slug === 'websites'): $forcePlate(true); ?>
+    <!-- Промо-акция: только на «Сайты под ключ», сразу после кейсов. -->
+    <section class="svc-card svc-card--dark svc-promo" data-card aria-labelledby="svc-promo">
+      <div class="svc-card__inner" data-reveal>
+        <h2 class="svc__h2 svc-promo__title" id="svc-promo">Сайт под ключ за 35 000 ₽</h2>
+        <p class="svc-promo__text">Плюс административная панель — в подарок, чтобы обновлять тексты, фото и кейсы самостоятельно, без моей помощи.</p>
+        <ul class="svc-promo__perks">
+          <li>Дизайн под ваш бренд — без шаблонов</li>
+          <li>Админ-панель в подарок</li>
+          <li>Фиксированная цена, без доплат</li>
+        </ul>
+        <a class="pill pill--light svc-promo__cta" href="#brief">Обсудить проект <span class="pill__arrow" aria-hidden="true">&rarr;</span></a>
+      </div>
+    </section>
+    <?php endif; ?>
 
     <!-- Отзывы: та же лента, что на главной, и всегда на тёмной плите —
          как на главной (.section--dark). Наполняет reviews.js
@@ -521,10 +548,10 @@ $svcStatement = [
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" crossorigin="anonymous"></script>
   <script src="/cms-schema.js?v=4"></script>
-  <script src="/cms.js?v=5"></script>
+  <script src="/cms.js?v=6"></script>
   <script src="/service.js?v=11"></script>
   <script src="/reviews.js?v=2" defer></script>
   <script src="/cookie.js?v=1"></script>
-  <script src="/leadmagnet.js?v=19" defer></script>
+  <script src="/leadmagnet.js?v=21" defer></script>
 </body>
 </html>

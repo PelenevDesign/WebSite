@@ -60,26 +60,18 @@ $system = <<<PROMPT
 {"reply": "короткий ответ по-русски", "ops": [ ... ]}
 
 Допустимые операции (поле "op" обязательно, остальные — по смыслу):
-- {"op":"task.create","title":"...","client":"имя или id клиента","urgent":true|false,"status":"new|progress|review|done","due":"YYYY-MM-DD","time":"HH:MM","price":0,"paid":0,"note":"..."}
+- {"op":"task.create","title":"...","due":"YYYY-MM-DD","time":"HH:MM","price":0,"paid":0,"note":"..."}
 - {"op":"task.update","id":"<id задачи>", ...любые поля из task.create...}
 - {"op":"task.pay","id":"<id задачи>","amount":0}
 - {"op":"task.delete","id":"<id задачи>"}
-- {"op":"client.create","name":"...","contact":"...","note":"..."}
-- {"op":"client.update","id":"<id клиента>","name":"...","contact":"...","note":"..."}
-- {"op":"client.delete","id":"<id клиента>"}
-- {"op":"vietnam.deposit","amount":0,"date":"YYYY-MM-DD","note":"..."}
-- {"op":"vietnam.expense","amount":0,"date":"YYYY-MM-DD","note":"..."}
-- {"op":"vietnam.delete","id":"<id операции>"}
-- {"op":"goal.update","title":"...","target":0,"deadline":"YYYY-MM-DD","tagline":"..."}
 
 Правила:
 1. Ссылайся только на id, которые есть в снимке данных ниже. Не выдумывай id.
-2. В task.create поле "client" может быть именем нового клиента — он будет создан автоматически.
-3. Статусы только из списка: new, progress, review, done. "Срочно" — это urgent:true, а не статус.
-4. Если запрос неоднозначный (непонятно, о какой задаче речь, или не хватает суммы) — верни "ops": [] и задай уточняющий вопрос в "reply".
-5. Если пользователь просто спрашивает о данных ("сколько я заработал?") — верни "ops": [] и ответь по снимку.
-6. Не удаляй ничего, если об этом не попросили явно.
-7. В "reply" пиши по-человечески и коротко, без markdown и без JSON.
+2. В CRM нет статусов и клиентов — только список задач с названием, сроком и деньгами.
+3. Если запрос неоднозначный (непонятно, о какой задаче речь, или не хватает суммы) — верни "ops": [] и задай уточняющий вопрос в "reply".
+4. Если пользователь просто спрашивает о данных ("сколько я заработал?") — верни "ops": [] и ответь по снимку.
+5. Не удаляй ничего, если об этом не попросили явно.
+6. В "reply" пиши по-человечески и коротко, без markdown и без JSON.
 
 Снимок текущих данных CRM:
 PROMPT;
@@ -174,7 +166,7 @@ try {
   }
   if (!is_array($parsed)) aiJson(502, ['error' => 'Модель вернула не JSON. Попробуй переформулировать.']);
 
-  $allowed = ['task.create','task.update','task.pay','task.delete','client.create','client.update','client.delete','vietnam.deposit','vietnam.expense','vietnam.delete','goal.update'];
+  $allowed = ['task.create','task.update','task.pay','task.delete'];
   $ops = [];
   foreach ((array)($parsed['ops'] ?? []) as $op) {
     if (is_array($op) && in_array((string)($op['op'] ?? ''), $allowed, true)) $ops[] = $op;

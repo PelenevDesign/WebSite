@@ -18,7 +18,7 @@ header('Cache-Control: no-store, private', true);
   <title>Workspace — PELENEV.DESIGN</title>
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <script>/* тема до первой отрисовки — иначе моргает */(function(){try{var t=localStorage.getItem('pelenev.crm.theme');if(t!=='light'&&t!=='dark')t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
-  <link rel="stylesheet" href="/crm/crm.css?v=25">
+  <link rel="stylesheet" href="/crm/crm.css?v=27">
 </head>
 <body class="crm-app">
 <div class="shell">
@@ -27,17 +27,13 @@ header('Cache-Control: no-store, private', true);
     <div class="brand"><span class="brand__mark">P</span><span class="brand__text"><strong>Workspace</strong><small>pelenev.design</small></span></div>
 
     <nav class="modes" aria-label="Основные режимы">
-      <button class="mode is-active" data-view="work" aria-label="Режим: работа, клиенты и задачи">
+      <button class="mode is-active" data-view="work" aria-label="Режим: задачи">
         <span class="mode__icon" aria-hidden="true">◇</span>
-        <span class="mode__text"><b>Работа</b><small>Клиенты и задачи</small></span>
+        <span class="mode__text"><b>Задачи</b><small>Добавил — удалил</small></span>
       </button>
-      <button class="mode" data-view="calendar" aria-label="Режим: календарь">
-        <span class="mode__icon" aria-hidden="true">▦</span>
-        <span class="mode__text"><b>Календарь</b><small>Задачи по датам</small></span>
-      </button>
-      <button class="mode" data-view="vietnam" aria-label="Режим: Вьетнам, копилка">
-        <span class="mode__icon" aria-hidden="true">◒</span>
-        <span class="mode__text"><b>Вьетнам</b><small>Копилка на поездку</small></span>
+      <button class="mode" data-view="notes" aria-label="Режим: заметки">
+        <span class="mode__icon" aria-hidden="true">✎</span>
+        <span class="mode__text"><b>Заметки</b><small>Как в iOS</small></span>
       </button>
     </nav>
 
@@ -61,7 +57,7 @@ header('Cache-Control: no-store, private', true);
   <main class="main">
     <header class="topbar">
       <button class="icon-btn burger" id="burger" aria-label="Открыть меню">☰</button>
-      <div class="crumbs"><span>Workspace</span><i aria-hidden="true">/</i><strong id="crumb">Работа</strong></div>
+      <div class="crumbs"><span>Workspace</span><i aria-hidden="true">/</i><strong id="crumb">Задачи</strong></div>
       <div class="topbar__actions">
         <span class="sync" id="sync-state" title="Состояние хранилища"></span>
         <button class="icon-btn theme-btn" id="theme-toggle" aria-label="Переключить тему"><span id="theme-icon" aria-hidden="true">☾</span></button>
@@ -71,134 +67,68 @@ header('Cache-Control: no-store, private', true);
 
     <div class="content">
 
-      <!-- ── РЕЖИМ 1 · Работа ───────────────────────────────────────── -->
+      <!-- ── Задачи ───────────────────────────────────────────────── -->
       <section class="view is-visible" data-screen="work">
         <div class="page-head">
           <div>
-            <p class="eyebrow">Режим 1</p>
-            <h1>Клиенты и задачи</h1>
+            <h1>Задачи</h1>
             <p class="muted" id="work-subtitle">—</p>
           </div>
         </div>
 
-        <div class="metrics" id="work-metrics"></div>
-
-        <div class="tabs" role="tablist">
-          <button class="tab is-active" role="tab" data-tab="tasks" aria-selected="true">Задачи <em id="tab-count-tasks">0</em></button>
-          <button class="tab" role="tab" data-tab="clients" aria-selected="false">Клиенты <em id="tab-count-clients">0</em></button>
+        <div class="metrics-bar" id="metrics-bar">
+          <button type="button" class="metrics-bar__summary" id="metrics-toggle" aria-expanded="false" aria-controls="work-metrics">
+            <span id="metrics-summary-text">—</span>
+            <span class="metrics-bar__chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="metrics" id="work-metrics" hidden></div>
         </div>
 
-        <!-- Задачи -->
-        <div class="tabpanel is-visible" data-tabpanel="tasks">
-          <div class="toolbar">
-            <label class="search"><span aria-hidden="true">⌕</span><input id="task-search" type="search" placeholder="Поиск по задачам и клиентам"></label>
-            <div class="chips" id="status-filter" role="group" aria-label="Фильтр по статусу"></div>
-            <button class="primary-btn" data-action="new-task">+ Задача</button>
-          </div>
-          <div id="task-groups"></div>
-        </div>
-
-        <!-- Клиенты -->
-        <div class="tabpanel" data-tabpanel="clients">
-          <div class="toolbar">
-            <label class="search"><span aria-hidden="true">⌕</span><input id="client-search" type="search" placeholder="Поиск по клиентам"></label>
-            <button class="primary-btn" data-action="new-client">+ Клиент</button>
-          </div>
-          <div class="client-grid" id="client-grid"></div>
-        </div>
+        <div id="task-groups"></div>
       </section>
 
-      <!-- ── РЕЖИМ 2 · Календарь ────────────────────────────────────── -->
-      <section class="view" data-screen="calendar">
+      <!-- ── Заметки ──────────────────────────────────────────────── -->
+      <section class="view" data-screen="notes">
         <div class="page-head">
           <div>
-            <p class="eyebrow">Режим 2</p>
-            <h1>Календарь</h1>
-            <p class="muted">Все задачи разложены по датам — видно, где густо, а где пусто.</p>
+            <h1>Заметки</h1>
+            <p class="muted">Пиши, форматируй, собирай чек-листы — как в заметках на iPhone.</p>
           </div>
         </div>
 
-        <div class="cal-layout">
-          <article class="panel cal-panel">
-            <div class="cal-toolbar">
-              <div class="cal-nav">
-                <button class="icon-btn" id="cal-prev" aria-label="Предыдущий месяц">‹</button>
-                <button class="icon-btn" id="cal-next" aria-label="Следующий месяц">›</button>
-                <button class="ghost-btn" id="cal-today">Сегодня</button>
-              </div>
-              <strong id="cal-title">—</strong>
-              <span class="cal-legend"><i class="dot dot--urgent"></i>срочно<i class="dot dot--normal"></i>обычные<i class="dot dot--done"></i>готово</span>
+        <div class="notes-layout" id="notes-layout">
+          <aside class="panel notes-list-panel">
+            <div class="notes-toolbar">
+              <label class="search"><span aria-hidden="true">⌕</span><input id="note-search" type="search" placeholder="Поиск по заметкам"></label>
+              <button type="button" class="chip" id="notes-trash-toggle" title="Недавно удалённые">🗑</button>
+              <button type="button" class="mini-btn" id="notes-new" title="Новая заметка" aria-label="Новая заметка">+</button>
             </div>
-            <div class="cal-week-head" id="cal-week-head"></div>
-            <div class="cal-grid" id="cal-grid"></div>
-          </article>
-
-          <aside class="panel cal-day">
-            <div class="panel-head">
-              <div><span class="panel-kicker">Выбранный день</span><h2 id="cal-day-title">—</h2></div>
-              <button class="ghost-btn" id="cal-day-add">+ Задача</button>
-            </div>
-            <div id="cal-day-list"></div>
-            <div class="cal-undated">
-              <div class="panel-head panel-head--tight"><div><span class="panel-kicker">Без даты</span><h2 id="cal-undated-count">0</h2></div></div>
-              <div id="cal-undated-list"></div>
-            </div>
+            <div id="notes-list"></div>
           </aside>
-        </div>
-      </section>
 
-      <!-- ── РЕЖИМ 3 · Вьетнам ──────────────────────────────────────── -->
-      <section class="view" data-screen="vietnam">
-        <div class="vn-hero">
-          <video class="vn-hero__media" poster="/assets/hero-poster.svg" muted loop playsinline autoplay preload="metadata">
-            <source src="/assets/video/vietnam.mp4" type="video/mp4">
-          </video>
-          <div class="vn-hero__shade"></div>
-          <div class="vn-hero__copy">
-            <p class="eyebrow">Режим 3 · личная цель</p>
-            <h1 id="vn-title">Вьетнам</h1>
-            <p id="vn-tagline">Место для следующей главы. Коплю спокойно, двигаюсь системно.</p>
-            <div class="vn-actions">
-              <button class="primary-btn" data-action="new-deposit">+ Отложить</button>
-              <button class="ghost-btn ghost-btn--ondark" data-action="new-expense">+ Расход</button>
-              <button class="ghost-btn ghost-btn--ondark" data-action="edit-goal">Настроить цель</button>
+          <article class="panel notes-editor-panel" id="notes-editor-panel" hidden>
+            <div class="notes-editor-head">
+              <button type="button" class="icon-btn notes-back" id="notes-back" aria-label="Назад к списку">‹</button>
+              <button type="button" class="mini-btn" id="note-pin" title="Закрепить">📌</button>
+              <button type="button" class="mini-btn" id="note-restore" hidden>Восстановить</button>
+              <button type="button" class="mini-btn" id="note-delete">Удалить</button>
+              <span id="note-meta" class="muted"></span>
             </div>
-          </div>
-          <div class="vn-hero__ring">
-            <svg viewBox="0 0 120 120" aria-hidden="true">
-              <circle class="ring-track" cx="60" cy="60" r="52"></circle>
-              <circle class="ring-value" id="vn-ring" cx="60" cy="60" r="52"></circle>
-            </svg>
-            <div class="vn-hero__ring-copy"><b id="vn-percent">0%</b><small>готово</small></div>
-          </div>
-        </div>
-
-        <div class="metrics" id="vn-metrics"></div>
-
-        <div class="vn-grid">
-          <article class="panel">
-            <div class="panel-head">
-              <div><span class="panel-kicker">Динамика</span><h2>Как растёт копилка</h2></div>
-              <span class="period-label" id="vn-chart-range">—</span>
+            <div class="note-toolbar" id="note-toolbar">
+              <button type="button" data-cmd="bold" title="Жирный"><b>Ж</b></button>
+              <button type="button" data-cmd="italic" title="Курсив"><i>К</i></button>
+              <button type="button" data-cmd="underline" title="Подчёркнутый"><u>Ч</u></button>
+              <button type="button" data-cmd="checklist" title="Чек-лист">☑</button>
+              <button type="button" data-cmd="insertUnorderedList" title="Маркированный список">•≡</button>
+              <button type="button" data-cmd="insertOrderedList" title="Нумерованный список">1≡</button>
             </div>
-            <div class="vn-chart" id="vn-chart"></div>
+            <div id="note-body" contenteditable="true" data-placeholder="Заметка"></div>
           </article>
 
-          <article class="panel panel--accent">
-            <div class="panel-head">
-              <div><span class="panel-kicker">Ритм</span><h2>Привычка</h2></div>
-            </div>
-            <div class="habit" id="vn-habit"></div>
-          </article>
-        </div>
-
-        <article class="panel">
-          <div class="panel-head">
-            <div><span class="panel-kicker">История</span><h2>Пополнения и расходы</h2></div>
-            <button class="ghost-btn" data-action="new-deposit">+ Отложить</button>
+          <div class="notes-editor-empty" id="notes-editor-empty">
+            <p>Выбери заметку слева или создай новую.</p>
           </div>
-          <div id="vn-entries"></div>
-        </article>
+        </div>
       </section>
 
     </div>
@@ -237,7 +167,6 @@ header('Cache-Control: no-store, private', true);
     <form id="modal-form" novalidate>
       <div id="modal-fields"></div>
       <div class="modal__actions">
-        <button type="button" class="danger-btn" id="modal-delete" hidden>Удалить</button>
         <span class="modal__spacer"></span>
         <button type="button" class="ghost-btn" data-modal-close>Отмена</button>
         <button type="submit" class="primary-btn">Сохранить</button>
@@ -249,13 +178,11 @@ header('Cache-Control: no-store, private', true);
 <div class="sheet" id="add-sheet" hidden>
   <div class="modal__backdrop" data-sheet-close></div>
   <div class="sheet__body" role="menu" aria-label="Что добавить">
-    <button data-action="new-task" role="menuitem"><b>Задача</b><small>с клиентом, сроком и стоимостью</small></button>
-    <button data-action="new-client" role="menuitem"><b>Клиент</b><small>контакт и заметка</small></button>
-    <button data-action="new-deposit" role="menuitem"><b>Отложить во Вьетнам</b><small>пополнение копилки</small></button>
-    <button data-action="new-expense" role="menuitem"><b>Расход по Вьетнаму</b><small>потратил из копилки</small></button>
+    <button data-action="new-task" role="menuitem"><b>Задача</b><small>название, срок и стоимость по желанию</small></button>
+    <button data-action="new-note" role="menuitem"><b>Заметка</b><small>текст, чек-лист, форматирование</small></button>
   </div>
 </div>
 
-<script src="/crm/crm.js?v=25"></script>
+<script src="/crm/crm.js?v=27"></script>
 </body>
 </html>

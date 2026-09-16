@@ -259,6 +259,40 @@
   line-height: 1.55;
 }
 
+/* ---------- Промо-акция («Сайт под ключ за 35 000 ₽») ----------
+   Та же крупная шкала заголовка, что у .svc-statement, плюс краткие
+   пункты-пилюли и кнопка. Только на «Сайты под ключ», см. _template.php. */
+.svc-promo{ text-align: center; }
+.svc-promo__title{
+  font-size: clamp(2.4rem, 4.6vw, 4.25rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.svc-promo__text{
+  margin: clamp(20px, 2.6vh, 28px) auto 0;
+  max-width: 46ch;
+  color: var(--on-dark-2);
+  font-size: clamp(1.0625rem, 1.4vw, 1.25rem);
+  line-height: 1.55;
+}
+.svc-promo__perks{
+  list-style: none;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+  margin: clamp(24px, 3vh, 32px) 0 0;
+  padding: 0;
+}
+.svc-promo__perks li{
+  padding: 10px 18px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,.06);
+  font-size: .9rem;
+  color: var(--on-dark);
+}
+.svc-promo__cta{ margin-top: clamp(28px, 3.4vh, 36px); }
+
 /* ---------- Этапы ---------- */
 .svc__steps{
   list-style: none;
