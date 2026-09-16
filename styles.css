@@ -2267,73 +2267,13 @@ h1, h2, h3, h4{
   will-change: transform, opacity, filter;
 }
 
-.chat__head{
-  display: flex; align-items: center; gap: 14px;
-  padding: 18px 74px 18px 22px;
-  border-bottom: 1px solid var(--paper-line);
+.chat__title{
+  padding: 26px 22px 4px;
+  font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em;
 }
-.chat__avatar{
-  position: relative; flex-shrink: 0;
-  width: 46px; height: 46px; border-radius: 50%;
-  background: var(--ink); color: var(--on-dark);
-  display: grid; place-items: center;
-  font-weight: 600; font-size: .95rem; letter-spacing: .02em;
-}
-.chat__presence{
-  position: absolute; right: -1px; bottom: -1px;
-  width: 13px; height: 13px; border-radius: 50%;
-  background: var(--ok); border: 2.5px solid var(--paper);
-  animation: presence-pulse 2.4s ease-in-out infinite;
-}
-@keyframes presence-pulse{
-  0%,100%{ box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
-  50%{ box-shadow: 0 0 0 5px rgba(34,197,94,0); }
-}
-.chat__id{ display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.chat__tg{
-  margin-left: auto; flex-shrink: 0;
-  width: 42px; height: 42px; border-radius: 50%;
-  display: grid; place-items: center;
-  background: var(--paper-soft); color: var(--ink);
-  will-change: transform, background-color;
-}
-.chat__tg svg{ width: 20px; height: 20px; }
-.chat__name{ font-weight: 600; font-size: 1.02rem; letter-spacing: -.01em; }
-.chat__status{ font-size: .82rem; color: var(--muted); overflow-wrap: anywhere; }
-.chat__online{ color: var(--ok); font-weight: 500; }
-
-.chat__body{
-  min-width: 0; padding: 22px;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-  max-height: 340px; overflow-y: auto;
-  background: radial-gradient(120% 60% at 50% 0%, rgba(244,244,244,.5), transparent 70%);
-  scrollbar-width: thin;
-}
-.msg{
-  max-width: 82%;
-  padding: 12px 16px; border-radius: 20px;
-  font-size: .98rem; line-height: 1.4;
-  overflow-wrap: anywhere;
-  will-change: transform, opacity;
-}
-.msg--in{ background: var(--paper-soft); color: var(--ink); border-bottom-left-radius: 7px; align-self: flex-start; }
-.msg--out{ background: var(--ink); color: var(--on-dark); border-bottom-right-radius: 7px; align-self: flex-end; }
-.msg__meta{
-  align-self: flex-end; margin-top: -2px;
-  font-size: .74rem; color: var(--muted);
-  display: flex; align-items: center; gap: 5px;
-}
-.msg__meta svg{ width: 13px; height: 13px; color: var(--ok); }
-
-.typing{ display: flex; gap: 5px; align-items: center; padding: 15px 18px; background: var(--paper-soft); border-radius: 20px; border-bottom-left-radius: 7px; align-self: flex-start; }
-.typing span{ width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: typing-bounce 1.2s ease-in-out infinite; }
-.typing span:nth-child(2){ animation-delay: .16s; }
-.typing span:nth-child(3){ animation-delay: .32s; }
-@keyframes typing-bounce{ 0%,60%,100%{ transform: translateY(0); opacity: .5; } 30%{ transform: translateY(-5px); opacity: 1; } }
 
 .chat__form{
-  min-width: 0; padding: 20px 22px 24px;
-  border-top: 1px solid var(--paper-line);
+  min-width: 0; padding: 18px 22px 24px;
   display: flex; flex-direction: column; gap: 18px;
 }
 .cfield{ display: flex; flex-direction: column; gap: 9px; }
@@ -2345,7 +2285,7 @@ h1, h2, h3, h4{
   border: 1.5px solid transparent; border-radius: 16px;
   will-change: transform, box-shadow, border-color;
 }
-.cfield__input, .composer__input{
+.cfield__input{
   width: 100%; background: transparent; border: 0; outline: 0;
   font: inherit; font-size: 1.02rem; color: var(--ink);
   padding: 15px 46px 15px 18px; border-radius: 16px;
@@ -2369,15 +2309,6 @@ h1, h2, h3, h4{
 }
 .cfield__check svg{ width: 20px; height: 20px; }
 .cfield__hint{ font-size: .8rem; color: var(--warn); padding-left: 4px; height: 0; opacity: 0; overflow: hidden; }
-
-.ctype{ position: relative; display: flex; gap: 4px; max-width: 100%; background: var(--paper-soft); border-radius: 14px; padding: 4px; align-self: flex-start; }
-.ctype__ind{ position: absolute; top: 4px; left: 0; height: calc(100% - 8px); border-radius: 10px; background: var(--paper); box-shadow: 0 2px 8px rgba(10,10,10,.08); will-change: transform, width; }
-.ctype__opt{ position: relative; z-index: 1; min-width: 0; border: 0; background: transparent; cursor: pointer; font: inherit; font-size: .9rem; font-weight: 500; color: var(--muted); padding: 9px 16px; border-radius: 10px; }
-.ctype__opt.is-active{ color: var(--ink); }
-
-.composer{ display: flex; align-items: flex-end; gap: 10px; }
-.composer__box{ position: relative; flex: 1; min-width: 0; background: var(--paper-soft); border: 1.5px solid transparent; border-radius: 20px; will-change: transform, box-shadow, border-color; }
-.composer__input{ padding: 15px 18px; resize: none; overflow: hidden; min-height: 52px; max-height: 160px; line-height: 1.4; display: block; box-sizing: border-box; }
 
 /* --- выбор страны + телефонная маска --- */
 .cfield__inwrap{ position: relative; flex: 1; min-width: 0; display: flex; }
@@ -2410,22 +2341,22 @@ h1, h2, h3, h4{
 .ccountry__opt-flag{ font-size: 1.15rem; }
 .ccountry__opt-name{ flex: 1; }
 .ccountry__opt-dial{ color: var(--muted); }
-.cfield--msg .cfield__ph{ top: 15px; transform: none; }
-.composer__send{
-  flex-shrink: 0; width: 52px; height: 52px; border-radius: 50%;
-  border: 0; cursor: pointer; background: var(--ink); color: var(--on-dark);
-  display: grid; place-items: center; position: relative;
-  will-change: transform, background-color;
+.chat__send{
+  flex-shrink: 0; border: 0; cursor: pointer;
+  padding: 15px 26px; border-radius: var(--r-pill);
+  background: var(--ink); color: var(--on-dark);
+  font: inherit; font-size: 1rem; font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  position: relative; will-change: transform, background-color;
 }
-.composer__send:disabled{ opacity: .4; cursor: default; }
-.composer__arrow{ width: 22px; height: 22px; will-change: transform; }
-.composer__spinner{
-  position: absolute; inset: 0; margin: auto;
-  width: 22px; height: 22px; border-radius: 50%;
-  border: 2.4px solid rgba(255,255,255,.25); border-top-color: var(--on-dark); opacity: 0;
+.chat__send:disabled{ opacity: .4; cursor: default; }
+.chat__spinner{
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2.2px solid rgba(255,255,255,.3); border-top-color: var(--on-dark);
+  opacity: 0;
 }
-.composer__send.is-loading .composer__arrow{ opacity: 0; }
-.composer__send.is-loading .composer__spinner{ opacity: 1; animation: spin .7s linear infinite; }
+.chat__send.is-loading{ color: transparent; }
+.chat__send.is-loading .chat__spinner{ position: absolute; inset: 0; margin: auto; opacity: 1; animation: spin .7s linear infinite; }
 @keyframes spin{ to{ transform: rotate(360deg); } }
 
 /* --- футер формы: согласие + отправка --- */
@@ -2444,8 +2375,20 @@ h1, h2, h3, h4{
 .consent__text a{ color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 .consent__input:focus-visible + .consent__box{ outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* --- заметка под формой + соцссылки --- */
+.chat__note{ padding: 0 22px; font-size: .84rem; line-height: 1.45; color: var(--muted); }
+.chat__social{
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
+  padding: 16px 22px 22px; border-top: 1px solid var(--paper-line); margin-top: 4px;
+}
+.chat__social-label{ font-size: .84rem; color: var(--muted); }
+.chat__social-links{ display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.chat__social-link{ font-size: .9rem; font-weight: 500; color: var(--ink); text-underline-offset: 3px; }
+.chat__social-link:hover{ text-decoration: underline; }
+.chat__thanks{ padding: 26px 22px 30px; font-size: 1.02rem; line-height: 1.5; }
+
 @media (prefers-reduced-motion: reduce){
-  .chat__presence, .typing span, .composer__send.is-loading .composer__spinner{ animation: none !important; }
+  .chat__send.is-loading .chat__spinner{ animation: none !important; }
   .cfield__ph.is-done::after{ animation: none !important; }
 }
 
@@ -2459,10 +2402,6 @@ h1, h2, h3, h4{
   .hero__service{ font-size: .94rem; line-height: 1.75; }
   .hero__services{ min-height: 196px; }
 
-  /* Чат-форма */
-  .chat__body{ max-height: 44vh; }
-  .composer__send{ width: 48px; height: 48px; }
-  .ctype__opt{ padding: 9px 13px; font-size: .86rem; }
   .pricing__price{ gap: 8px; white-space: nowrap; }
   .pricing__price-val{ font-size: clamp(3rem, 13vw, 3.5rem); }
   .pricing__period{ font-size: .95rem; white-space: nowrap; }

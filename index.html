@@ -470,97 +470,71 @@
       </button>
 
       <div class="chat" id="chat">
-        <div class="chat__head">
-            <span class="chat__avatar" aria-hidden="true">
-              <span class="chat__avatar-txt">DP</span>
-              <span class="chat__presence"></span>
-            </span>
-            <span class="chat__id">
-              <span class="chat__name">Dmitry Pelenev</span>
-              <span class="chat__status"><span class="chat__online">Online</span> · обычно отвечаю в течение&nbsp;30&nbsp;минут</span>
-            </span>
-            <!-- заказчик: вписать реальную ссылку t.me/... -->
-            <a data-cms="link-telegram" class="chat__tg" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer" aria-label="Написать в Telegram" title="Написать в Telegram">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22 3 2 10.5l6.4 2.3M22 3l-3.2 16.2c-.2.9-1.2 1.2-1.9.6L12.4 15M22 3 8.4 12.8m0 0V19c0 .9 1.1 1.3 1.7.6l2.3-2.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </a>
+        <h3 class="chat__title">Написать Дмитрию</h3>
+
+        <form class="chat__form" id="chat-form" novalidate autocomplete="off">
+          <div class="cfield" data-step="name">
+            <span class="cfield__label">Имя</span>
+            <div class="cfield__box">
+              <input class="cfield__input" id="c-name" type="text" autocomplete="off" spellcheck="false">
+              <span class="cfield__ph" aria-hidden="true"></span>
+              <span class="cfield__check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+            </div>
+            <span class="cfield__hint" aria-hidden="true"></span>
           </div>
 
-          <div class="chat__body" id="chat-body" data-lenis-prevent>
-            <div class="msg msg--in">Здравствуйте! 👋</div>
-            <div class="msg msg--in">Расскажите немного о вашем проекте — что за бизнес и какая задача?</div>
+          <div class="cfield" data-step="contact">
+            <span class="cfield__label">Телефон</span>
+            <div class="cfield__box is-phone">
+              <button class="ccountry" id="ccountry" type="button" aria-label="Код страны" aria-haspopup="listbox" aria-expanded="false">
+                <span class="ccountry__flag">🇷🇺</span>
+                <span class="ccountry__dial">+7</span>
+                <svg class="ccountry__chev" viewBox="0 0 12 8" fill="none"><path d="m1 1.5 5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <span class="cfield__inwrap">
+                <input class="cfield__input" id="c-contact" type="tel" autocomplete="off" spellcheck="false">
+                <span class="cfield__ph" aria-hidden="true"></span>
+              </span>
+              <span class="cfield__check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <div class="ccountry__menu" id="ccountry-menu" role="listbox" aria-label="Выбор страны" hidden></div>
+            </div>
+            <span class="cfield__hint" aria-hidden="true"></span>
           </div>
 
-          <form class="chat__form" id="chat-form" novalidate autocomplete="off">
-            <!-- шаг 1 — сообщение -->
-            <div class="cfield cfield--msg" data-step="message">
-              <span class="cfield__label">Сообщение</span>
-              <div class="composer__box">
-                <textarea class="composer__input" id="c-msg" rows="1" autocomplete="off"></textarea>
-                <span class="cfield__ph" aria-hidden="true"></span>
-              </div>
-              <span class="cfield__hint" aria-hidden="true"></span>
-            </div>
-
-            <!-- шаг 2 — имя -->
-            <div class="cfield is-locked" data-step="name">
-              <span class="cfield__label">Имя</span>
-              <div class="cfield__box">
-                <input class="cfield__input" id="c-name" type="text" autocomplete="off" spellcheck="false">
-                <span class="cfield__ph" aria-hidden="true"></span>
-                <span class="cfield__check" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <!-- honeypot: скрыто от людей, боты заполняют — такие заявки отбрасываются -->
+          <input class="cfield__trap" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <!-- футер: согласие + отправка -->
+          <div class="cfield chat__foot" data-step="foot">
+            <div class="foot__row">
+              <label class="consent">
+                <input type="checkbox" class="consent__input" id="c-consent">
+                <span class="consent__box" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
-              </div>
-              <span class="cfield__hint" aria-hidden="true"></span>
+                <span class="consent__text">Соглашаюсь с <a href="privacy.html" target="_blank" rel="noopener">политикой&nbsp;конфиденциальности</a> и обработкой персональных данных</span>
+              </label>
+              <button type="submit" class="chat__send" id="c-send">
+                Отправить
+                <span class="chat__spinner" aria-hidden="true"></span>
+              </button>
             </div>
+            <span class="cfield__hint" aria-hidden="true"></span>
+          </div>
+        </form>
 
-            <!-- шаг 3 — контакт -->
-            <div class="cfield is-locked" data-step="contact">
-              <span class="cfield__label">Контакт</span>
-              <div class="ctype" id="ctype" role="tablist" aria-label="Способ связи">
-                <span class="ctype__ind" aria-hidden="true"></span>
-                <button type="button" class="ctype__opt is-active" data-type="telegram" role="tab" aria-selected="true">Telegram</button>
-                <button type="button" class="ctype__opt" data-type="phone" role="tab" aria-selected="false">Телефон</button>
-                <button type="button" class="ctype__opt" data-type="email" role="tab" aria-selected="false">Email</button>
-              </div>
-              <div class="cfield__box">
-                <button class="ccountry" id="ccountry" type="button" aria-label="Код страны" aria-haspopup="listbox" aria-expanded="false">
-                  <span class="ccountry__flag">🇷🇺</span>
-                  <span class="ccountry__dial">+7</span>
-                  <svg class="ccountry__chev" viewBox="0 0 12 8" fill="none"><path d="m1 1.5 5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
-                <span class="cfield__inwrap">
-                  <input class="cfield__input" id="c-contact" type="text" autocomplete="off" spellcheck="false">
-                  <span class="cfield__ph" aria-hidden="true"></span>
-                </span>
-                <span class="cfield__check" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-                <div class="ccountry__menu" id="ccountry-menu" role="listbox" aria-label="Выбор страны" hidden></div>
-              </div>
-              <span class="cfield__hint" aria-hidden="true"></span>
-            </div>
+        <p class="chat__note">Заполнение формы ни к чему не обязывает — просто пообщаемся, чтобы я мог точно сориентировать вас по срокам и стоимости</p>
 
-            <!-- honeypot: скрыто от людей, боты заполняют — такие заявки отбрасываются -->
-            <input class="cfield__trap" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
-            <!-- футер: согласие + отправка -->
-            <div class="cfield chat__foot is-locked" data-step="foot">
-              <div class="foot__row">
-                <label class="consent">
-                  <input type="checkbox" class="consent__input" id="c-consent">
-                  <span class="consent__box" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </span>
-                  <span class="consent__text">Соглашаюсь с <a href="privacy.html" target="_blank" rel="noopener">политикой&nbsp;конфиденциальности</a> и обработкой персональных данных</span>
-                </label>
-                <button type="submit" class="composer__send" id="c-send" aria-label="Отправить сообщение">
-                  <svg class="composer__arrow" viewBox="0 0 24 24" fill="none"><path d="M5 12h13M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <span class="composer__spinner" aria-hidden="true"></span>
-                </button>
-              </div>
-              <span class="cfield__hint" aria-hidden="true"></span>
-            </div>
-          </form>
+        <div class="chat__social">
+          <span class="chat__social-label">или свяжитесь со мной сами</span>
+          <div class="chat__social-links">
+            <a data-cms="link-telegram" class="chat__social-link" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer">Telegram</a>
+            <a data-cms="link-behance" class="chat__social-link" href="https://www.behance.net/Pelenev-design" target="_blank" rel="noopener noreferrer">Behance</a>
+            <a data-cms="link-vk" class="chat__social-link" href="https://vk.ru/pelenev_design" target="_blank" rel="noopener noreferrer">ВК</a>
+          </div>
         </div>
       </div>
   </div>

@@ -739,26 +739,17 @@ function initContact() {
   if (!chat) return;
 
   const form = document.getElementById('chat-form');
-  const body = document.getElementById('chat-body');
   const fName = form.querySelector('[data-step="name"]');
   const fContact = form.querySelector('[data-step="contact"]');
-  const fMsg = form.querySelector('[data-step="message"]');
   const fFoot = form.querySelector('[data-step="foot"]');
   const inName = document.getElementById('c-name');
   const inContact = document.getElementById('c-contact');
-  const inMsg = document.getElementById('c-msg');
   const consent = document.getElementById('c-consent');
   const consentBox = fFoot.querySelector('.consent__box');
   const consentCheck = consentBox.querySelector('svg');
   const sendBtn = document.getElementById('c-send');
-  const arrow = sendBtn.querySelector('.composer__arrow');
-  const ctype = document.getElementById('ctype');
-  const ctypeOpts = ctype.querySelectorAll('.ctype__opt');
-  const ctypeInd = ctype.querySelector('.ctype__ind');
 
   const STORE = 'pelenev_chat';
-  let contactType = 'telegram';
-  const doneSteps = new Set();
 
   // страны с dial-кодом и маской (# = цифра). Дефолт — Россия
   const COUNTRIES = [
@@ -796,32 +787,17 @@ function initContact() {
     return out;
   }
 
-  const PH = {
-    name: 'Как вас зовут?',
-    telegram: '@username',
-    phone: '+7 900 000-00-00',
-    email: 'you@example.com',
-    message: 'Опишите задачу в двух словах…',
-  };
+  const PH = { name: 'Как вас зовут?' };
   const HINT = {
     name: 'Введите имя — минимум 2 буквы',
-    telegram: 'Укажите ник в Telegram, например @pelenev',
-    phone: 'Похоже на неполный номер — проверьте, пожалуйста',
-    email: 'Кажется, в адресе опечатка',
-    message: 'Пару слов о задаче — этого достаточно',
+    contact: 'Похоже на неполный номер — проверьте, пожалуйста',
   };
   const validators = {
     name: (v) => v.trim().length >= 2,
-    contact: (v) => {
-      v = v.trim();
-      if (contactType === 'telegram') return /^@?[a-zA-Z0-9_]{4,}$/.test(v.replace(/^https?:\/\/t\.me\//, '@'));
-      if (contactType === 'phone') return digitsOf(v).length === maskLen(country.mask);
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-    },
-    message: (v) => v.trim().length >= 5,
+    contact: (v) => digitsOf(v).length === maskLen(country.mask),
   };
-  const hintFor = (key) => (key === 'contact' ? HINT[contactType] : HINT[key]);
-  const boxOf = (f) => f.querySelector('.cfield__box, .composer__box');
+  const hintFor = (key) => HINT[key];
+  const boxOf = (f) => f.querySelector('.cfield__box');
 
   /* --- печатающийся плейсхолдер --- */
   const typers = new Map();
@@ -878,72 +854,34 @@ function initContact() {
     if (c) gsap.to(c, { scale: 0, opacity: 0, duration: 0.25, ease: 'power2.in' });
   };
 
-  /* --- прогрессивное раскрытие полей --- */
-  function revealField(field, instant) {
-    if (!field.classList.contains('is-locked')) return;
-    field.classList.remove('is-locked');
-    const step = field.dataset.step;
-    const phText = step === 'name' ? PH.name
-      : step === 'contact' ? (contactType === 'phone' ? country.mask : PH[contactType])
-      : PH.message;
-    if (!field.classList.contains('is-filled')) typePlaceholder(field, phText);
-    if (step === 'contact') requestAnimationFrame(refreshInd);
-    if (step === 'message') requestAnimationFrame(autoresize);
-    if (instant || prefersReducedMotion) { ScrollTrigger.refresh(); return; }
-    gsap.set(field, { overflow: 'hidden' });
-    gsap.from(field, {
-      height: 0, opacity: 0, y: 14, filter: 'blur(8px)',
-      duration: 0.75, ease: 'power3.out',
-      onComplete() { gsap.set(field, { clearProps: 'height,overflow,filter,transform,opacity' }); ScrollTrigger.refresh(); },
-    });
-  }
-
-  const allValid = () => validators.name(inName.value) && validators.contact(inContact.value) && validators.message(inMsg.value);
+  const allValid = () => validators.name(inName.value) && validators.contact(inContact.value);
   const updateSend = () => { sendBtn.disabled = !allValid(); };
 
-  function evaluate(field, input, key, next) {
+  function evaluate(field, input, key) {
     syncFilled(field, input);
-    if (validators[key](input.value)) {
-      clearError(field);
-      if (!doneSteps.has(key)) {
-        doneSteps.add(key);
-        markValid(field);
-        if (next) setTimeout(() => revealField(next), 300);
-      }
-    } else if (doneSteps.has(key)) {
-      doneSteps.delete(key);
-      unmarkValid(field);
-    }
+    if (validators[key](input.value)) { clearError(field); markValid(field); }
+    else unmarkValid(field);
     updateSend();
   }
 
-  /* --- поля: фокус / блюр / ввод / hover-scale (порядок: сообщение → имя → контакт → футер) --- */
-  [[fMsg, inMsg, 'message', fName], [fName, inName, 'name', fContact], [fContact, inContact, 'contact', fFoot]]
-    .forEach(([f, inp, key, next]) => {
-      inp.addEventListener('focus', () => { f.classList.add('is-focus'); clearError(f); glow(f, 'focus'); });
-      inp.addEventListener('blur', () => {
-        f.classList.remove('is-focus');
-        if (inp.value.trim() && !validators[key](inp.value)) showError(f, hintFor(key));
-        else glow(f, f.classList.contains('has-error') ? 'error' : 'none');
-      });
-      inp.addEventListener('input', () => {
-        if (key === 'contact' && contactType === 'phone') {
-          inp.value = formatPhone(inp.value);
-          try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* ignore */ }
-        }
-        evaluate(f, inp, key, next); save();
-      });
-      f.addEventListener('pointerenter', () => { if (!f.classList.contains('is-focus') && !prefersReducedMotion) gsap.to(boxOf(f), { scale: 1.006, duration: 0.4, ease: 'power3.out' }); });
-      f.addEventListener('pointerleave', () => { if (!f.classList.contains('is-focus') && !prefersReducedMotion) gsap.to(boxOf(f), { scale: 1, duration: 0.4, ease: 'power3.out' }); });
+  /* --- поля: фокус / блюр / ввод / hover-scale --- */
+  [[fName, inName, 'name'], [fContact, inContact, 'contact']].forEach(([f, inp, key]) => {
+    inp.addEventListener('focus', () => { f.classList.add('is-focus'); clearError(f); glow(f, 'focus'); });
+    inp.addEventListener('blur', () => {
+      f.classList.remove('is-focus');
+      if (inp.value.trim() && !validators[key](inp.value)) showError(f, hintFor(key));
+      else glow(f, f.classList.contains('has-error') ? 'error' : 'none');
     });
-
-  /* --- авто-высота сообщения (не считаем, пока поле скрыто) --- */
-  function autoresize() {
-    if (fMsg.classList.contains('is-locked') || !inMsg.offsetParent) return;
-    inMsg.style.height = 'auto';
-    inMsg.style.height = Math.min(inMsg.scrollHeight, 160) + 'px';
-  }
-  inMsg.addEventListener('input', autoresize);
+    inp.addEventListener('input', () => {
+      if (key === 'contact') {
+        inp.value = formatPhone(inp.value);
+        try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* ignore */ }
+      }
+      evaluate(f, inp, key); save();
+    });
+    f.addEventListener('pointerenter', () => { if (!f.classList.contains('is-focus') && !prefersReducedMotion) gsap.to(boxOf(f), { scale: 1.006, duration: 0.4, ease: 'power3.out' }); });
+    f.addEventListener('pointerleave', () => { if (!f.classList.contains('is-focus') && !prefersReducedMotion) gsap.to(boxOf(f), { scale: 1, duration: 0.4, ease: 'power3.out' }); });
+  });
 
   /* --- согласие с политикой (обязательно) --- */
   function setConsent(on) {
@@ -973,21 +911,11 @@ function initContact() {
   }
   consent.addEventListener('change', () => setConsent(consent.checked));
 
-  /* --- сегмент-переключатель контакта --- */
-  function refreshInd() {
-    if (fContact.classList.contains('is-locked')) return;
-    const active = ctype.querySelector('.ctype__opt.is-active');
-    gsap.set(ctypeInd, { x: active.offsetLeft, width: active.offsetWidth });
-  }
-  function moveInd(btn) {
-    gsap.to(ctypeInd, { x: btn.offsetLeft, width: btn.offsetWidth, duration: prefersReducedMotion ? 0 : 0.5, ease: 'expo.out' });
-  }
-  const setInputMode = () => { inContact.inputMode = contactType === 'phone' ? 'tel' : contactType === 'email' ? 'email' : 'text'; };
+  inContact.inputMode = 'tel';
 
-  /* --- выбор страны (только для телефона) --- */
+  /* --- выбор страны --- */
   const ccBtn = document.getElementById('ccountry');
   const ccMenu = document.getElementById('ccountry-menu');
-  const cBox = fContact.querySelector('.cfield__box');
   let menuOpen = false;
 
   COUNTRIES.forEach((co, idx) => {
@@ -1011,7 +939,7 @@ function initContact() {
     updateCountryBtn();
     inContact.value = formatPhone(inContact.value);
     if (!inContact.value) typePlaceholder(fContact, country.mask);
-    evaluate(fContact, inContact, 'contact', fMsg);
+    evaluate(fContact, inContact, 'contact');
     save();
   }
   function openCountry() {
@@ -1028,34 +956,7 @@ function initContact() {
   ccBtn.addEventListener('click', (e) => { e.stopPropagation(); menuOpen ? closeCountry() : openCountry(); });
   document.addEventListener('click', (e) => { if (menuOpen && !ccMenu.contains(e.target) && !ccBtn.contains(e.target)) closeCountry(); });
 
-  const applyContactType = () => {
-    setInputMode();
-    if (contactType === 'phone') {
-      cBox.classList.add('is-phone');
-      updateCountryBtn();
-      inContact.value = formatPhone(inContact.value);
-    } else {
-      cBox.classList.remove('is-phone');
-      closeCountry();
-    }
-  };
-
-  ctypeOpts.forEach((opt) => {
-    opt.addEventListener('click', () => {
-      if (opt.classList.contains('is-active')) return;
-      ctypeOpts.forEach((o) => { const on = o === opt; o.classList.toggle('is-active', on); o.setAttribute('aria-selected', on); });
-      contactType = opt.dataset.type;
-      applyContactType();
-      moveInd(opt);
-      if (!inContact.value) typePlaceholder(fContact, contactType === 'phone' ? country.mask : PH[contactType]);
-      clearError(fContact);
-      evaluate(fContact, inContact, 'contact', fMsg);
-      inContact.focus();
-      save();
-    });
-  });
-
-  /* --- кнопка отправки: магнит + смена фона + сдвиг стрелки --- */
+  /* --- кнопка отправки: магнит + смена фона --- */
   if (!prefersReducedMotion) {
     const bx = gsap.quickTo(sendBtn, 'x', { duration: 0.4, ease: 'power3.out' });
     const by = gsap.quickTo(sendBtn, 'y', { duration: 0.4, ease: 'power3.out' });
@@ -1065,89 +966,50 @@ function initContact() {
       bx((e.clientX - (r.left + r.width / 2)) * 0.3);
       by((e.clientY - (r.top + r.height / 2)) * 0.3);
       gsap.to(sendBtn, { backgroundColor: '#FF3C00', duration: 0.4, ease: 'power2.out' });
-      gsap.to(arrow, { x: 3, duration: 0.4, ease: 'power2.out' });
     });
     sendBtn.addEventListener('pointerleave', () => {
       bx(0); by(0);
       gsap.to(sendBtn, { backgroundColor: '#0A0A0A', duration: 0.5, ease: 'power3.out' });
-      gsap.to(arrow, { x: 0, duration: 0.5, ease: 'power3.out' });
-    });
-  }
-
-  /* --- иконка Telegram в шапке: ховер --- */
-  const tg = chat.querySelector('.chat__tg');
-  if (tg && !prefersReducedMotion) {
-    tg.addEventListener('pointerenter', () => gsap.to(tg, { scale: 1.08, backgroundColor: '#FF3C00', color: '#FFFFFF', duration: 0.35, ease: 'power3.out' }));
-    tg.addEventListener('pointerleave', () => gsap.to(tg, { scale: 1, backgroundColor: '#F4F4F4', color: '#0A0A0A', duration: 0.4, ease: 'power3.out' }));
-  }
-
-  /* --- parallax сообщений --- */
-  if (!prefersReducedMotion) {
-    chat.addEventListener('pointermove', (e) => {
-      const r = chat.getBoundingClientRect();
-      const dx = (e.clientX - (r.left + r.width / 2)) / r.width;
-      const dy = (e.clientY - (r.top + r.height / 2)) / r.height;
-      body.querySelectorAll('.msg[data-settled]').forEach((m, i) => {
-        const d = i % 2 ? 1 : 1.5;
-        gsap.to(m, { x: dx * 6 * d, y: dy * 4 * d, duration: 0.6, ease: 'power3.out' });
-      });
-    });
-    chat.addEventListener('pointerleave', () => {
-      body.querySelectorAll('.msg[data-settled]').forEach((m) => gsap.to(m, { x: 0, y: 0, duration: 0.6, ease: 'power3.out' }));
     });
   }
 
   /* --- сохранение / восстановление --- */
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ name: inName.value, contact: inContact.value, message: inMsg.value, type: contactType, country: country.c })); } catch (e) { /* ignore */ }
+    try { localStorage.setItem(STORE, JSON.stringify({ name: inName.value, contact: inContact.value, country: country.c })); } catch (e) { /* ignore */ }
   }
   function restore() {
     let d = {};
     try { d = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) { d = {}; }
-    if (d.type && ['telegram', 'phone', 'email'].includes(d.type)) {
-      contactType = d.type;
-      ctypeOpts.forEach((o) => { const on = o.dataset.type === d.type; o.classList.toggle('is-active', on); o.setAttribute('aria-selected', on); });
-    }
     const ci = d.country ? COUNTRIES.findIndex((x) => x.c === d.country) : -1;
-    if (ci >= 0) { country = COUNTRIES[ci]; ccOpts.forEach((o, i) => o.classList.toggle('is-active', i === ci)); }
+    if (ci >= 0) { country = COUNTRIES[ci]; ccOpts.forEach((o, i) => o.classList.toggle('is-active', i === ci)); updateCountryBtn(); }
     if (d.name) inName.value = d.name;
     if (d.contact) inContact.value = d.contact;
-    if (d.message) inMsg.value = d.message;
-    applyContactType();
-    [[fName, inName], [fContact, inContact], [fMsg, inMsg]].forEach(([f, i]) => syncFilled(f, i));
-    if (validators.message(inMsg.value)) { doneSteps.add('message'); revealField(fName, true); }
-    if (doneSteps.has('message') && validators.name(inName.value)) { doneSteps.add('name'); markValid(fName, true); revealField(fContact, true); }
-    if (doneSteps.has('name') && validators.contact(inContact.value)) { doneSteps.add('contact'); markValid(fContact, true); revealField(fFoot, true); }
-    autoresize(); updateSend(); refreshInd();
+    [[fName, inName], [fContact, inContact]].forEach(([f, i]) => syncFilled(f, i));
+    evaluate(fName, inName, 'name');
+    evaluate(fContact, inContact, 'contact');
   }
 
   /* --- отправка --- */
-  const scrollChat = () => body.scrollTo({ top: body.scrollHeight, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
-  const bubbleIn = (el, from) => { if (prefersReducedMotion) { el.dataset.settled = '1'; return; } gsap.from(el, from); };
-
   function submitChat() {
-    const text = inMsg.value.trim();
     sendBtn.disabled = true;
     sendBtn.classList.add('is-loading');
     gsap.to(sendBtn, { x: 0, y: 0, backgroundColor: '#0A0A0A', duration: 0.2 });
 
-    // Отправка идёт параллельно с анимацией «отправляем» — задержка уже была заложена.
     const trap = form.querySelector('.cfield__trap');
-    const delivery = fetch('/api.php?action=lead', {
+    fetch('/api.php?action=lead', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: inName.value.trim(),
         contact: inContact.value.trim(),
-        type: ctype.querySelector('.ctype__opt.is-active')?.dataset.type || '',
-        message: text,
+        type: 'phone',
+        // Поле «сообщение» убрали из формы, но бэкенд требует его непустым —
+        // шлём фиксированную заглушку вместо текста, который клиент не пишет.
+        message: 'Заявка с сайта',
         page: location.pathname,
         company: trap ? trap.value : '',
       }),
-    }).then((r) => r.ok).catch(() => false);
-
-    gsap.delayedCall(prefersReducedMotion ? 0 : 1.0, async () => {
-      const ok = await delivery;
+    }).then((r) => r.ok).catch(() => false).then((ok) => {
       sendBtn.classList.remove('is-loading');
 
       if (!ok) {                                   // заявка не ушла — не притворяемся, что всё хорошо
@@ -1157,60 +1019,20 @@ function initContact() {
         return;
       }
       ym(111032105, 'reachGoal', 'form_submit');
-
-      const bubble = document.createElement('div');
-      bubble.className = 'msg msg--out';
-      bubble.textContent = text;
-      body.appendChild(bubble);
-      if (prefersReducedMotion) bubble.dataset.settled = '1';
-      else gsap.fromTo(bubble, { y: 44, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(1.4)', onComplete: () => (bubble.dataset.settled = '1') });
-      scrollChat();
-
-      // ✓ Delivered
-      gsap.delayedCall(prefersReducedMotion ? 0 : 0.5, () => {
-        const meta = document.createElement('div');
-        meta.className = 'msg__meta';
-        meta.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="m2 13 5 5 8-10M11 15l1.5 1.5 8-9.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Delivered';
-        body.appendChild(meta);
-        if (!prefersReducedMotion) gsap.from(meta, { opacity: 0, y: 6, duration: 0.4, ease: 'power2.out' });
-        scrollChat();
-      });
-
-      // свернуть форму
-      gsap.set(form, { overflow: 'hidden' });
-      gsap.to(form, {
-        height: 0, opacity: 0, paddingTop: 0, paddingBottom: 0, duration: 0.6, ease: 'power3.inOut',
-        onComplete() { form.style.display = 'none'; ScrollTrigger.refresh(); },
-      });
-
-      // «печатает…» → ответ
-      gsap.delayedCall(prefersReducedMotion ? 0 : 0.9, () => {
-        const typing = document.createElement('div');
-        typing.className = 'typing';
-        typing.innerHTML = '<span></span><span></span><span></span>';
-        body.appendChild(typing); scrollChat();
-        if (!prefersReducedMotion) gsap.from(typing, { opacity: 0, y: 8, scale: 0.9, duration: 0.4, ease: 'power2.out' });
-
-        gsap.delayedCall(prefersReducedMotion ? 0 : 1.5, () => {
-          typing.remove();
-          const reply = document.createElement('div');
-          reply.className = 'msg msg--in';
-          reply.innerHTML = 'Спасибо! Сообщение получил.<br>Изучу задачу и свяжусь с вами в ближайшее время.';
-          body.appendChild(reply);
-          reply.dataset.settled = '1';
-          if (!prefersReducedMotion) gsap.from(reply, { opacity: 0, y: 10, scale: 0.95, duration: 0.5, ease: 'back.out(1.3)' });
-          scrollChat();
-        });
-      });
-
       try { localStorage.removeItem(STORE); } catch (e) { /* ignore */ }
+
+      const thanks = document.createElement('p');
+      thanks.className = 'chat__thanks';
+      thanks.textContent = 'Спасибо! Заявка получена — я свяжусь с вами в ближайшее время.';
+      form.replaceWith(thanks);
+      if (!prefersReducedMotion) gsap.from(thanks, { opacity: 0, y: 10, duration: 0.5, ease: 'power3.out' });
     });
   }
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     let firstBad = null;
-    [['message', fMsg, inMsg], ['name', fName, inName], ['contact', fContact, inContact]].forEach(([key, f, inp]) => {
+    [['name', fName, inName], ['contact', fContact, inContact]].forEach(([key, f, inp]) => {
       if (!validators[key](inp.value)) { if (!firstBad) firstBad = inp; showError(f, hintFor(key)); }
     });
     if (firstBad) { firstBad.focus(); return; }
@@ -1218,11 +1040,8 @@ function initContact() {
     submitChat();
   });
 
-  window.addEventListener('resize', refreshInd);
-
   /* --- восстановление --- */
   restore();
-  const settleMsgs = () => body.querySelectorAll('.msg').forEach((m) => (m.dataset.settled = '1'));
 
   /* --- модалка: открытие со всех CTA «обсудить / оставить заявку» --- */
   const modal = document.getElementById('contact-modal');
@@ -1248,12 +1067,11 @@ function initContact() {
     if (!modalOpen || !field) return;
     window.setTimeout(() => field.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' }), 80);
   };
-  [inMsg, inName, inContact].forEach((field) => field.addEventListener('focus', () => keepFieldVisible(field)));
+  [inName, inContact].forEach((field) => field.addEventListener('focus', () => keepFieldVisible(field)));
 
   function runEntrance() {
-    settleMsgs();
-    if (!inMsg.value) typePlaceholder(fMsg, PH.message);
-    requestAnimationFrame(() => { refreshInd(); autoresize(); });
+    if (!inName.value) typePlaceholder(fName, PH.name);
+    if (!inContact.value) typePlaceholder(fContact, country.mask);
   }
   function openModal() {
     if (modalOpen) return;
@@ -1270,7 +1088,7 @@ function initContact() {
         { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', onComplete: () => gsap.set(mDialog, { clearProps: 'filter' }) });
     }
     runEntrance();
-    setTimeout(() => { if (!inMsg.value) { try { inMsg.focus({ preventScroll: true }); } catch (e) { inMsg.focus(); } } }, prefersReducedMotion ? 0 : 320);
+    setTimeout(() => { if (!inName.value) { try { inName.focus({ preventScroll: true }); } catch (e) { inName.focus(); } } }, prefersReducedMotion ? 0 : 320);
   }
   function closeModal() {
     if (!modalOpen) return;
