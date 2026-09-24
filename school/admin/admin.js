@@ -82,7 +82,7 @@
   }
 
   /* ───── Обзор ───── */
-  var EVENTS = { login: 'Вход ученика', login_fail: 'Неудачный вход', admin_login: 'Вход в админку', admin_fail: 'Неудачный вход в админку', lesson_open: 'Открыт урок', guard_screenshot: 'Попытка скриншота', guard_devtools: 'Инструменты разработчика', guard_watermark: 'Попытка убрать водяной знак' };
+  var EVENTS = { login: 'Вход ученика', login_fail: 'Неудачный вход', admin_login: 'Вход в админку', admin_fail: 'Неудачный вход в админку', lesson_open: 'Открыт урок', stream_deny: 'Видео не выдано', guard_screenshot: 'Попытка скриншота', guard_devtools: 'Инструменты разработчика', guard_watermark: 'Попытка убрать водяной знак' };
   function ev(e) { return EVENTS[e] || e; }
   function dashboard(main) {
     api('admin.dashboard').then(function (d) {
@@ -162,7 +162,8 @@
         (d.lessons.length ? '<div class="ad-list">' + d.lessons.map(function (l, i) {
           var vid = l.video_type === 'file' ? 'видео ' + size(l.video_size) : l.video_type === 'kinescope' ? 'Kinescope' : '<span class="pill off">нет видео</span>';
           return '<div class="ad-item no-thumb"><div class="order"><button data-up="' + i + '">▲</button><button data-down="' + i + '">▼</button></div>' +
-            '<div><h3>' + (i + 1) + '. ' + esc(l.title) + ' ' + (+l.is_published ? '' : '<span class="pill">черновик</span>') + '</h3><p>' + vid + '</p></div>' +
+            '<div><h3>' + (i + 1) + '. ' + esc(l.title) + ' ' + (+l.is_published ? '' : '<span class="pill">черновик</span>') + '</h3><p>' + vid + '</p>' +
+            (l.warning ? '<p style="color:#ff8a70;margin-top:4px">⚠ ' + esc(l.warning) + '</p>' : '') + '</div>' +
             '<div class="row-actions"><button class="btn btn--ghost btn--sm" data-edit="' + i + '">Изменить</button><button class="btn btn--danger btn--sm" data-del="' + l.id + '">Удалить</button></div></div>';
         }).join('') + '</div>' : '<div class="empty">Уроков пока нет.</div>');
       $('#back').addEventListener('click', function (e) { e.preventDefault(); go('courses'); });
@@ -175,19 +176,28 @@
     }).catch(fail);
   }
 
+  /* Размер куска берём с сервера — под его лимит post_max_size. Повтор при сбое сети —
+     только того же куска: сервер проверяет, что предыдущие дошли целиком. */
   function uploadVideo(lessonId, file, onProgress) {
-    var total = Math.max(1, Math.ceil(file.size / CHUNK));
     var uid = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
-    function send(i, attempt) {
-      var q = '&lesson_id=' + lessonId + '&upload_id=' + uid + '&index=' + i + '&total=' + total + '&name=' + encodeURIComponent(file.name);
-      return api('admin.upload_chunk', { query: q, raw: file.slice(i * CHUNK, (i + 1) * CHUNK) })
-        .catch(function (err) { if (attempt < 3 && err.message !== 'auth') return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return send(i, attempt + 1); }); throw err; })
-        .then(function () { onProgress((i + 1) / total); if (i + 1 < total) return send(i + 1, 0); });
-    }
-    /* Не даём закрыть вкладку, пока видео грузится. */
+    var result = {};
     function guard(e) { e.preventDefault(); e.returnValue = ''; }
     window.addEventListener('beforeunload', guard);
-    return send(0, 0).finally(function () { window.removeEventListener('beforeunload', guard); });
+    return api('admin.upload_config').then(function (cfg) {
+      var chunk = cfg.chunk || CHUNK;
+      var total = Math.max(1, Math.ceil(file.size / chunk));
+      function send(i, attempt) {
+        var q = '&lesson_id=' + lessonId + '&upload_id=' + uid + '&index=' + i + '&total=' + total + '&chunk=' + chunk + '&size=' + file.size + '&name=' + encodeURIComponent(file.name);
+        return api('admin.upload_chunk', { query: q, raw: file.slice(i * chunk, (i + 1) * chunk) })
+          .catch(function (err) {
+            var retryable = err.message === 'Failed to fetch' || /Ошибка сервера|\(5\d\d\)/.test(err.message);
+            if (attempt < 3 && retryable) return new Promise(function (r) { setTimeout(r, 2000); }).then(function () { return send(i, attempt + 1); });
+            throw err;
+          })
+          .then(function (d) { if (d && d.done) result = d; onProgress((i + 1) / total); if (i + 1 < total) return send(i + 1, 0); });
+      }
+      return send(0, 0);
+    }).then(function () { return result; }).finally(function () { window.removeEventListener('beforeunload', guard); });
   }
 
   function lessonForm(l) {
@@ -214,7 +224,13 @@
       if (rm) rm.addEventListener('click', function () { api('admin.video_remove', { body: { id: l.id } }).then(function () { close(); toast('Видео убрано'); go('lessons'); }).catch(fail); });
       var prev = $('#prev', m);
       if (prev) prev.addEventListener('click', function () {
-        api('admin.preview_token', { query: '&id=' + l.id }).then(function (d) { $('#pv', m).innerHTML = '<video class="preview" controls playsinline controlslist="nodownload" src="' + esc(d.src) + '"></video>'; }).catch(fail);
+        api('admin.preview_token', { query: '&id=' + l.id }).then(function (d) {
+          var pv = $('#pv', m);
+          pv.innerHTML = '<video class="preview" controls playsinline controlslist="nodownload" src="' + esc(d.src) + '"></video>';
+          pv.querySelector('video').addEventListener('error', function () {
+            api('admin.video_check', { query: '&id=' + l.id }).then(function (c) { pv.innerHTML = '<div class="video-now" style="color:#ff8a70">' + esc(c.message) + '</div>'; }).catch(fail);
+          });
+        }).catch(fail);
       });
       f.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -228,7 +244,11 @@
           var bar = m.querySelector('.upl'); bar.hidden = false;
           btn.textContent = 'Загрузка 0%';
           return uploadVideo(d.id, file, function (p) { bar.firstChild.style.width = (p * 100) + '%'; btn.textContent = 'Загрузка ' + Math.round(p * 100) + '%'; });
-        }).then(function () { close(); toast('Урок сохранён'); go('lessons'); })
+        }).then(function (up) {
+          close(); go('lessons');
+          if (up && up.warning) modal('<h2>Видео загружено, но…</h2><p style="color:var(--muted)">' + esc(up.warning) + '</p><div class="modal__foot"><button class="btn" data-close>Понятно</button></div>');
+          else toast('Урок сохранён');
+        })
           .catch(function (x) { err.textContent = x.message; btn.disabled = false; btn.textContent = 'Сохранить'; });
       });
     });
@@ -303,7 +323,7 @@
     filter = filter || '';
     api('admin.log', { query: '&filter=' + filter }).then(function (d) {
       main.innerHTML = '<div class="ad-head"><div><h1>Журнал</h1><p>Входы, просмотры и срабатывания защиты. Последние 300 событий.</p></div></div>' +
-        '<div class="seg">' + [['', 'Все'], ['login', 'Входы'], ['guard', 'Защита']].map(function (x) { return '<button data-f="' + x[0] + '" class="' + (x[0] === filter ? 'is-active' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>' + logTable(d.log);
+        '<div class="seg">' + [['', 'Все'], ['login', 'Входы'], ['guard', 'Защита'], ['video', 'Ошибки видео']].map(function (x) { return '<button data-f="' + x[0] + '" class="' + (x[0] === filter ? 'is-active' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>' + logTable(d.log);
       main.querySelectorAll('[data-f]').forEach(function (b) { b.addEventListener('click', function () { log(main, b.dataset.f); }); });
     }).catch(fail);
   }

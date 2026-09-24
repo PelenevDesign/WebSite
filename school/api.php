@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/lib.php';
-schoolSession();
+/* PHP-сессия — только для админки; ученик авторизуется cookie устройства. */
+if (strpos((string)($_GET['action'] ?? ''), 'admin') === 0) schoolSession();
 header('Content-Type: application/json; charset=utf-8');
 schoolNoIndexHeaders();
 
@@ -48,6 +49,36 @@ function deleteVideoFile(array $lesson): void {
   }
 }
 
+/* Общая диагностика для ученика и превью в админке. $studentId = 0 — админ. */
+function videoDiagnosis(array $l, int $studentId): string {
+  if ($l['video_type'] !== 'file') return 'У урока нет загруженного видео.';
+  $path = schoolVideoPath($l);
+  if (!is_file($path) || (int)filesize($path) === 0) return 'Файл видео не найден на сервере — загрузите его в админке заново.';
+  if ((int)filesize($path) !== (int)$l['video_size'] && (int)$l['video_size'] > 0) return 'Файл видео загрузился не полностью — загрузите его в админке заново.';
+  $codec = (string)$l['video_codec'];
+  if ($codec === '') { $codec = schoolProbeVideo($path)['codec']; if ($codec !== '') db()->prepare('UPDATE school_lessons SET video_codec=? WHERE id=?')->execute([$codec, $l['id']]); }
+  if ($w = schoolCodecWarning($codec)) return $w;
+  $s = db()->prepare("SELECT detail FROM school_log WHERE event='stream_deny' AND " . ($studentId ? 'student_id=?' : 'student_id IS NULL AND ip=?') . ' AND created_at > ? ORDER BY id DESC LIMIT 1');
+  $s->execute([$studentId ?: schoolIp(), date('Y-m-d H:i:s', time() - 600)]);
+  $reason = (string)$s->fetchColumn();
+  $map = [
+    'token_expired' => 'Ссылка на видео устарела — нажмите «Повторить».',
+    'token_signature' => 'Ссылка на видео повреждена — нажмите «Повторить».',
+    'token_format' => 'Ссылка на видео повреждена — нажмите «Повторить».',
+    'not_logged_in' => 'Сеанс завершён — войдите в кабинет заново.',
+    'bind_mismatch' => 'Сеанс изменился — нажмите «Повторить».',
+    'no_access' => 'Нет доступа к этому курсу.',
+    'admin_session' => 'Сеанс админки завершён — войдите заново.',
+    'file_missing' => 'Файл видео не найден на сервере.',
+  ];
+  if ($reason !== '') {
+    $key = explode(':', $reason)[0];
+    if ($key === 'direct_open' || $key === 'cross_site') return 'Браузер заблокировал загрузку видео (' . $reason . '). Обновите браузер или откройте кабинет в Chrome, Safari или Firefox.';
+    return $map[$key] ?? ('Сервер отклонил видео: ' . $reason);
+  }
+  return 'Браузер не смог воспроизвести файл. Скорее всего, неподдерживаемый формат — пересохраните видео в MP4 (H.264).';
+}
+
 try {
   schoolSchema();
   $action = (string)($_GET['action'] ?? '');
@@ -66,23 +97,23 @@ try {
     if (!$st || !password_verify(str('password', 200), (string)$st['password_hash'])) { schoolLog(null, 'login_fail', $email); out(403, ['error' => 'Неверная почта или пароль.']); }
     if (!(int)$st['is_active']) out(403, ['error' => 'Доступ приостановлен. Напишите автору курса.']);
     if ($st['access_until'] && $st['access_until'] < date('Y-m-d')) out(403, ['error' => 'Срок доступа истёк.']);
-    session_regenerate_id(true);
     $token = bin2hex(random_bytes(32));
     db()->prepare('UPDATE school_students SET session_token=?, last_login_at=?, last_ip=? WHERE id=?')->execute([$token, schoolNow(), schoolIp(), $st['id']]);
-    $_SESSION['student_id'] = (int)$st['id'];
-    $_SESSION['student_token'] = $token;
+    schoolSetAuthCookie($st['id'] . '.' . $token);
     schoolLog((int)$st['id'], 'login');
     out(200, ['ok' => true]);
   }
 
   if ($action === 'logout' && $method === 'POST') {
-    unset($_SESSION['student_id'], $_SESSION['student_token']);
+    $me = schoolCurrentStudent();
+    if ($me) db()->prepare('UPDATE school_students SET session_token=NULL WHERE id=?')->execute([$me['id']]);
+    schoolSetAuthCookie('');
     out(200, ['ok' => true]);
   }
 
-  if (strpos($action, 'admin.') !== 0 && $action !== 'admin_login') {
+  if (strpos($action, 'admin') !== 0) {
     $me = schoolCurrentStudent();
-    if (!$me) out(401, ['error' => schoolStudentKicked() ? 'Выполнен вход с другого устройства. Этот сеанс завершён.' : 'Войдите в кабинет.', 'kicked' => schoolStudentKicked()]);
+    if (!$me) { $reason = schoolStudentDenyReason(); out(401, ['error' => $reason ?: 'Войдите в кабинет.', 'kicked' => $reason !== '']); }
     $sid = (int)$me['id'];
 
     if ($action === 'me') {
@@ -124,6 +155,13 @@ try {
       $p = progressMap($sid)[(int)$l['id']] ?? ['position' => 0, 'completed' => false];
       schoolLog($sid, 'lesson_open', (string)$l['id']);
       out(200, ['lesson' => ['id' => (int)$l['id'], 'course_id' => (int)$l['course_id'], 'title' => $l['title'], 'description' => (string)$l['description'], 'materials' => (string)$l['materials'], 'video' => $video, 'position' => $p['position'], 'completed' => $p['completed']]]);
+    }
+
+    /* Плеер не смог воспроизвести видео — выясняем причину и показываем её по-человечески. */
+    if ($action === 'video_check') {
+      $l = schoolLesson((int)($_GET['id'] ?? 0));
+      if (!$l || !schoolStudentCanSee($me, $l)) out(200, ['message' => 'Урок недоступен.']);
+      out(200, ['message' => videoDiagnosis($l, $sid)]);
     }
 
     if ($action === 'progress' && $method === 'POST') {
@@ -175,7 +213,7 @@ try {
   if ($action === 'admin.dashboard') {
     $week = date('Y-m-d H:i:s', time() - 7 * 86400);
     $count = function (string $sql, array $p = []) use ($db): int { $s = $db->prepare($sql); $s->execute($p); return (int)$s->fetchColumn(); };
-    $recent = $db->prepare("SELECT l.event, l.detail, l.ip, l.created_at, s.name, s.email FROM school_log l LEFT JOIN school_students s ON s.id=l.student_id WHERE l.event IN ('login','guard_screenshot','guard_devtools','guard_watermark','guard_record') ORDER BY l.id DESC LIMIT 12");
+    $recent = $db->prepare("SELECT l.event, l.detail, l.ip, l.created_at, s.name, s.email FROM school_log l LEFT JOIN school_students s ON s.id=l.student_id WHERE l.event IN ('login','stream_deny','guard_screenshot','guard_devtools','guard_watermark') ORDER BY l.id DESC LIMIT 12");
     $recent->execute();
     /* Подозрительные: много разных IP за сутки — похоже на передачу аккаунта. */
     $sus = $db->prepare("SELECT s.id, s.name, s.email, COUNT(DISTINCT l.ip) ips FROM school_log l JOIN school_students s ON s.id=l.student_id WHERE l.event='login' AND l.created_at > ? GROUP BY s.id HAVING ips >= 3 ORDER BY ips DESC LIMIT 10");
@@ -240,7 +278,19 @@ try {
     $cid = (int)($_GET['course_id'] ?? 0);
     $c = schoolCourse($cid);
     if (!$c) out(404, ['error' => 'Курс не найден.']);
-    out(200, ['course' => $c, 'lessons' => lessonsOf($cid, true)]);
+    $rows = lessonsOf($cid, true);
+    /* Проблемы с видео видны сразу в списке, а не только когда ученик пожалуется. */
+    foreach ($rows as &$r) {
+      $r['warning'] = '';
+      if ($r['video_type'] !== 'file') continue;
+      $path = schoolVideoPath($r);
+      if (!is_file($path) || (int)filesize($path) === 0) { $r['warning'] = 'Файл не найден на сервере — загрузите заново.'; continue; }
+      if ((int)$r['video_size'] > 0 && (int)filesize($path) !== (int)$r['video_size']) { $r['warning'] = 'Файл загрузился не полностью — загрузите заново.'; continue; }
+      if ($r['video_codec'] === '') { $r['video_codec'] = schoolProbeVideo($path)['codec']; if ($r['video_codec'] !== '') $db->prepare('UPDATE school_lessons SET video_codec=? WHERE id=?')->execute([$r['video_codec'], $r['id']]); }
+      $r['warning'] = schoolCodecWarning((string)$r['video_codec']);
+    }
+    unset($r);
+    out(200, ['course' => $c, 'lessons' => $rows]);
   }
   if ($action === 'admin.lesson_save' && $method === 'POST') {
     $id = int_('id');
@@ -265,7 +315,7 @@ try {
       if ($kid !== '') {
         $old = schoolLesson($id);
         if ($old) deleteVideoFile($old);
-        $db->prepare("UPDATE school_lessons SET video_type='kinescope', video_ref=?, video_name='', video_size=0 WHERE id=?")->execute([$kid, $id]);
+        $db->prepare("UPDATE school_lessons SET video_type='kinescope', video_ref=?, video_name='', video_size=0, video_codec='' WHERE id=?")->execute([$kid, $id]);
       }
     }
     out(200, ['ok' => true, 'id' => $id]);
@@ -279,7 +329,7 @@ try {
     $l = schoolLesson(int_('id'));
     if (!$l) out(404, ['error' => 'Урок не найден.']);
     deleteVideoFile($l);
-    $db->prepare("UPDATE school_lessons SET video_type='', video_ref='', video_name='', video_size=0, duration=0 WHERE id=?")->execute([$l['id']]);
+    $db->prepare("UPDATE school_lessons SET video_type='', video_ref='', video_name='', video_size=0, video_codec='', duration=0 WHERE id=?")->execute([$l['id']]);
     out(200, ['ok' => true]);
   }
   if ($action === 'admin.preview_token') {
@@ -287,8 +337,18 @@ try {
     if (!$l || $l['video_type'] !== 'file') out(404, ['error' => 'Видео не найдено.']);
     out(200, ['src' => '/school/stream.php?t=' . schoolVideoToken((int)$l['id'], 0)]);
   }
+  if ($action === 'admin.video_check') {
+    $l = schoolLesson((int)($_GET['id'] ?? 0));
+    if (!$l) out(404, ['error' => 'Урок не найден.']);
+    out(200, ['message' => videoDiagnosis($l, 0)]);
+  }
+  if ($action === 'admin.upload_config') {
+    out(200, ['chunk' => schoolChunkBytes()]);
+  }
 
-  /* Загрузка видео кусками по 4 МБ — обходит лимит upload_max_filesize на хостинге. */
+  /* Загрузка видео кусками (до 4 МБ, под лимит хостинга) — обходит upload_max_filesize.
+     Каждый кусок сверяется по размеру: если хостинг обрезал запрос, загрузка
+     останавливается с ошибкой, а не сохраняет битый файл. */
   if ($action === 'admin.upload_chunk' && $method === 'POST') {
     $l = schoolLesson((int)($_GET['lesson_id'] ?? 0));
     if (!$l) out(404, ['error' => 'Урок не найден.']);
@@ -299,22 +359,32 @@ try {
     $name = mb_substr(basename((string)($_GET['name'] ?? 'video.mp4')), 0, 255);
     $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
     if (!in_array($ext, ['mp4', 'm4v', 'webm', 'mov'], true)) out(422, ['error' => 'Поддерживаются MP4, M4V, MOV и WEBM. Лучше всего — MP4 (H.264).']);
-    if ($index < 0 || $total < 1 || $index >= $total || $total > 20000) out(422, ['error' => 'Некорректный номер части.']);
+    $chunk = (int)($_GET['chunk'] ?? 0);
+    $fileSize = (int)($_GET['size'] ?? 0);
+    if ($index < 0 || $total < 1 || $index >= $total || $total > 200000) out(422, ['error' => 'Некорректный номер части.']);
+    if ($chunk < 65536 || $chunk > SCHOOL_CHUNK_BYTES || $fileSize < 1 || (int)ceil($fileSize / $chunk) !== $total) out(422, ['error' => 'Некорректные параметры загрузки. Обновите страницу.']);
+    $expected = min($chunk, $fileSize - $index * $chunk);
     $part = schoolStorage() . "/parts/$uid.part";
     if ($index === 0) @unlink($part);
-    elseif (!is_file($part)) out(409, ['error' => 'Загрузка прервана, начните заново.']);
+    elseif (!is_file($part) || (int)filesize($part) !== $index * $chunk) out(409, ['error' => 'Загрузка прервалась, начните заново.']);
     $in = fopen('php://input', 'rb');
     $outF = fopen($part, 'ab');
-    $bytes = stream_copy_to_stream($in, $outF, SCHOOL_CHUNK_BYTES + 1);
+    $bytes = stream_copy_to_stream($in, $outF, $expected + 1);
     fclose($in); fclose($outF);
-    if ($bytes === false || $bytes > SCHOOL_CHUNK_BYTES) { @unlink($part); out(422, ['error' => 'Часть файла слишком большая.']); }
+    clearstatcache(true, $part);
+    if ($bytes !== $expected) {
+      @unlink($part);
+      out(422, ['error' => 'Сервер получил часть файла не целиком (' . (int)$bytes . ' из ' . $expected . ' байт). Попробуйте ещё раз — если повторится, лимит хостинга post_max_size меньше ' . round($expected / 1048576, 1) . ' МБ.']);
+    }
     if ($index < $total - 1) out(200, ['ok' => true, 'received' => $index + 1]);
+    if ((int)filesize($part) !== $fileSize) { @unlink($part); out(422, ['error' => 'Итоговый размер файла не совпал — загрузите заново.']); }
+    $probe = schoolProbeVideo($part);
+    if ($probe['container'] === '') { @unlink($part); out(422, ['error' => 'Это не видеофайл MP4/MOV/WEBM или файл повреждён.']); }
     $target = bin2hex(random_bytes(16)) . '.' . $ext;
-    if (!rename($part, schoolStorage() . "/videos/$target")) out(500, ['error' => 'Не удалось сохранить видео.']);
+    if (!rename($part, schoolStorage() . "/videos/$target")) { @unlink($part); out(500, ['error' => 'Не удалось сохранить видео.']); }
     deleteVideoFile($l);
-    $size = (int)filesize(schoolStorage() . "/videos/$target");
-    $db->prepare("UPDATE school_lessons SET video_type='file', video_ref=?, video_name=?, video_size=?, duration=0 WHERE id=?")->execute([$target, $name, $size, $l['id']]);
-    out(200, ['ok' => true, 'done' => true]);
+    $db->prepare("UPDATE school_lessons SET video_type='file', video_ref=?, video_name=?, video_size=?, video_codec=?, duration=0 WHERE id=?")->execute([$target, $name, $fileSize, $probe['codec'], $l['id']]);
+    out(200, ['ok' => true, 'done' => true, 'warning' => schoolCodecWarning($probe['codec'])]);
   }
 
   /* Ученики */
@@ -380,7 +450,7 @@ try {
   /* Журнал и настройки */
   if ($action === 'admin.log') {
     $filter = (string)($_GET['filter'] ?? '');
-    $where = $filter === 'guard' ? "WHERE l.event LIKE 'guard\\_%'" : ($filter === 'login' ? "WHERE l.event IN ('login','login_fail','admin_login','admin_fail')" : '');
+    $where = $filter === 'guard' ? "WHERE l.event LIKE 'guard\\_%'" : ($filter === 'login' ? "WHERE l.event IN ('login','login_fail','admin_login','admin_fail')" : ($filter === 'video' ? "WHERE l.event='stream_deny'" : ''));
     $rows = $db->query("SELECT l.*, s.name, s.email FROM school_log l LEFT JOIN school_students s ON s.id=l.student_id $where ORDER BY l.id DESC LIMIT 300")->fetchAll();
     out(200, ['log' => $rows]);
   }

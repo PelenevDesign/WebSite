@@ -5,7 +5,8 @@
    3) поверх видео — персональный водяной знак ученика: любая утечка указывает на того, кто её сделал. */
 (function () {
   'use strict';
-  var shield = document.getElementById('page-shield');
+  /* Каждый защищённый плеер: { wrap, pausable, shield }. Закрываем только видео, а не всю страницу —
+     иначе ученик не мог даже прочитать описание урока, переключившись на конспект в другом окне. */
   var players = [];
   var lastSignal = {};
 
@@ -17,15 +18,15 @@
       fetch('/school/api.php?action=signal', { method: 'POST', keepalive: true, credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-School': '1' }, body: JSON.stringify({ kind: kind, detail: detail || '' }) });
     } catch (e) {}
   }
-  function pauseAll() { players.forEach(function (p) { try { p.pause(); } catch (e) {} }); }
+  function setShield(on) { players.forEach(function (p) { p.shield.hidden = !on; }); }
   function hideFor(ms) {
     if (!players.length) return;
-    pauseAll();
-    shield.hidden = false;
+    players.forEach(function (p) { try { p.pausable.pause(); } catch (e) {} });
+    setShield(true);
     clearTimeout(hideFor.t);
-    if (ms) hideFor.t = setTimeout(function () { if (document.hasFocus()) shield.hidden = true; }, ms);
+    if (ms) hideFor.t = setTimeout(function () { if (document.hasFocus()) setShield(false); }, ms);
   }
-  function unhide() { if (document.visibilityState === 'visible' && document.hasFocus()) shield.hidden = true; }
+  function unhide() { if (document.visibilityState === 'visible' && document.hasFocus()) setShield(false); }
 
   function isField(el) { return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable); }
   document.addEventListener('contextmenu', function (e) { if (!isField(e.target)) e.preventDefault(); });
@@ -59,7 +60,6 @@
   });
   window.addEventListener('focus', unhide);
   document.addEventListener('visibilitychange', function () { if (document.hidden) hideFor(0); else unhide(); });
-  shield.addEventListener('click', unhide);
   window.addEventListener('beforeprint', function () { hideFor(0); signal('screenshot', 'print'); });
 
   /* Водяной знак: крупная «блуждающая» подпись + еле заметная сетка по всему кадру. */
@@ -112,7 +112,14 @@
     /* pausable — объект с методом pause(); возвращает функцию отключения. */
     protect: function (wrap, pausable, text) {
       var wm = new Watermark(wrap, text);
-      players.push(pausable);
+      var shield = document.createElement('div');
+      shield.className = 'player__shield';
+      shield.hidden = document.hasFocus();
+      shield.innerHTML = '<p>Просмотр приостановлен.<br><small>Нажмите, чтобы продолжить.</small></p>';
+      shield.addEventListener('click', unhide);
+      wrap.appendChild(shield);
+      var entry = { wrap: wrap, pausable: pausable, shield: shield };
+      players.push(entry);
       var timer = setInterval(function () {
         if (!wrap.isConnected) return;
         if (!intact(wrap, wm)) {
@@ -122,7 +129,7 @@
           clearInterval(timer);
         }
       }, 1000);
-      return function () { clearInterval(timer); wm.destroy(); players = players.filter(function (p) { return p !== pausable; }); };
+      return function () { clearInterval(timer); wm.destroy(); shield.remove(); players = players.filter(function (p) { return p !== entry; }); };
     }
   };
 })();

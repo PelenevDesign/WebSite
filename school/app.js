@@ -137,7 +137,20 @@
       if (!seeking && v.duration) seek.value = Math.round(v.currentTime / v.duration * 1000);
       if (Date.now() - lastSave > 10000) { lastSave = Date.now(); save(); }
     });
-    v.addEventListener('error', function () { wrap.insertAdjacentHTML('beforeend', '<div class="player__shield"><p>Не удалось загрузить видео.<br><small>Обновите страницу. Если не помогло — возможно, выполнен вход с другого устройства.</small></p></div>'); });
+    var failed = false;
+    v.addEventListener('error', function () {
+      if (failed || !v.getAttribute('src')) return;
+      failed = true;
+      var box = document.createElement('div');
+      box.className = 'player__shield player__error';
+      box.innerHTML = '<p>Не удалось загрузить видео.<br><small>Проверяем причину…</small></p>';
+      wrap.appendChild(box);
+      api('video_check', { query: '&id=' + lesson.id }).then(function (d) {
+        box.innerHTML = '<p>Не удалось загрузить видео.<br><small>' + esc(d.message) + '</small></p><button class="btn btn--sm" type="button">Повторить</button>';
+        /* Новый токен и чистый плеер — без перезагрузки страницы. */
+        box.querySelector('button').addEventListener('click', function () { route(); });
+      }).catch(function () {});
+    });
     seek.addEventListener('input', function () { seeking = true; if (v.duration) cur.textContent = fmt(seek.value / 1000 * v.duration); });
     seek.addEventListener('change', function () { if (v.duration) v.currentTime = seek.value / 1000 * v.duration; seeking = false; });
     wrap.querySelector('.player__big').addEventListener('click', toggle);

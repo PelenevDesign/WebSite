@@ -15,11 +15,11 @@ header('X-Frame-Options: DENY', true);
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/school/school.css?v=1">
-  <link rel="stylesheet" href="/school/admin/admin.css?v=1">
+  <link rel="stylesheet" href="/school/school.css?v=2">
+  <link rel="stylesheet" href="/school/admin/admin.css?v=2">
 </head>
 <body class="ad">
   <div id="root"><div class="sc-loading" style="padding:40px">Загрузка…</div></div>
-  <script src="/school/admin/admin.js?v=1"></script>
+  <script src="/school/admin/admin.js?v=2"></script>
 </body>
 </html>

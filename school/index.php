@@ -18,7 +18,7 @@ $h = fn(string $s) => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/school/school.css?v=1">
+  <link rel="stylesheet" href="/school/school.css?v=2">
 </head>
 <body class="sc">
   <header class="sc-top">
@@ -29,8 +29,7 @@ $h = fn(string $s) => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
     </nav>
   </header>
   <main class="sc-main" id="app" aria-live="polite"><div class="sc-loading">Загрузка…</div></main>
-  <div class="sc-shield" id="page-shield" hidden><p>Просмотр приостановлен.<br><small>Вернитесь в окно, чтобы продолжить.</small></p></div>
-  <script src="/school/guard.js?v=1"></script>
-  <script src="/school/app.js?v=1"></script>
+  <script src="/school/guard.js?v=2"></script>
+  <script src="/school/app.js?v=2"></script>
 </body>
 </html>
