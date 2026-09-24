@@ -17,4 +17,7 @@ return [
 
   'admin_password_hash' => '',
   'admin_password' => 'CHANGE_ME',
+
+  /* Стартовый пароль админки онлайн-школы (/school/admin/). */
+  'school_admin_password' => 'CHANGE_ME',
 ];

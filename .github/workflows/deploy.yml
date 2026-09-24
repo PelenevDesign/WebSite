@@ -32,6 +32,7 @@ jobs:
             config.php
             cloud/config.php
             uploads/**
+            school/_storage/**
             .htlead-attempts.json
             .htlogin-attempts.json
             install.lock
