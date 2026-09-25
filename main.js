@@ -919,7 +919,7 @@ function initContact() {
         { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', onComplete: () => gsap.set(mDialog, { clearProps: 'filter' }) });
       /* Содержимое всплывает по очереди: на десктопе окно большое, и разом
          проявившийся блок читается как статичная картинка. */
-      const items = chat.querySelectorAll('.chat__head, .chat__way, .chat__or, .chat__when, .chat__msg');
+      const items = chat.querySelectorAll('.chat__head, .chat__way, .chat__or, .chat__when, .chat__msgbox');
       gsap.fromTo(items, { opacity: 0, y: 14 },
         { opacity: 1, y: 0, duration: 0.5, stagger: 0.04, ease: 'power3.out', delay: 0.1, clearProps: 'transform,opacity' });
     }

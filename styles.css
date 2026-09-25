@@ -2378,6 +2378,8 @@ h1, h2, h3, h4{
 .chat__opt.is-selected{ border-color: #fff; background: #fff; color: var(--ink); }
 
 /* Готовое сообщение: снимает ступор «а что писать». */
+.chat__msgbox{ display: flex; flex-direction: column; gap: 10px; }
+.chat__msg-hint{ padding-left: 4px; font-size: .8rem; line-height: 1.4; color: rgba(255,255,255,.45); }
 .chat__msg{
   display: flex; align-items: flex-end; gap: 12px;
   padding: 14px 16px; border-radius: 16px;
@@ -2423,7 +2425,7 @@ h1, h2, h3, h4{
   .chat__or{ gap: 0; color: rgba(255,255,255,.55); padding-right: 52px; }
   .chat__or::before, .chat__or::after{ display: none; }
   .chat__when{ gap: 12px; }
-  .chat__msg{ margin-top: auto; }
+  .chat__msgbox{ margin-top: auto; }
 }
 
 /* --- Телефон: шторка снизу, как в приложениях --- */

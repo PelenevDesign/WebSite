@@ -34,7 +34,7 @@
   <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
 
-  <link rel="stylesheet" href="styles.css?v=111">
+  <link rel="stylesheet" href="styles.css?v=112">
 
   <script type="application/ld+json">
   {
@@ -354,12 +354,15 @@
           </div>
         </div>
 
-        <div class="chat__msg">
+        <div class="chat__msgbox">
+          <p class="chat__msg-hint">Этот текст можно скопировать и отправить мне — забронирую время за вами</p>
+          <div class="chat__msg">
           <p class="chat__msg-text" id="c-msg"></p>
           <button type="button" class="chat__copy" id="c-copy">
             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="7" y="7" width="9" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M13 4.5A1.5 1.5 0 0 0 11.5 3h-6A2.5 2.5 0 0 0 3 5.5v7A1.5 1.5 0 0 0 4.5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             <span id="c-copy-label">Скопировать</span>
           </button>
+          </div>
         </div>
         </div>
 
@@ -453,7 +456,7 @@
   <script src="cms-schema.js?v=7"></script>
   <script src="cms.js?v=6"></script>
   <script src="portfolio.js?v=14"></script>
-  <script src="main.js?v=78"></script>
+  <script src="main.js?v=79"></script>
 
   <!-- Уведомление о cookie. Показывается один раз, выбор хранится в localStorage. -->
   <div class="cookie" id="cookie" role="dialog" aria-live="polite" aria-label="Уведомление о cookie" hidden>
