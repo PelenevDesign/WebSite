@@ -2378,7 +2378,6 @@ h1, h2, h3, h4{
 .chat__copy:hover{ color: var(--on-dark); }
 .chat__copy.is-done{ color: var(--ok, #22C55E); }
 
-.chat__note{ padding-left: 4px; font-size: .84rem; line-height: 1.45; color: rgba(255,255,255,.5); }
 
 /* --- Телефон: шторка снизу, как в приложениях --- */
 @media (max-width: 640px){
