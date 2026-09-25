@@ -2274,6 +2274,12 @@ h1, h2, h3, h4{
 }
 .modal__close:hover{ background: rgba(255,255,255,.18); color: #fff; }
 .modal__close svg{ width: 20px; height: 20px; }
+/* Кружок рисуем прежнего размера, а нажимается область 48×48: пальцем в
+   36-пиксельную мишень у самого края экрана попасть трудно. */
+.modal__close::after{
+  content: ''; position: absolute; top: 50%; left: 50%;
+  width: 48px; height: 48px; transform: translate(-50%, -50%);
+}
 
 /* ---------- Чат-форма (#contact) ---------- */
 #contact{ --ok: #22C55E; --warn: #FF5C3D; }
@@ -2460,15 +2466,18 @@ h1, h2, h3, h4{
   /* «Ручка» — и метка, что шторку можно утянуть вниз, и зона захвата. */
   .chat__grab{
     display: block; flex: none; position: relative;
-    width: 100%; height: 20px; margin: 0 0 2px;
+    width: 100%; height: 26px; margin: 0 0 2px;
   }
   .chat__grab::before{
-    content: ''; position: absolute; top: 8px; left: 50%;
+    content: ''; position: absolute; top: 11px; left: 50%;
     width: 40px; height: 4px; margin-left: -20px;
     border-radius: 99px; background: rgba(255,255,255,.28);
   }
-  .chat__grab, .chat__head{ touch-action: none; }
-  .modal__close{ top: 18px; right: 12px; width: 36px; height: 36px; }
+  /* touch-action: none только на «ручке». Раньше он стоял и на заголовке,
+     а заголовок лежит внутри прокручиваемой области — палец на нём не
+     листал шторку вообще, получалась мёртвая зона в сотню пикселей. */
+  .chat__grab{ touch-action: none; }
+  .modal__close{ top: 16px; right: 14px; width: 40px; height: 40px; }
   .chat__title{ font-size: 1.22rem; }
   /* Пальцевые тап-зоны: строки каналов и «таблетки» крупнее. */
   .chat__way{ padding: 15px 16px; }

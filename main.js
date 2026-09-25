@@ -937,18 +937,16 @@ function initContact() {
     else gsap.to(mDialog, { y: 40, opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: done });
   }
 
-  /* Свайп вниз закрывает шторку — привычный жест. Тянем за «ручку» всегда,
-     а за заголовок только когда содержимое не прокручено: иначе жест
-     перехватывал бы обычный скролл списка. */
-  const chatBody = chat.querySelector('.chat__body');
-  const grip = [chat.querySelector('.chat__grab'), chat.querySelector('.chat__head')].filter(Boolean);
+  /* Свайп вниз закрывает шторку — привычный жест. Тянем только за «ручку»:
+     заголовок лежит в прокручиваемой области, и перетаскивание за него
+     отбирало бы у пальца обычный скролл. */
+  const grip = [chat.querySelector('.chat__grab')].filter(Boolean);
   let dragging = false;
   let startY = 0;
   let dragY = 0;
   grip.forEach((el) => {
     el.addEventListener('pointerdown', (e) => {
       if (!isSheet() || e.pointerType === 'mouse' || !modalOpen) return;
-      if (el !== grip[0] && chatBody && chatBody.scrollTop > 0) return;
       dragging = true; startY = e.clientY; dragY = 0;
       gsap.killTweensOf(mDialog);
       try { el.setPointerCapture(e.pointerId); } catch (err) { /* не поддержано */ }
