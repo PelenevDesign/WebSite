@@ -750,75 +750,62 @@ function initContact() {
   const sendBtn = document.getElementById('c-send');
 
   const STORE = 'pelenev_chat';
+  const steps = [...form.querySelectorAll('.chat__step')];
+  const contactLabel = document.getElementById('c-contact-label');
+  const daysBox = document.getElementById('c-days');
+  const thanksBox = document.getElementById('c-thanks');
 
-  // страны с dial-кодом и маской (# = цифра). Дефолт — Россия
-  const COUNTRIES = [
-    { c: 'RU', name: 'Россия', flag: '🇷🇺', dial: '+7', mask: '(###) ###-##-##' },
-    { c: 'KZ', name: 'Казахстан', flag: '🇰🇿', dial: '+7', mask: '(###) ###-##-##' },
-    { c: 'BY', name: 'Беларусь', flag: '🇧🇾', dial: '+375', mask: '(##) ###-##-##' },
-    { c: 'UA', name: 'Украина', flag: '🇺🇦', dial: '+380', mask: '(##) ###-##-##' },
-    { c: 'US', name: 'США / Канада', flag: '🇺🇸', dial: '+1', mask: '(###) ###-####' },
-    { c: 'GB', name: 'Великобритания', flag: '🇬🇧', dial: '+44', mask: '#### ######' },
-    { c: 'DE', name: 'Германия', flag: '🇩🇪', dial: '+49', mask: '### ########' },
-    { c: 'FR', name: 'Франция', flag: '🇫🇷', dial: '+33', mask: '# ## ## ## ##' },
-    { c: 'ES', name: 'Испания', flag: '🇪🇸', dial: '+34', mask: '### ## ## ##' },
-    { c: 'IT', name: 'Италия', flag: '🇮🇹', dial: '+39', mask: '### ### ####' },
-    { c: 'PL', name: 'Польша', flag: '🇵🇱', dial: '+48', mask: '### ### ###' },
-    { c: 'AE', name: 'ОАЭ', flag: '🇦🇪', dial: '+971', mask: '## ### ####' },
-    { c: 'TR', name: 'Турция', flag: '🇹🇷', dial: '+90', mask: '### ### ## ##' },
-  ];
-  // страна по умолчанию — по языку сайта (RU→+7, EN→+1 и т.д.), можно сменить вручную
-  const defaultCountryIdx = () => {
-    const lang = (document.documentElement.lang || navigator.language || 'ru').slice(0, 2).toLowerCase();
-    const byLang = { ru: 'RU', kk: 'KZ', be: 'BY', uk: 'UA', en: 'US', de: 'DE', fr: 'FR', es: 'ES', it: 'IT', pl: 'PL', tr: 'TR', ar: 'AE' };
-    const i = COUNTRIES.findIndex((c) => c.c === (byLang[lang] || 'RU'));
-    return i >= 0 ? i : 0;
+  /* Мессенджеры: подпись поля и подсказка меняются под выбранный. */
+  const CHANNELS = {
+    telegram: { label: 'Telegram', field: 'Ник в Telegram', ph: '@username или ссылка t.me/…' },
+    vk: { label: 'ВКонтакте', field: 'Профиль ВКонтакте', ph: 'vk.com/… или ник' },
+    max: { label: 'MAX', field: 'Аккаунт в MAX', ph: 'номер или ник в MAX' },
   };
-  let country = COUNTRIES[defaultCountryIdx()];
-  const digitsOf = (s) => (String(s).match(/\d/g) || []).join('');
-  const maskLen = (m) => (m.match(/#/g) || []).length;
-  function formatPhone(raw) {
-    const digits = digitsOf(raw).slice(0, maskLen(country.mask));
-    let out = '', di = 0;
-    for (let k = 0; k < country.mask.length && di < digits.length; k++) {
-      const ch = country.mask[k];
-      out += ch === '#' ? digits[di++] : ch;
+  const GOALS = {
+    price: { label: 'Точная стоимость и сроки разработки', thanks: 'стоимость и сроки' },
+    promo: { label: 'Акция — сайт за 35 000 ₽', thanks: 'детали акции' },
+  };
+  const TIME_WHEN = { 'Утро': 'утром', 'День': 'днём', 'Вечер': 'вечером' };
+
+  /* «завтра вечером», но «вс, 27 сент., вечером» — без даты фраза читается живее. */
+  const whenPhrase = () => {
+    if (!day || !TIME_WHEN[time]) return 'в выбранное время';
+    return day.soon ? `${day.short.toLowerCase()} ${TIME_WHEN[time]}` : `${day.full}, ${TIME_WHEN[time]}`;
+  };
+
+  /* Дни считаем от текущей даты, а не списком в коде — форма не устаревает.
+     После 17:00 сегодняшний день уже не предлагаем: созвониться вряд ли успеем. */
+  function callDays() {
+    const now = new Date();
+    const fmt = new Intl.DateTimeFormat('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' });
+    const first = now.getHours() < 17 ? 0 : 1;
+    const out = [];
+    for (let i = first; i < first + 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      const date = fmt.format(d);
+      const short = i === 0 ? 'Сегодня' : i === 1 ? 'Завтра' : date;
+      out.push({ short, full: i < 2 ? `${short}, ${date}` : date, soon: i < 2 });
     }
     return out;
   }
 
-  const PH = { name: 'Как вас зовут?' };
+  /* Выбранное на шагах — уходит в текст заявки. */
+  let goal = '';
+  let channel = '';
+  let day = null;
+  let time = '';
+  let step = 0;
+
   const HINT = {
     name: 'Введите имя — минимум 2 буквы',
-    contact: 'Похоже на неполный номер — проверьте, пожалуйста',
+    contact: 'Укажите ник, номер или ссылку — по ним я напишу вам',
   };
   const validators = {
     name: (v) => v.trim().length >= 2,
-    contact: (v) => digitsOf(v).length === maskLen(country.mask),
+    contact: (v) => v.trim().length >= 3,
   };
   const hintFor = (key) => HINT[key];
   const boxOf = (f) => f.querySelector('.cfield__box');
-
-  /* --- печатающийся плейсхолдер --- */
-  const typers = new Map();
-  function typePlaceholder(field, text) {
-    const ph = field.querySelector('.cfield__ph');
-    if (!ph) return;
-    if (typers.has(ph)) clearInterval(typers.get(ph));
-    ph.textContent = '';
-    ph.classList.remove('is-done');
-    if (prefersReducedMotion) { ph.textContent = text; ph.classList.add('is-done'); return; }
-    ph.classList.add('is-typing');
-    let i = 0;
-    const id = setInterval(() => {
-      ph.textContent = text.slice(0, ++i);
-      if (i >= text.length) {
-        clearInterval(id); typers.delete(ph);
-        ph.classList.remove('is-typing'); ph.classList.add('is-done');
-      }
-    }, 55);
-    typers.set(ph, id);
-  }
   const syncFilled = (field, input) => field.classList.toggle('is-filled', input.value.length > 0);
 
   /* --- свечение фокуса / ошибки (GSAP, без CSS-transition) --- */
@@ -854,8 +841,13 @@ function initContact() {
     if (c) gsap.to(c, { scale: 0, opacity: 0, duration: 0.25, ease: 'power2.in' });
   };
 
-  const allValid = () => validators.name(inName.value) && validators.contact(inContact.value);
-  const updateSend = () => { sendBtn.disabled = !allValid(); };
+  /* Шаг связи готов, когда выбран мессенджер и заполнены имя с контактом. */
+  const contactReady = () => !!channel && validators.name(inName.value) && validators.contact(inContact.value);
+  const nextBtns = [...form.querySelectorAll('[data-cnext]')];
+  const updateSend = () => {
+    nextBtns.forEach((b) => { b.disabled = !contactReady(); });
+    sendBtn.disabled = !(day && time);
+  };
 
   function evaluate(field, input, key) {
     syncFilled(field, input);
@@ -873,10 +865,6 @@ function initContact() {
       else glow(f, f.classList.contains('has-error') ? 'error' : 'none');
     });
     inp.addEventListener('input', () => {
-      if (key === 'contact') {
-        inp.value = formatPhone(inp.value);
-        try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* ignore */ }
-      }
       evaluate(f, inp, key); save();
     });
     f.addEventListener('pointerenter', () => { if (!f.classList.contains('is-focus') && !prefersReducedMotion) gsap.to(boxOf(f), { scale: 1.006, duration: 0.4, ease: 'power3.out' }); });
@@ -911,50 +899,72 @@ function initContact() {
   }
   consent.addEventListener('change', () => setConsent(consent.checked));
 
-  inContact.inputMode = 'tel';
+  /* --- шаги: оффер → связь → время → спасибо --- */
+  function goStep(n) {
+    if (n < 0 || n >= steps.length) return;
+    steps[step].hidden = true;
+    step = n;
+    steps[step].hidden = false;
+    updateSend();
+    if (!prefersReducedMotion) {
+      gsap.fromTo(steps[step].children, { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.45, stagger: 0.05, ease: 'power3.out', clearProps: 'transform,opacity' });
+    }
+    /* Фокус — на первое поле шага связи, но не на мобильном: там всплывающая
+       клавиатура закрыла бы половину формы сразу после перехода. */
+    if (step === 1 && !matchMedia('(max-width: 768px)').matches) {
+      setTimeout(() => { try { inName.focus({ preventScroll: true }); } catch (e) { inName.focus(); } }, 120);
+    }
+  }
 
-  /* --- выбор страны --- */
-  const ccBtn = document.getElementById('ccountry');
-  const ccMenu = document.getElementById('ccountry-menu');
-  let menuOpen = false;
+  /* Одна «таблетка» выбрана — остальные в группе гаснут. */
+  function pickOne(group, el) {
+    group.querySelectorAll('.chat__opt').forEach((b) => b.classList.toggle('is-selected', b === el));
+  }
 
-  COUNTRIES.forEach((co, idx) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'ccountry__opt' + (COUNTRIES[idx] === country ? ' is-active' : '');
-    b.setAttribute('role', 'option');
-    b.innerHTML = `<span class="ccountry__opt-flag">${co.flag}</span><span class="ccountry__opt-name">${co.name}</span><span class="ccountry__opt-dial">${co.dial}</span>`;
-    b.addEventListener('click', () => { selectCountry(idx); closeCountry(); inContact.focus(); });
-    ccMenu.appendChild(b);
+  /* Шаг 0 — выбор пути. Он же задаёт текст благодарности. */
+  form.querySelectorAll('[data-goal]').forEach((b) => {
+    b.addEventListener('click', () => { goal = b.dataset.goal; pickOne(b.parentElement, b); goStep(1); });
   });
-  const ccOpts = ccMenu.querySelectorAll('.ccountry__opt');
 
-  function updateCountryBtn() {
-    ccBtn.querySelector('.ccountry__flag').textContent = country.flag;
-    ccBtn.querySelector('.ccountry__dial').textContent = country.dial;
+  /* Шаг 1 — мессенджер: меняем подпись и подсказку поля под выбранный. */
+  const channelsBox = document.getElementById('c-channels');
+  channelsBox.querySelectorAll('[data-channel]').forEach((b) => {
+    b.addEventListener('click', () => {
+      channel = b.dataset.channel;
+      pickOne(channelsBox, b);
+      contactLabel.textContent = CHANNELS[channel].field;
+      inContact.placeholder = CHANNELS[channel].ph;
+      clearError(fContact);
+      updateSend();
+      save();
+      if (!inContact.value) { try { inContact.focus({ preventScroll: true }); } catch (e) { inContact.focus(); } }
+    });
+  });
+
+  /* Шаг 2 — день и время. Дни рисуем от текущей даты при каждом открытии. */
+  function renderDays() {
+    daysBox.innerHTML = '';
+    callDays().forEach((d) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chat__opt chat__opt--chip';
+      b.textContent = d.short;
+      b.addEventListener('click', () => { day = d; pickOne(daysBox, b); updateSend(); });
+      daysBox.appendChild(b);
+    });
+    day = null;
   }
-  function selectCountry(idx) {
-    country = COUNTRIES[idx];
-    ccOpts.forEach((o, i) => o.classList.toggle('is-active', i === idx));
-    updateCountryBtn();
-    inContact.value = formatPhone(inContact.value);
-    if (!inContact.value) typePlaceholder(fContact, country.mask);
-    evaluate(fContact, inContact, 'contact');
-    save();
-  }
-  function openCountry() {
-    ccMenu.hidden = false; menuOpen = true;
-    ccBtn.classList.add('is-open'); ccBtn.setAttribute('aria-expanded', 'true');
-    if (!prefersReducedMotion) gsap.fromTo(ccMenu, { opacity: 0, y: -8, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power3.out', transformOrigin: 'top left' });
-  }
-  function closeCountry() {
-    if (!menuOpen) return;
-    menuOpen = false; ccBtn.classList.remove('is-open'); ccBtn.setAttribute('aria-expanded', 'false');
-    if (prefersReducedMotion) { ccMenu.hidden = true; return; }
-    gsap.to(ccMenu, { opacity: 0, y: -8, scale: 0.98, duration: 0.2, ease: 'power2.in', onComplete: () => { ccMenu.hidden = true; } });
-  }
-  ccBtn.addEventListener('click', (e) => { e.stopPropagation(); menuOpen ? closeCountry() : openCountry(); });
-  document.addEventListener('click', (e) => { if (menuOpen && !ccMenu.contains(e.target) && !ccBtn.contains(e.target)) closeCountry(); });
+  const timesBox = document.getElementById('c-times');
+  timesBox.querySelectorAll('[data-time]').forEach((b) => {
+    b.addEventListener('click', () => { time = b.dataset.time; pickOne(timesBox, b); updateSend(); });
+  });
+
+  form.querySelectorAll('[data-cnext]').forEach((b) => b.addEventListener('click', () => {
+    if (!contactReady()) return;
+    goStep(2);
+  }));
+  form.querySelectorAll('[data-cback]').forEach((b) => b.addEventListener('click', () => goStep(step - 1)));
 
   /* --- кнопка отправки: магнит + смена фона --- */
   if (!prefersReducedMotion) {
@@ -975,15 +985,15 @@ function initContact() {
 
   /* --- сохранение / восстановление --- */
   function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ name: inName.value, contact: inContact.value, country: country.c })); } catch (e) { /* ignore */ }
+    try { localStorage.setItem(STORE, JSON.stringify({ name: inName.value, contact: inContact.value, channel })); } catch (e) { /* ignore */ }
   }
   function restore() {
     let d = {};
     try { d = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) { d = {}; }
-    const ci = d.country ? COUNTRIES.findIndex((x) => x.c === d.country) : -1;
-    if (ci >= 0) { country = COUNTRIES[ci]; ccOpts.forEach((o, i) => o.classList.toggle('is-active', i === ci)); updateCountryBtn(); }
     if (d.name) inName.value = d.name;
     if (d.contact) inContact.value = d.contact;
+    const saved = d.channel && CHANNELS[d.channel] ? channelsBox.querySelector(`[data-channel="${d.channel}"]`) : null;
+    if (saved) saved.click();
     [[fName, inName], [fContact, inContact]].forEach(([f, i]) => syncFilled(f, i));
     evaluate(fName, inName, 'name');
     evaluate(fContact, inContact, 'contact');
@@ -995,6 +1005,13 @@ function initContact() {
     sendBtn.classList.add('is-loading');
     gsap.to(sendBtn, { x: 0, y: 0, backgroundColor: '#0A0A0A', duration: 0.2 });
 
+    /* Отдельных колонок под путь, мессенджер и время на сервере нет —
+       собираем их читаемым текстом в message, как и в квизе. */
+    const message = 'Заявка с сайта.'
+      + `\n\nИнтерес: ${GOALS[goal] ? GOALS[goal].label : '—'}`
+      + `\nСвязь: ${CHANNELS[channel] ? CHANNELS[channel].label : '—'} — ${inContact.value.trim()}`
+      + `\nСозвон: ${day ? day.full : '—'}, ${time || '—'}`;
+
     const trap = form.querySelector('.cfield__trap');
     fetch('/api.php?action=lead', {
       method: 'POST',
@@ -1002,10 +1019,8 @@ function initContact() {
       body: JSON.stringify({
         name: inName.value.trim(),
         contact: inContact.value.trim(),
-        type: 'phone',
-        // Поле «сообщение» убрали из формы, но бэкенд требует его непустым —
-        // шлём фиксированную заглушку вместо текста, который клиент не пишет.
-        message: 'Заявка с сайта',
+        type: channel,
+        message,
         page: location.pathname,
         company: trap ? trap.value : '',
       }),
@@ -1021,11 +1036,8 @@ function initContact() {
       ym(111032105, 'reachGoal', 'form_submit');
       try { localStorage.removeItem(STORE); } catch (e) { /* ignore */ }
 
-      const thanks = document.createElement('p');
-      thanks.className = 'chat__thanks';
-      thanks.textContent = 'Спасибо! Заявка получена — я свяжусь с вами в ближайшее время.';
-      form.replaceWith(thanks);
-      if (!prefersReducedMotion) gsap.from(thanks, { opacity: 0, y: 10, duration: 0.5, ease: 'power3.out' });
+      thanksBox.textContent = `Свяжусь с вами ${whenPhrase()}, чтобы обсудить ${GOALS[goal] ? GOALS[goal].thanks : 'ваш проект'}.`;
+      goStep(3);
     });
   }
 
@@ -1035,7 +1047,7 @@ function initContact() {
     [['name', fName, inName], ['contact', fContact, inContact]].forEach(([key, f, inp]) => {
       if (!validators[key](inp.value)) { if (!firstBad) firstBad = inp; showError(f, hintFor(key)); }
     });
-    if (firstBad) { firstBad.focus(); return; }
+    if (firstBad) { goStep(1); firstBad.focus(); return; }
     if (!consent.checked) { consentError(); return; }
     submitChat();
   });
@@ -1069,9 +1081,16 @@ function initContact() {
   };
   [inName, inContact].forEach((field) => field.addEventListener('focus', () => keepFieldVisible(field)));
 
+  /* Каждое открытие — с первого шага и со свежими датами: вкладка могла
+     провисеть открытой до следующего дня. Отправленную заявку не переоткрываем. */
   function runEntrance() {
-    if (!inName.value) typePlaceholder(fName, PH.name);
-    if (!inContact.value) typePlaceholder(fContact, country.mask);
+    if (step === 3) return;
+    renderDays();
+    time = '';
+    goal = '';
+    timesBox.querySelectorAll('.chat__opt').forEach((b) => b.classList.remove('is-selected'));
+    form.querySelectorAll('[data-goal]').forEach((b) => b.classList.remove('is-selected'));
+    goStep(0);
   }
   function openModal() {
     if (modalOpen) return;
@@ -1088,13 +1107,11 @@ function initContact() {
         { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', onComplete: () => gsap.set(mDialog, { clearProps: 'filter' }) });
     }
     runEntrance();
-    setTimeout(() => { if (!inName.value) { try { inName.focus({ preventScroll: true }); } catch (e) { inName.focus(); } } }, prefersReducedMotion ? 0 : 320);
   }
   function closeModal() {
     if (!modalOpen) return;
     modalOpen = false;
     lenis.start();
-    closeCountry();
     const done = () => modal.setAttribute('aria-hidden', 'true');
     if (prefersReducedMotion) { gsap.set([mBackdrop, mDialog], { opacity: 0 }); done(); return; }
     gsap.to(mBackdrop, { opacity: 0, duration: 0.3, ease: 'power2.in' });

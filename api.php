@@ -194,7 +194,7 @@ if ($action === 'lead' && $_SERVER['REQUEST_METHOD'] === 'POST') {
   $name    = trim((string)($data['name'] ?? ''));
   $contact = trim((string)($data['contact'] ?? ''));
   $message = trim((string)($data['message'] ?? ''));
-  $type    = in_array($data['type'] ?? '', ['telegram', 'phone', 'email'], true) ? $data['type'] : 'контакт';
+  $type    = in_array($data['type'] ?? '', ['telegram', 'vk', 'max', 'phone', 'email'], true) ? $data['type'] : 'контакт';
 
   if (mb_strlen($name) < 2 || mb_strlen($name) > 100
    || mb_strlen($contact) < 3 || mb_strlen($contact) > 150

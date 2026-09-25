@@ -34,7 +34,7 @@
   <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
 
-  <link rel="stylesheet" href="styles.css?v=98">
+  <link rel="stylesheet" href="styles.css?v=99">
 
   <script type="application/ld+json">
   {
@@ -300,46 +300,75 @@
       </button>
 
       <div class="chat" id="chat">
-        <h3 class="chat__title">Написать Дмитрию</h3>
-
         <form class="chat__form" id="chat-form" novalidate autocomplete="off">
-          <div class="cfield" data-step="name">
-            <span class="cfield__label">Имя</span>
-            <div class="cfield__box">
-              <input class="cfield__input" id="c-name" type="text" autocomplete="off" spellcheck="false">
-              <span class="cfield__ph" aria-hidden="true"></span>
-              <span class="cfield__check" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </span>
-            </div>
-            <span class="cfield__hint" aria-hidden="true"></span>
-          </div>
 
-          <div class="cfield" data-step="contact">
-            <span class="cfield__label">Телефон</span>
-            <div class="cfield__box is-phone">
-              <button class="ccountry" id="ccountry" type="button" aria-label="Код страны" aria-haspopup="listbox" aria-expanded="false">
-                <span class="ccountry__flag">🇷🇺</span>
-                <span class="ccountry__dial">+7</span>
-                <svg class="ccountry__chev" viewBox="0 0 12 8" fill="none"><path d="m1 1.5 5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-              <span class="cfield__inwrap">
-                <input class="cfield__input" id="c-contact" type="tel" autocomplete="off" spellcheck="false">
-                <span class="cfield__ph" aria-hidden="true"></span>
-              </span>
-              <span class="cfield__check" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </span>
-              <div class="ccountry__menu" id="ccountry-menu" role="listbox" aria-label="Выбор страны" hidden></div>
+          <!-- Шаг 0 — оффер: два пути, выбор уходит в текст заявки -->
+          <section class="chat__step" data-cstep="0">
+            <h3 class="chat__title">Как хотите продолжить?</h3>
+            <div class="chat__opts">
+              <button type="button" class="chat__opt" data-goal="price">Узнать точную стоимость и сроки разработки</button>
+              <button type="button" class="chat__opt" data-goal="promo">Воспользоваться акцией — сайт за 35 000 ₽</button>
             </div>
-            <span class="cfield__hint" aria-hidden="true"></span>
-          </div>
+            <p class="chat__note">Заполнение формы ни к чему не обязывает — просто пообщаемся, чтобы я мог точно сориентировать вас по срокам и стоимости</p>
+          </section>
 
-          <!-- honeypot: скрыто от людей, боты заполняют — такие заявки отбрасываются -->
-          <input class="cfield__trap" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
-          <!-- футер: согласие + отправка -->
-          <div class="cfield chat__foot" data-step="foot">
-            <div class="foot__row">
+          <!-- Шаг 1 — связь: мессенджер + имя + контакт -->
+          <section class="chat__step" data-cstep="1" hidden>
+            <h3 class="chat__title">Как с вами связаться?</h3>
+            <div class="chat__chips" id="c-channels" role="group" aria-label="Мессенджер">
+              <button type="button" class="chat__opt chat__opt--chip" data-channel="telegram">Telegram</button>
+              <button type="button" class="chat__opt chat__opt--chip" data-channel="vk">ВКонтакте</button>
+              <button type="button" class="chat__opt chat__opt--chip" data-channel="max">MAX</button>
+            </div>
+
+            <div class="cfield" data-step="name">
+              <span class="cfield__label">Имя</span>
+              <div class="cfield__box">
+                <input class="cfield__input" id="c-name" type="text" autocomplete="name" spellcheck="false" placeholder="Как вас зовут?">
+                <span class="cfield__check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+              </div>
+              <span class="cfield__hint" aria-hidden="true"></span>
+            </div>
+
+            <div class="cfield" data-step="contact">
+              <span class="cfield__label" id="c-contact-label">Ник или ссылка</span>
+              <div class="cfield__box">
+                <input class="cfield__input" id="c-contact" type="text" autocomplete="off" spellcheck="false" placeholder="Юзернейм, номер или ссылка">
+                <span class="cfield__check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+              </div>
+              <span class="cfield__hint" aria-hidden="true"></span>
+            </div>
+
+            <div class="chat__nav">
+              <button type="button" class="chat__back" data-cback>Назад</button>
+              <button type="button" class="chat__send" data-cnext>Дальше</button>
+            </div>
+          </section>
+
+          <!-- Шаг 2 — время созвона: дни считает скрипт от текущей даты -->
+          <section class="chat__step" data-cstep="2" hidden>
+            <h3 class="chat__title">Когда удобно созвониться?</h3>
+
+            <p class="chat__sub">День</p>
+            <div class="chat__chips" id="c-days" role="group" aria-label="День"></div>
+
+            <p class="chat__sub">Время</p>
+            <div class="chat__chips" id="c-times" role="group" aria-label="Время">
+              <button type="button" class="chat__opt chat__opt--chip" data-time="Утро">Утро</button>
+              <button type="button" class="chat__opt chat__opt--chip" data-time="День">День</button>
+              <button type="button" class="chat__opt chat__opt--chip" data-time="Вечер">Вечер</button>
+            </div>
+
+            <p class="chat__note">Это предпочтительное время — я подтвержу точный созвон в переписке</p>
+
+            <!-- honeypot: скрыто от людей, боты заполняют — такие заявки отбрасываются -->
+            <input class="cfield__trap" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+            <div class="cfield chat__foot" data-step="foot">
               <label class="consent">
                 <input type="checkbox" class="consent__input" id="c-consent">
                 <span class="consent__box" aria-hidden="true">
@@ -347,16 +376,27 @@
                 </span>
                 <span class="consent__text">Соглашаюсь с <a href="privacy.html" target="_blank" rel="noopener">политикой&nbsp;конфиденциальности</a> и обработкой персональных данных</span>
               </label>
-              <button type="submit" class="chat__send" id="c-send">
-                Отправить
-                <span class="chat__spinner" aria-hidden="true"></span>
-              </button>
+              <div class="chat__nav">
+                <button type="button" class="chat__back" data-cback>Назад</button>
+                <button type="submit" class="chat__send" id="c-send">
+                  Отправить
+                  <span class="chat__spinner" aria-hidden="true"></span>
+                </button>
+              </div>
+              <span class="cfield__hint" aria-hidden="true"></span>
             </div>
-            <span class="cfield__hint" aria-hidden="true"></span>
-          </div>
-        </form>
+          </section>
 
-        <p class="chat__note">Заполнение формы ни к чему не обязывает — просто пообщаемся, чтобы я мог точно сориентировать вас по срокам и стоимости</p>
+          <!-- Шаг 3 — благодарность -->
+          <section class="chat__step chat__done" data-cstep="3" hidden>
+            <span class="chat__ok" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <h3 class="chat__title">Спасибо!</h3>
+            <p class="chat__thanks" id="c-thanks"></p>
+            <p class="chat__note">Это предпочтительное время, точный созвон подтвержу в переписке.</p>
+          </section>
+        </form>
 
         <div class="chat__social">
           <span class="chat__social-label">или свяжитесь со мной сами</span>
@@ -456,7 +496,7 @@
   <script src="cms-schema.js?v=4"></script>
   <script src="cms.js?v=6"></script>
   <script src="portfolio.js?v=14"></script>
-  <script src="main.js?v=68"></script>
+  <script src="main.js?v=69"></script>
 
   <!-- Уведомление о cookie. Показывается один раз, выбор хранится в localStorage. -->
   <div class="cookie" id="cookie" role="dialog" aria-live="polite" aria-label="Уведомление о cookie" hidden>
@@ -464,6 +504,6 @@
     <button class="cookie__ok" type="button" id="cookie-ok">Окей</button>
   </div>
   <script src="cookie.js?v=1"></script>
-  <script src="/leadmagnet.js?v=19" defer></script>
+  <script src="/leadmagnet.js?v=22" defer></script>
 </body>
 </html>

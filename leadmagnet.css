@@ -188,6 +188,18 @@
 .lm__option.is-selected{ background: #fff; color: var(--ink); border-color: #fff; }
 .lm__option.is-selected::after{ background: var(--ink); border-color: var(--ink); }
 
+/* «Таблетки»: мессенджер, день, время — их много, поэтому в ряд с переносом
+   и без кружка-радио, он тут только съедает ширину. */
+.lm__options--chips{ display: flex; flex-wrap: wrap; gap: 8px; }
+.lm__options--chips .lm__option{ width: auto; padding: 11px 16px; border-radius: var(--r-pill); }
+.lm__options--chips .lm__option::after{ display: none; }
+
+.lm__sub{ margin-top: 18px; font-size: .8rem; color: rgba(255,255,255,.6); }
+.lm__sub + .lm__options{ margin-top: 8px; }
+.lm__note{ margin-top: 14px; font-size: .84rem; line-height: 1.45; color: rgba(255,255,255,.5); }
+.lm__step > .lm__field{ margin-top: 18px; }
+.lm__done .lm__note{ margin-inline: auto; }
+
 /* Кнопки шага */
 .lm__actions{ margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap; }
 .lm__btn{
@@ -206,7 +218,6 @@
 .lm__btn--primary:hover .lm__arrow{ transform: translateX(4px); }
 
 /* Форма телефона */
-.lm__form{ margin-top: 18px; display: grid; gap: 12px; }
 .lm__field{ display: grid; gap: 6px; min-width: 0; }
 .lm__label{ font-size: .8rem; color: rgba(255,255,255,.6); }
 .lm__input{
