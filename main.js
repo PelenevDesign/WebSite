@@ -893,6 +893,7 @@ function initContact() {
   if (viewport) viewport.addEventListener('scroll', syncVisualViewport, { passive: true });
 
   let modalOpen = false;
+  let lastClosedAt = 0;
 
   /* Одного lenis.stop() мало: на телефоне прокрутка пальцем нативная, Lenis
      её не перехватывает — и страница продолжает ездить под шторкой. Гасим
@@ -939,6 +940,7 @@ function initContact() {
   function closeModal() {
     if (!modalOpen) return;
     modalOpen = false;
+    lastClosedAt = Date.now();
     lockPage(false);
     const done = () => { modal.setAttribute('aria-hidden', 'true'); gsap.set(mDialog, { clearProps: 'y,yPercent' }); };
     if (prefersReducedMotion) { gsap.set([mBackdrop, mDialog], { opacity: 0 }); done(); return; }
@@ -983,6 +985,11 @@ function initContact() {
   document.querySelectorAll('[data-contact]').forEach((el) => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
+      /* Safari на iOS досылает синтетический клик через ~300мс после касания
+         и целится в то, что оказалось под пальцем к этому моменту. Если форму
+         только что закрыли, клик попадает по кнопке под ней и открывает её
+         снова — а следом всё повторяется. Такие клики игнорируем. */
+      if (Date.now() - lastClosedAt < 700) return;
       ym(111032105, 'reachGoal', 'concept_click');
       if (typeof menuOpen !== 'undefined' && menuOpen) { closeMenu(); gsap.delayedCall(prefersReducedMotion ? 0 : 0.35, openModal); }
       else openModal();
@@ -990,8 +997,13 @@ function initContact() {
   });
   mClose.addEventListener('click', closeModal);
   mBackdrop.addEventListener('click', closeModal);
+  /* На тач-экране закрываем уже по отпусканию пальца: click иногда теряется,
+     а preventDefault здесь ещё и отменяет синтетический клик следом. */
+  [mClose, mBackdrop].forEach((el) => {
+    el.addEventListener('touchend', (e) => { e.preventDefault(); closeModal(); }, { passive: false });
+  });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modalOpen) closeModal(); });
-  if (!prefersReducedMotion) {
+  if (!prefersReducedMotion && matchMedia('(hover: hover) and (pointer: fine)').matches) {
     mClose.addEventListener('pointerenter', () => gsap.to(mClose, { scale: 1.1, duration: 0.3, ease: 'power3.out' }));
     mClose.addEventListener('pointerleave', () => gsap.to(mClose, { scale: 1, duration: 0.35, ease: 'power3.out' }));
   }
