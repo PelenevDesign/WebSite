@@ -755,7 +755,7 @@ function initContact() {
 
   const EMAIL = 'dmitrypelenev@gmail.com';
   const SUBJECT = 'Вопрос по проекту — pelenevdesign.ru';
-  const OPENER = 'Привет, Дмитрий! Хочу обсудить проект.';
+  const MSG_EMPTY = 'Удобно связаться…';   // пока день и время не выбраны — подсказка, а не текст
   const TIME_WHEN = { 'Утро': 'утром', 'День': 'днём', 'Вечер': 'вечером' };
   const isSheet = () => matchMedia('(max-width: 640px)').matches;
 
@@ -788,14 +788,19 @@ function initContact() {
   }
   const message = () => {
     const when = whenPhrase();
-    return when ? `${OPENER} Удобно связаться ${when}.` : OPENER;
+    return when ? `Удобно связаться ${when}.` : '';
   };
   function syncMessage() {
     const text = message();
-    msgBox.textContent = text;
+    /* Без выбора копировать нечего: показываем подсказку и гасим кнопку,
+       иначе в буфер уехало бы многоточие. */
+    msgBox.textContent = text || MSG_EMPTY;
+    msgBox.classList.toggle('is-placeholder', !text);
+    copyBtn.disabled = !text;
     /* В письме тему и текст можно подставить сразу — в мессенджерах нельзя,
        поэтому там и нужна кнопка «Скопировать». */
-    emailWay.setAttribute('href', `mailto:${EMAIL}?subject=${encodeURIComponent(SUBJECT)}&body=${encodeURIComponent(text)}`);
+    emailWay.setAttribute('href', `mailto:${EMAIL}?subject=${encodeURIComponent(SUBJECT)}`
+      + (text ? `&body=${encodeURIComponent(text)}` : ''));
   }
 
   const pickOne = (group, el) => {
@@ -847,7 +852,9 @@ function initContact() {
   }
 
   copyBtn.addEventListener('click', async () => {
-    const ok = await copyText(message());
+    const text = message();
+    if (!text) return;
+    const ok = await copyText(text);
     flash(copyLabel, ok ? 'Скопировано' : 'Не вышло — выделите текст', 'Скопировать', { el: copyBtn, on: ok });
   });
 

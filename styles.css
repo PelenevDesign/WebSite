@@ -2372,6 +2372,7 @@ h1, h2, h3, h4{
   background: var(--c-field); border: 1px solid var(--c-line);
 }
 .chat__msg-text{ flex: 1; min-width: 0; font-size: .92rem; line-height: 1.45; color: rgba(255,255,255,.82); }
+.chat__msg-text.is-placeholder{ color: rgba(255,255,255,.38); }
 .chat__copy{
   flex: none; display: inline-flex; align-items: center; gap: 6px;
   border: 0; background: transparent; cursor: pointer; font: inherit;
@@ -2380,6 +2381,8 @@ h1, h2, h3, h4{
 }
 .chat__copy svg{ width: 17px; height: 17px; }
 .chat__copy:hover{ color: var(--on-dark); }
+.chat__copy:disabled{ opacity: .35; cursor: default; }
+.chat__copy:disabled:hover{ color: rgba(255,255,255,.6); }
 .chat__copy.is-done{ color: var(--ok, #22C55E); }
 
 
