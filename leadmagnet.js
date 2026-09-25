@@ -21,7 +21,7 @@
   if (!document.querySelector('link[data-lm-css]')) {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = '/leadmagnet.css?v=23';
+    css.href = '/leadmagnet.css?v=24';
     css.dataset.lmCss = '';
     document.head.appendChild(css);
   }
@@ -47,7 +47,7 @@
   const CHANNELS = [
     ['telegram', 'Telegram', 'Ник в Telegram', '@username или ссылка t.me/…'],
     ['vk', 'ВКонтакте', 'Профиль ВКонтакте', 'vk.com/… или ник'],
-    ['max', 'MAX', 'Аккаунт в MAX', 'номер или ник в MAX'],
+    ['max', 'MAX', 'Аккаунт в MAX', '+7 (900) 000-00-00 или ник'],
   ];
   const CHANNEL_BY_ID = Object.fromEntries(CHANNELS.map(([id, label, field, ph]) => [id, { label, field, ph }]));
   const TIMES = ['Утро', 'День', 'Вечер'];
@@ -60,6 +60,28 @@
      ловим типовые ошибки (номер вместо ника, чужая ссылка) и заодно
      приводим введённое к единому виду. Правила те же, что в модалке. */
   const PHONEISH = /^\+?\d[\d\s()\-]{5,}$/;
+
+  /* Маска +7 (999) 999-99-99 — см. подробный разбор в main.js. Лишние цифры
+     не влезают; аккаунт всё ещё можно указать ником, маска включается только
+     когда человек начал ввод с цифры или «+». */
+  const subscriberDigits = (v) => {
+    let t = String(v).trim();
+    if (t.indexOf('+7') === 0) t = t.slice(2);
+    else if (t.indexOf('+') === 0) t = t.slice(1);
+    let d = t.replace(/\D/g, '');
+    if (d.length > 10 && (d[0] === '7' || d[0] === '8')) d = d.slice(1);
+    if (d.length === 1 && (d[0] === '7' || d[0] === '8')) d = '';
+    return d.slice(0, 10);
+  };
+  const ruMask = (d) => {
+    let out = '+7';
+    if (d.length) out += ' (' + d.slice(0, 3);
+    if (d.length >= 3) out += ')';
+    if (d.length > 3) out += ' ' + d.slice(3, 6);
+    if (d.length > 6) out += '-' + d.slice(6, 8);
+    if (d.length > 8) out += '-' + d.slice(8, 10);
+    return out;
+  };
   const CHECK = {
     telegram(v) {
       const t = v.trim();
@@ -89,15 +111,13 @@
     max(v) {
       const t = v.trim();
       if (!t) return { ok: false, msg: 'Укажите номер или ник в MAX' };
-      if (/^[+\d][\d\s()\-]*$/.test(t)) {
-        let d = t.replace(/\D/g, '');
-        if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);
-        if (d.length === 10 && d[0] === '9') d = '7' + d;
-        if (d.length < 11 || d.length > 15) return { ok: false, msg: 'Номер с кодом страны, 11–15 цифр. Например +7 900 000-00-00' };
-        return { ok: true, value: '+' + d };
+      if (/^[+\d]/.test(t)) {
+        const d = subscriberDigits(t);
+        if (d.length !== 10) return { ok: false, msg: 'Номер из 10 цифр после +7. Например +7 (900) 000-00-00' };
+        return { ok: true, value: ruMask(d) };
       }
       const nick = t.replace(/^@/, '');
-      if (!/^[A-Za-z0-9_.]{3,64}$/.test(nick)) return { ok: false, msg: 'Номер с кодом страны или ник в MAX' };
+      if (!/^[A-Za-z0-9_.]{3,64}$/.test(nick)) return { ok: false, msg: 'Номер в формате +7 (900) 000-00-00 или ник в MAX' };
       return { ok: true, value: '@' + nick };
     },
   };
@@ -474,6 +494,7 @@
       contactInput.placeholder = c.ph;
       contactInput.classList.remove('is-bad');
       errorBox1.hidden = true;
+      phoneDigits = '';
       return;
     }
     const dayBtn = e.target.closest('[data-lm-day]');
@@ -500,7 +521,22 @@
     if (e.target.closest('[data-lm-prev]')) { go(current - 1); return; }
   });
   form.addEventListener('submit', send);
-  contactInput.addEventListener('input', () => {
+  let phoneDigits = '';
+  const phoneMode = () => channel === 'max' && /^[+\d]/.test(contactInput.value.trim());
+  contactInput.addEventListener('input', (e) => {
+    if (phoneMode()) {
+      const del = !!(e.inputType && e.inputType.indexOf('delete') === 0);
+      let d = subscriberDigits(contactInput.value);
+      /* Скобки и дефисы сами не стираются — за удалённый разделитель
+         снимаем цифру, иначе Backspace упирается в маску. */
+      if (del && d === phoneDigits) d = d.slice(0, -1);
+      phoneDigits = d;
+      contactInput.value = del && !d ? '' : ruMask(d);
+      const end = contactInput.value.length;
+      try { contactInput.setSelectionRange(end, end); } catch (err) { /* не текстовое поле */ }
+    } else {
+      phoneDigits = '';
+    }
     contactInput.classList.remove('is-bad');
     errorBox1.hidden = true;
   });

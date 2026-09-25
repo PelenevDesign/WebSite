@@ -230,7 +230,7 @@
 }
 .lm__input::placeholder{ color: rgba(255,255,255,.35); }
 .lm__input:focus{ outline: none; border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.09); }
-.lm__input.is-bad{ border-color: #FF6A4D; }
+.lm__input.is-bad{ border-color: #F5320E; }
 /* honeypot: людям не видно, боты заполняют */
 .lm__trap{ position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .lm__dialog:focus{ outline: none; }
@@ -254,9 +254,9 @@
 .lm__consent input:checked + .lm__consent-box{ background: #22C55E; border-color: #22C55E; }
 .lm__consent input:checked + .lm__consent-box svg{ transform: scale(1); }
 .lm__consent input:focus-visible + .lm__consent-box{ outline: 2px solid rgba(255,255,255,.7); outline-offset: 2px; }
-.lm__consent.is-bad .lm__consent-box{ border-color: #F59E0B; }
+.lm__consent.is-bad .lm__consent-box{ border-color: #F5320E; }
 .lm__consent a{ color: rgba(255,255,255,.85); text-decoration: underline; }
-.lm__error{ margin-top: 10px; font-size: .85rem; line-height: 1.4; color: #FF8A6D; text-align: center; }
+.lm__error{ margin-top: 10px; font-size: .85rem; line-height: 1.4; color: #FF5C3D; text-align: center; }
 .lm__step > .lm__error{ text-align: left; }   /* под полем связи текст длиннее — по центру он рвётся */
 .lm__error[hidden]{ display: none; }
 

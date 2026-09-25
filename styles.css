@@ -2243,7 +2243,7 @@ h1, h2, h3, h4{
   pointer-events: none;
   overflow-y: auto;
   overscroll-behavior: contain;
-  --ok: #22C55E; --warn: #F59E0B;
+  --ok: #22C55E; --warn: #FF5C3D;
 }
 .modal[aria-hidden="false"]{ pointer-events: auto; }
 .modal__backdrop{
@@ -2273,7 +2273,7 @@ h1, h2, h3, h4{
 .modal__close svg{ width: 20px; height: 20px; }
 
 /* ---------- Чат-форма (#contact) ---------- */
-#contact{ --ok: #22C55E; --warn: #F59E0B; }
+#contact{ --ok: #22C55E; --warn: #FF5C3D; }
 
 .contact__head{
   text-align: center;
@@ -2297,7 +2297,7 @@ h1, h2, h3, h4{
 /* Карточка тёмная — как виджет акции: форма всплывает над тёмным героем
    и не «выжигает» экран белым прямоугольником. */
 .chat{
-  --ok: #22C55E; --warn: #FFB020;
+  --ok: #22C55E; --warn: #FF5C3D;   /* осветлённый вермилион: на тёмном #F5320E уже не читается */
   --c-line: rgba(255,255,255,.12);
   --c-field: rgba(255,255,255,.05);
   --c-muted: rgba(255,255,255,.55);
@@ -2345,7 +2345,7 @@ h1, h2, h3, h4{
 .chat__opt:hover{ background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.22); }
 .chat__opt.is-selected{ border-color: #fff; background: #fff; color: var(--ink); }
 .chat__opt--chip{ padding: 11px 16px; border-radius: var(--r-pill); font-size: .95rem; }
-.chat__chips.has-error .chat__opt{ border-color: rgba(255,176,32,.5); }
+.chat__chips.has-error .chat__opt{ border-color: rgba(245,50,14,.55); }
 
 .chat__nav{ display: flex; align-items: center; gap: 12px; }
 .chat__nav .chat__send{ margin-left: auto; }

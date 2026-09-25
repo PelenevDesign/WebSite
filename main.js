@@ -759,7 +759,7 @@ function initContact() {
   const CHANNELS = {
     telegram: { label: 'Telegram', field: 'Ник в Telegram', ph: '@username или ссылка t.me/…' },
     vk: { label: 'ВКонтакте', field: 'Профиль ВКонтакте', ph: 'vk.com/… или ник' },
-    max: { label: 'MAX', field: 'Аккаунт в MAX', ph: 'номер или ник в MAX' },
+    max: { label: 'MAX', field: 'Аккаунт в MAX', ph: '+7 (900) 000-00-00 или ник' },
   };
   const GOALS = {
     price: { label: 'Точная стоимость и сроки разработки', thanks: 'стоимость и сроки' },
@@ -804,6 +804,46 @@ function initContact() {
      «t.me/pelenev» превращается в «@pelenev», «8 900…» в «+7900…». */
   const PHONEISH = /^\+?\d[\d\s()\-]{5,}$/;
 
+  /* ---------- Маска номера +7 (999) 999-99-99 ----------
+     Работает только в MAX и только если человек начал с цифры или «+»:
+     аккаунт там можно указать и ником, маска не должна этому мешать.
+     Лишние цифры просто не влезают — набрать номер длиннее нельзя. */
+  const subscriberDigits = (v) => {
+    let t = String(v).trim();
+    /* «+7» в начале — это наша же маска, а не цифра номера: иначе при наборе
+       «+7…» семёрка ушла бы в номер и всё поехало бы на разряд вправо. */
+    if (t.indexOf('+7') === 0) t = t.slice(2);
+    else if (t.indexOf('+') === 0) t = t.slice(1);
+    let d = t.replace(/\D/g, '');
+    if (d.length > 10 && (d[0] === '7' || d[0] === '8')) d = d.slice(1);  // номер вставили целиком
+    if (d.length === 1 && (d[0] === '7' || d[0] === '8')) d = '';         // начали с кода страны
+    return d.slice(0, 10);
+  };
+  const ruMask = (d) => {
+    let out = '+7';
+    if (d.length) out += ' (' + d.slice(0, 3);
+    if (d.length >= 3) out += ')';
+    if (d.length > 3) out += ' ' + d.slice(3, 6);
+    if (d.length > 6) out += '-' + d.slice(6, 8);
+    if (d.length > 8) out += '-' + d.slice(8, 10);
+    return out;
+  };
+  let phoneDigits = '';
+  const phoneMode = () => channel === 'max' && /^[+\d]/.test(inContact.value.trim());
+  function maskContact(e) {
+    if (!phoneMode()) { phoneDigits = ''; return; }
+    const del = !!(e && e.inputType && e.inputType.indexOf('delete') === 0);
+    let d = subscriberDigits(inContact.value);
+    /* Скобки и дефисы сами не стираются: если после Backspace набор цифр
+       не изменился, значит удалили разделитель — убираем цифру за него. */
+    if (del && d === phoneDigits) d = d.slice(0, -1);
+    phoneDigits = d;
+    if (del && !d) { inContact.value = ''; return; }    // поле можно очистить и ввести ник
+    inContact.value = ruMask(d);
+    const end = inContact.value.length;
+    try { inContact.setSelectionRange(end, end); } catch (err) { /* не текстовое поле */ }
+  }
+
   const checkName = (v) => {
     const t = v.trim().replace(/\s+/g, ' ');
     if (!t) return { ok: false, msg: 'Как к вам обращаться?' };
@@ -846,15 +886,13 @@ function initContact() {
     max(v) {
       const t = v.trim();
       if (!t) return { ok: false, msg: 'Укажите номер или ник в MAX' };
-      if (/^[+\d][\d\s()\-]*$/.test(t)) {
-        let d = t.replace(/\D/g, '');
-        if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);   // привычное «8» вместо кода страны
-        if (d.length === 10 && d[0] === '9') d = '7' + d;            // номер набрали вообще без кода
-        if (d.length < 11 || d.length > 15) return { ok: false, msg: 'Номер с кодом страны, 11–15 цифр. Например +7 900 000-00-00' };
-        return { ok: true, value: '+' + d };
+      if (/^[+\d]/.test(t)) {
+        const d = subscriberDigits(t);
+        if (d.length !== 10) return { ok: false, msg: 'Номер из 10 цифр после +7. Например +7 (900) 000-00-00' };
+        return { ok: true, value: ruMask(d) };
       }
       const nick = t.replace(/^@/, '');
-      if (!/^[A-Za-z0-9_.]{3,64}$/.test(nick)) return { ok: false, msg: 'Номер с кодом страны или ник в MAX' };
+      if (!/^[A-Za-z0-9_.]{3,64}$/.test(nick)) return { ok: false, msg: 'Номер в формате +7 (900) 000-00-00 или ник в MAX' };
       return { ok: true, value: '@' + nick };
     },
   };
@@ -870,8 +908,8 @@ function initContact() {
 
   /* --- свечение фокуса / ошибки (GSAP, без CSS-transition) --- */
   const GLOW = {
-    focus: { borderColor: '#FF3C00', boxShadow: '0 0 0 3px rgba(255,60,0,.12)', scale: 1.01 },
-    error: { borderColor: '#FFB020', boxShadow: '0 0 0 4px rgba(255,176,32,.16)', scale: 1 },
+    focus: { borderColor: 'rgba(255,255,255,.4)', boxShadow: '0 0 0 3px rgba(255,255,255,.06)', scale: 1.01 },
+    error: { borderColor: '#F5320E', boxShadow: '0 0 0 4px rgba(245,50,14,.18)', scale: 1 },
     none:  { borderColor: 'rgba(255,255,255,.12)', boxShadow: '0 0 0 0 rgba(255,60,0,0)', scale: 1 },
   };
   const glow = (field, state) => gsap.to(boxOf(field), { ...GLOW[state], duration: 0.4, ease: 'power3.out' });
@@ -959,7 +997,8 @@ function initContact() {
       if (r.ok && r.value !== inp.value) { inp.value = r.value; save(); }
       glow(f, f.classList.contains('has-error') ? 'error' : 'none');
     });
-    inp.addEventListener('input', () => {
+    inp.addEventListener('input', (e) => {
+      if (key === 'contact') maskContact(e);
       clearError(f);
       evaluate(f, inp, key, 'never');
       save();
@@ -985,7 +1024,7 @@ function initContact() {
     hint.textContent = 'Отметьте согласие с политикой конфиденциальности';
     gsap.to(hint, { height: 'auto', opacity: 1, duration: 0.3, ease: 'power2.out' });
     gsap.fromTo(consentBox, { x: -5 }, { x: 0, duration: 0.5, ease: 'elastic.out(1,0.4)' });
-    gsap.to(consentBox, { borderColor: '#FFB020', duration: 0.3 });
+    gsap.to(consentBox, { borderColor: '#F5320E', duration: 0.3 });
   }
   function clearConsentError() {
     if (!fFoot.classList.contains('has-error')) return;
@@ -1031,6 +1070,7 @@ function initContact() {
       contactLabel.textContent = CHANNELS[channel].field;
       inContact.placeholder = CHANNELS[channel].ph;
       hideHint(channelHint, channelsBox);
+      phoneDigits = phoneMode() ? subscriberDigits(inContact.value) : '';
       /* Формат зависит от мессенджера: ник из Telegram не годится для ВК —
          перепроверяем уже введённое сразу после переключения. */
       clearError(fContact);
@@ -1095,6 +1135,7 @@ function initContact() {
     if (d.contact) inContact.value = d.contact;
     const saved = d.channel && CHANNELS[d.channel] ? channelsBox.querySelector(`[data-channel="${d.channel}"]`) : null;
     if (saved) saved.click();
+    phoneDigits = phoneMode() ? subscriberDigits(inContact.value) : '';
     evaluate(fName, inName, 'name', 'never');
     evaluate(fContact, inContact, 'contact', 'never');
   }
