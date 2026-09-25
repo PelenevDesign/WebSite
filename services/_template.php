@@ -209,7 +209,7 @@ $svcStatement = [
        затем сами превращаем в stylesheet. Без JS работает noscript-ветка. -->
   <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
-  <link rel="stylesheet" href="/styles.css?v=110">
+  <link rel="stylesheet" href="/styles.css?v=111">
   <link rel="stylesheet" href="/case.css?v=13">
   <link rel="stylesheet" href="/service.css?v=21">
   <link rel="stylesheet" href="/reviews.css?v=2">

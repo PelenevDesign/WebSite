@@ -790,7 +790,7 @@ function initContact() {
     const when = whenPhrase();
     return when ? `Удобно связаться ${when}.` : '';
   };
-  function syncMessage() {
+  function syncMessage(animate) {
     const text = message();
     /* Без выбора копировать нечего: показываем подсказку и гасим кнопку,
        иначе в буфер уехало бы многоточие. */
@@ -801,6 +801,11 @@ function initContact() {
        поэтому там и нужна кнопка «Скопировать». */
     emailWay.setAttribute('href', `mailto:${EMAIL}?subject=${encodeURIComponent(SUBJECT)}`
       + (text ? `&body=${encodeURIComponent(text)}` : ''));
+    /* Текст меняется от нажатия «таблетки» — без подхвата подмена выглядит
+       как глюк: строка молча стала другой. */
+    if (animate && !prefersReducedMotion) {
+      gsap.fromTo(msgBox, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', clearProps: 'transform,opacity' });
+    }
   }
 
   const pickOne = (group, el) => {
@@ -815,12 +820,12 @@ function initContact() {
       b.type = 'button';
       b.className = 'chat__opt chat__opt--chip';
       b.textContent = d.short;
-      b.addEventListener('click', () => { day = days[i]; pickOne(daysBox, b); syncMessage(); });
+      b.addEventListener('click', () => { day = days[i]; pickOne(daysBox, b); syncMessage(true); });
       daysBox.appendChild(b);
     });
   }
   timesBox.querySelectorAll('[data-time]').forEach((b) => {
-    b.addEventListener('click', () => { time = b.dataset.time; pickOne(timesBox, b); syncMessage(); });
+    b.addEventListener('click', () => { time = b.dataset.time; pickOne(timesBox, b); syncMessage(true); });
   });
 
   /* Копирование: clipboard API есть не везде (http, старые webview) —
@@ -855,6 +860,7 @@ function initContact() {
     const text = message();
     if (!text) return;
     const ok = await copyText(text);
+    if (ok && !prefersReducedMotion) gsap.fromTo(copyBtn, { scale: 0.94 }, { scale: 1, duration: 0.45, ease: 'back.out(3)' });
     flash(copyLabel, ok ? 'Скопировано' : 'Не вышло — выделите текст', 'Скопировать', { el: copyBtn, on: ok });
   });
 
@@ -911,6 +917,11 @@ function initContact() {
     } else {
       gsap.fromTo(mDialog, { y: 60, opacity: 0, filter: 'blur(14px)' },
         { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', onComplete: () => gsap.set(mDialog, { clearProps: 'filter' }) });
+      /* Содержимое всплывает по очереди: на десктопе окно большое, и разом
+         проявившийся блок читается как статичная картинка. */
+      const items = chat.querySelectorAll('.chat__head, .chat__way, .chat__or, .chat__when, .chat__msg');
+      gsap.fromTo(items, { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.5, stagger: 0.04, ease: 'power3.out', delay: 0.1, clearProps: 'transform,opacity' });
     }
   }
 

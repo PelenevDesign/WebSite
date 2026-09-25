@@ -2315,6 +2315,9 @@ h1, h2, h3, h4{
 }
 
 .chat__grab{ display: none; }
+/* Колонки существуют только на широком экране: ниже брейкпоинта они
+   «растворяются», и дети снова становятся элементами колонки .chat. */
+.chat__col{ display: contents; }
 .chat__head{ display: flex; flex-direction: column; gap: 6px; padding-right: 44px; }
 .chat__title{ font-size: 1.3rem; font-weight: 600; letter-spacing: -.02em; }
 .chat__lead{ font-size: .94rem; line-height: 1.45; color: var(--c-muted); }
@@ -2330,8 +2333,12 @@ h1, h2, h3, h4{
   padding: 14px 18px; border-radius: 16px;
   border: 1px solid var(--c-line); background: var(--c-field);
   color: var(--on-dark); font: inherit; text-align: left; cursor: pointer;
-  transition: border-color .2s ease, background-color .2s ease;
+  transition: border-color .2s ease, background-color .2s ease, transform .25s cubic-bezier(.22,1,.36,1);
 }
+@media (hover: hover){
+  .chat__way:hover{ transform: translateY(-2px); }
+}
+.chat__way:active{ transform: translateY(0) scale(.995); }
 .chat__way.is-done{ border-color: rgba(34,197,94,.45); }
 .chat__way.is-done .chat__way-go{ color: var(--ok, #22C55E); }
 .chat__way[hidden]{ display: none; }
@@ -2362,9 +2369,12 @@ h1, h2, h3, h4{
   border: 1px solid var(--c-line); background: var(--c-field);
   border-radius: var(--r-pill); padding: 11px 16px; cursor: pointer;
   font: inherit; font-size: .95rem; line-height: 1.2; color: var(--on-dark); text-align: left;
-  transition: border-color .2s ease, background-color .2s ease, color .2s ease;
+  transition: border-color .2s ease, background-color .2s ease, color .2s ease, transform .2s cubic-bezier(.22,1,.36,1);
 }
-.chat__opt:hover{ background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.24); }
+@media (hover: hover){
+  .chat__opt:hover{ background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.24); transform: translateY(-1px); }
+}
+.chat__opt:active{ transform: translateY(0) scale(.96); }
 .chat__opt.is-selected{ border-color: #fff; background: #fff; color: var(--ink); }
 
 /* Готовое сообщение: снимает ступор «а что писать». */
@@ -2387,6 +2397,34 @@ h1, h2, h3, h4{
 .chat__copy:disabled:hover{ color: rgba(255,255,255,.6); }
 .chat__copy.is-done{ color: var(--ok, #22C55E); }
 
+
+/* --- Широкий экран: две колонки и больше воздуха ---
+   Слева «куда написать», справа «когда удобно» — две смысловые половины
+   перестают выстраиваться в длинный столбец и читаются параллельно. */
+@media (min-width: 900px){
+  .modal__dialog{ width: min(100%, 900px); max-width: 900px; }
+  .chat{
+    max-width: 900px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 0 38px;
+    padding: 34px 36px 32px;
+  }
+  .chat__col{ display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  /* Вертикальная линейка между колонками заменяет горизонтальный разделитель. */
+  .chat__col--aside{ padding-left: 38px; border-left: 1px solid var(--c-line); }
+  .chat__head{ gap: 8px; padding-right: 52px; }
+  .chat__title{ font-size: 1.5rem; }
+  .chat__lead{ font-size: .96rem; }
+  .chat__ways{ gap: 10px; }
+  .chat__way{ padding: 16px 20px; }
+  /* Подпись правой колонки: линейки не нужны, их роль играет бордюр колонки. */
+  .chat__or{ gap: 0; color: rgba(255,255,255,.55); padding-right: 52px; }
+  .chat__or::before, .chat__or::after{ display: none; }
+  .chat__when{ gap: 12px; }
+  .chat__msg{ margin-top: auto; }
+}
 
 /* --- Телефон: шторка снизу, как в приложениях --- */
 @media (max-width: 640px){

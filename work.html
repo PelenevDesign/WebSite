@@ -34,7 +34,7 @@
   <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
 
-  <link rel="stylesheet" href="styles.css?v=110">
+  <link rel="stylesheet" href="styles.css?v=111">
 
   <script type="application/ld+json">
   {
@@ -304,6 +304,11 @@
 
       <div class="chat" id="chat">
         <span class="chat__grab" aria-hidden="true"></span>
+
+        <!-- На широком экране .chat становится сеткой из двух колонок, на узком
+             у обёрток display: contents — разметка схлопывается в прежний столбец,
+             поэтому мобильная шторка остаётся ровно такой, как была. -->
+        <div class="chat__col chat__col--main">
         <div class="chat__head">
           <h3 class="chat__title">Напишите мне</h3>
           <p class="chat__lead">Отвечаю лично. Выберите удобные дату и время — или просто напишите, <b>отвечу в течение 30 минут</b>.</p>
@@ -322,7 +327,7 @@
                ссылка живёт только в приложении. Поэтому строка не ведёт никуда,
                а копирует номер: по нему меня находят поиском внутри MAX. -->
           <button type="button" class="chat__way" data-way="max" id="c-max" data-phone="+79223885108">
-            <span class="chat__way-text"><b>MAX</b><small id="c-max-note">+7 922 388-51-08 — нажмите, чтобы скопировать</small></span>
+            <span class="chat__way-text"><b>MAX</b><small id="c-max-note">+7 922 388-51-08 · скопировать</small></span>
             <svg class="chat__way-go" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="7" y="7" width="9" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M13 4.5A1.5 1.5 0 0 0 11.5 3h-6A2.5 2.5 0 0 0 3 5.5v7A1.5 1.5 0 0 0 4.5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </button>
           <a class="chat__way" data-way="email" id="c-email" href="mailto:dmitrypelenev@gmail.com">
@@ -330,7 +335,9 @@
             <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         </div>
+        </div>
 
+        <div class="chat__col chat__col--aside">
         <!-- Времени созвона взяться неоткуда: формы нет, и сказать его может
              только сам человек. Поэтому выбор складывается в готовый текст,
              который он копирует и отправляет вместе с вопросом. -->
@@ -353,6 +360,7 @@
             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="7" y="7" width="9" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M13 4.5A1.5 1.5 0 0 0 11.5 3h-6A2.5 2.5 0 0 0 3 5.5v7A1.5 1.5 0 0 0 4.5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             <span id="c-copy-label">Скопировать</span>
           </button>
+        </div>
         </div>
 
       </div>
@@ -445,7 +453,7 @@
   <script src="cms-schema.js?v=7"></script>
   <script src="cms.js?v=6"></script>
   <script src="portfolio.js?v=14"></script>
-  <script src="main.js?v=77"></script>
+  <script src="main.js?v=78"></script>
 
   <!-- Уведомление о cookie. Показывается один раз, выбор хранится в localStorage. -->
   <div class="cookie" id="cookie" role="dialog" aria-live="polite" aria-label="Уведомление о cookie" hidden>
