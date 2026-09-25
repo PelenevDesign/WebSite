@@ -2242,21 +2242,27 @@ h1, h2, h3, h4{
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   opacity: 0;
 }
+/* Диалог сам не прокручивается — скроллит .chat__body внутри. Иначе кнопка
+   закрытия, лежащая здесь абсолютом, уезжает вместе с содержимым, и на
+   длинном экране окно нечем закрыть. */
 .modal__dialog{
   position: relative; width: min(100%, 560px); max-width: 560px;
   max-height: calc(var(--vvh, 100dvh) - 32px);
-  overflow-y: auto;
+  display: flex;
+  overflow: hidden;
+  opacity: 0; will-change: transform, opacity, filter;
+}
+.chat__body{
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  opacity: 0; will-change: transform, opacity, filter;
   /* Системная полоса поверх тёмной карточки выглядит чужеродно — делаем тонкую. */
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,.22) transparent;
 }
-.modal__dialog::-webkit-scrollbar{ width: 6px; }
-.modal__dialog::-webkit-scrollbar-track{ background: transparent; }
-.modal__dialog::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.22); border-radius: 99px; }
-.modal__dialog::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,.34); }
+.chat__body::-webkit-scrollbar{ width: 6px; }
+.chat__body::-webkit-scrollbar-track{ background: transparent; }
+.chat__body::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.22); border-radius: 99px; }
+.chat__body::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,.34); }
 .modal__close{
   position: absolute; top: 12px; right: 12px; z-index: 3;
   width: 40px; height: 40px; border-radius: 50%;
@@ -2307,6 +2313,7 @@ h1, h2, h3, h4{
   color: var(--on-dark);
   overflow: hidden;
   display: flex; flex-direction: column; gap: 18px;
+  flex: 1 1 auto; min-height: 0;
   padding: 26px 22px 24px;
   will-change: transform, opacity, filter;
 }
@@ -2316,7 +2323,11 @@ h1, h2, h3, h4{
 
 .chat__grab{ display: none; }
 /* Колонки существуют только на широком экране: ниже брейкпоинта они
-   «растворяются», и дети снова становятся элементами колонки .chat. */
+   «растворяются», и дети снова становятся элементами .chat__body. */
+.chat__body{
+  display: flex; flex-direction: column; gap: 18px; min-width: 0;
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+}
 .chat__col{ display: contents; }
 .chat__head{ display: flex; flex-direction: column; gap: 6px; padding-right: 44px; }
 .chat__title{ font-size: 1.3rem; font-weight: 600; letter-spacing: -.02em; }
@@ -2405,13 +2416,12 @@ h1, h2, h3, h4{
    перестают выстраиваться в длинный столбец и читаются параллельно. */
 @media (min-width: 900px){
   .modal__dialog{ width: min(100%, 900px); max-width: 900px; }
-  .chat{
-    max-width: 900px;
+  .chat{ max-width: 900px; padding: 34px 36px 32px; }
+  .chat__body{
     display: grid;
     grid-template-columns: 1fr 1fr;
     align-items: stretch;
     gap: 0 38px;
-    padding: 34px 36px 32px;
   }
   .chat__col{ display: flex; flex-direction: column; gap: 18px; min-width: 0; }
   /* Вертикальная линейка между колонками заменяет горизонтальный разделитель. */
@@ -2433,8 +2443,13 @@ h1, h2, h3, h4{
   .modal{ place-items: end stretch; padding: 0; }
   .modal__dialog{
     width: 100%; max-width: none;
-    max-height: calc(var(--vvh, 100dvh) - 24px);
+    /* 52px сверху — не «дырка», а полоса фона: по ней закрывают шторку тапом,
+       как в приложениях. Без неё диалог занимал экран целиком. */
+    max-height: calc(var(--vvh, 100dvh) - 52px);
   }
+  /* На телефоне полосу прокрутки не показываем — она и так системная. */
+  .chat__body{ scrollbar-width: none; }
+  .chat__body::-webkit-scrollbar{ display: none; }
   .chat{
     max-width: none;
     border-radius: 24px 24px 0 0;
@@ -2444,8 +2459,12 @@ h1, h2, h3, h4{
   }
   /* «Ручка» — и метка, что шторку можно утянуть вниз, и зона захвата. */
   .chat__grab{
-    display: block; flex: none;
-    width: 40px; height: 4px; margin: 0 auto 4px;
+    display: block; flex: none; position: relative;
+    width: 100%; height: 20px; margin: 0 0 2px;
+  }
+  .chat__grab::before{
+    content: ''; position: absolute; top: 8px; left: 50%;
+    width: 40px; height: 4px; margin-left: -20px;
     border-radius: 99px; background: rgba(255,255,255,.28);
   }
   .chat__grab, .chat__head{ touch-action: none; }
