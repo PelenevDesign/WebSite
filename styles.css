@@ -2318,6 +2318,8 @@ h1, h2, h3, h4{
 .chat__head{ display: flex; flex-direction: column; gap: 6px; padding-right: 44px; }
 .chat__title{ font-size: 1.3rem; font-weight: 600; letter-spacing: -.02em; }
 .chat__lead{ font-size: .94rem; line-height: 1.45; color: var(--c-muted); }
+/* Обещание срока — единственное, что должно цеплять взгляд в подзаголовке. */
+.chat__lead b{ color: var(--on-dark); font-weight: 500; }
 
 /* Прямые каналы связи — главное на этом экране. */
 .chat__ways{ display: flex; flex-direction: column; gap: 8px; }
