@@ -2249,7 +2249,14 @@ h1, h2, h3, h4{
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   opacity: 0; will-change: transform, opacity, filter;
+  /* Системная полоса поверх тёмной карточки выглядит чужеродно — делаем тонкую. */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.22) transparent;
 }
+.modal__dialog::-webkit-scrollbar{ width: 6px; }
+.modal__dialog::-webkit-scrollbar-track{ background: transparent; }
+.modal__dialog::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.22); border-radius: 99px; }
+.modal__dialog::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,.34); }
 .modal__close{
   position: absolute; top: 12px; right: 12px; z-index: 3;
   width: 40px; height: 40px; border-radius: 50%;
