@@ -107,6 +107,20 @@ function ensureProjectsBlocksColumn(): bool {
   } catch (Throwable $e) { error_log($e->__toString()); return $done = false; }
 }
 
+/* Отметка «письмо о заявке ушло». Нужна, чтобы молчащая почта не выглядела
+   в админке как «заявок нет»: строка остаётся, но рядом видно, что письмо
+   не отправилось. NULL — заявка из времён до этой колонки. */
+function ensureLeadsMailedColumn(): bool {
+  static $done = null;
+  if ($done !== null) return $done;
+  try {
+    $stmt = db()->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+    $stmt->execute(['cms_leads', 'mailed']);
+    if ((int)$stmt->fetchColumn() === 0) db()->exec('ALTER TABLE cms_leads ADD COLUMN mailed TINYINT(1) NULL DEFAULT NULL AFTER status');
+    return $done = true;
+  } catch (Throwable $e) { error_log($e->__toString()); return $done = false; }
+}
+
 /* Достижения кейса (три плитки на первом экране). Та же идемпотентная схема,
    что и у blocks: колонка создаётся при первом обращении. */
 function ensureProjectsStatsColumn(): bool {

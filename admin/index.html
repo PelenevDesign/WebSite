@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://rsms.me/" crossorigin>
 <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
-<link rel="stylesheet" href="admin.css?v=12">
+<link rel="stylesheet" href="admin.css?v=13">
 </head>
 <body>
 
@@ -58,6 +58,16 @@
 
       <section class="section" data-section="leads" hidden>
         <div class="section__head"><h2>Заявки</h2><div class="chips" id="lead-filters"></div></div>
+        <div class="card lmail">
+          <div class="lmail__row">
+            <div>
+              <b>Уведомления на почту</b>
+              <p class="lmail__note">Отправлю тестовое письмо на адрес из настроек — тем же способом, каким уходят заявки.</p>
+            </div>
+            <button type="button" class="btn" id="mail-test">Проверить почту</button>
+          </div>
+          <p class="lmail__result" id="mail-test-result" hidden></p>
+        </div>
         <div id="leads-root" class="card"></div>
       </section>
 
@@ -152,7 +162,7 @@
 <div id="toasts" class="toasts" aria-live="polite"></div>
 
 <script src="/cms-schema.js?v=5"></script>
-<script src="admin.js?v=21"></script>
+<script src="admin.js?v=22"></script>
 <script src="gallery-tools.js?v=3"></script>
 </body>
 </html>

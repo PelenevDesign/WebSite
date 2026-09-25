@@ -364,8 +364,41 @@ let leadFilter = 'all';
 
 loaders.leads = async () => {
   renderLeadFilters();
+  bindMailTest();
   await refreshLeads();
 };
+
+/* Проверка почты: дёргает боевой путь отправки и показывает, что ответил
+   сервер. Нужна, потому что «письма не приходят» — это либо пустой
+   lead_email, либо отключённый mail(), либо спам-папка, и на глаз не понять. */
+let mailTestBound = false;
+function bindMailTest() {
+  if (mailTestBound) return;
+  mailTestBound = true;
+  const btn = $('#mail-test');
+  const out = $('#mail-test-result');
+  btn.onclick = async () => {
+    btn.disabled = true;
+    const label = btn.textContent;
+    btn.textContent = 'Отправляю…';
+    out.hidden = true;
+    try {
+      const r = await apiFetch('/api.php?action=mail-test', { method: 'POST' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || 'Сервер не ответил. Обновите api.php на хостинге.');
+      out.className = 'lmail__result ' + (d.ok ? 'is-ok' : 'is-err');
+      out.textContent = d.ok
+        ? `Письмо отправлено на ${d.to} (от ${d.from}). Проверьте входящие и «Спам» — если письма нет нигде, дело в почтовом ящике, а не в форме.`
+        : `Не отправилось. ${d.reason || ''}`.trim();
+    } catch (e) {
+      out.className = 'lmail__result is-err';
+      out.textContent = e.message;
+    }
+    out.hidden = false;
+    btn.disabled = false;
+    btn.textContent = label;
+  };
+}
 async function refreshLeads() {
   const r = await apiFetch(`/api.php?action=leads&_=${Date.now()}`, { cache: 'no-store' });
   const d = await r.json().catch(() => ({}));
@@ -385,9 +418,11 @@ function renderLeads() {
   const rows = leadsCache.filter((l) => leadFilter === 'all' || (l.status || 'new') === leadFilter);
   if (!rows.length) { root.innerHTML = '<p class="lempty">Заявок нет. Новые придут с формы на сайте и на почту.</p>'; return; }
   const fmt = (s) => new Date(s.replace(' ', 'T')).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+  /* mailed: 1 — письмо ушло, 0 — нет, null — заявка старше этой отметки. */
+  const mailMark = (l) => (String(l.mailed) === '0' ? '<br><small class="lmail__fail">письмо не ушло</small>' : '');
   root.innerHTML = `<table class="ltable"><thead><tr><th>Дата</th><th>Имя</th><th>Контакт</th><th>Сообщение</th><th>Статус</th></tr></thead><tbody>${
     rows.map((l) => `<tr class="${(l.status || 'new') === 'new' ? 'is-new' : ''}">
-      <td>${fmt(l.created_at)}</td>
+      <td>${fmt(l.created_at)}${mailMark(l)}</td>
       <td><b>${esc(l.name)}</b></td>
       <td>${esc(l.contact)}<br><small style="color:var(--muted)">${esc(l.contact_type)}</small></td>
       <td class="msg">${esc(l.message)}</td>

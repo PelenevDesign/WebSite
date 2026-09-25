@@ -181,6 +181,31 @@ if ($action === 'project' && $_SERVER['REQUEST_METHOD'] === 'GET') {
   response(200, ['project' => $project]);
 }
 
+/* Письмо о заявке. Вынесено отдельно, чтобы тем же кодом работала проверка
+   почты из админки — иначе проверка гоняла бы не тот путь, что боевые заявки. */
+function leadMailFrom(): string {
+  /* Домен берём из site_url, а не из Host: заголовок подставляет клиент, и на
+     нём же строится SPF. Заодно визит через www не меняет отправителя, иначе
+     письмо уходило бы с домена, которого нет в SPF-записи. */
+  $host = (string)(parse_url((string)(config()['site_url'] ?? ''), PHP_URL_HOST) ?: (string)($_SERVER['HTTP_HOST'] ?? ''));
+  $host = preg_replace('/[^A-Za-z0-9.\-]/', '', explode(':', $host)[0]);   // без порта и мусора
+  if (str_starts_with($host, 'www.')) $host = substr($host, 4);
+  return 'noreply@' . ($host !== '' ? $host : 'localhost');
+}
+function sendLeadMail(string $subject, string $body, array $extraHeaders = []): bool {
+  $to = trim((string)(config()['lead_email'] ?? ''));
+  if ($to === '' || !function_exists('mail')) { error_log('lead mail skipped: no address or mail() disabled'); return false; }
+  $from = leadMailFrom();
+  $headers = array_merge([
+    'From: PELENEV.DESIGN <' . $from . '>',
+    'Content-Type: text/plain; charset=utf-8',
+    'MIME-Version: 1.0',
+  ], $extraHeaders);
+  $sent = @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, implode("\r\n", $headers), '-f ' . $from);
+  if (!$sent) error_log('lead mail failed for ' . $to);
+  return (bool)$sent;
+}
+
 /* Заявка с формы обратной связи. Публичный экшен: письмо + запись в БД про запас. */
 if ($action === 'lead' && $_SERVER['REQUEST_METHOD'] === 'POST') {
   $data = requestData();
@@ -203,31 +228,29 @@ if ($action === 'lead' && $_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   // сохраняем до отправки: даже если почта не уйдёт, заявка не потеряется
+  $leadId = 0;
   try {
     db()->exec('CREATE TABLE IF NOT EXISTS cms_leads (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL, contact VARCHAR(150) NOT NULL, contact_type VARCHAR(20) NOT NULL DEFAULT "", message TEXT NOT NULL, page VARCHAR(255) NOT NULL DEFAULT "", ip VARCHAR(45) NOT NULL DEFAULT "", status VARCHAR(20) NOT NULL DEFAULT "new", created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
     db()->prepare('INSERT INTO cms_leads (name,contact,contact_type,message,page,ip) VALUES (?,?,?,?,?,?)')
         ->execute([$name, $contact, $type, $message, mb_substr((string)($data['page'] ?? ''), 0, 255), (string)($_SERVER['REMOTE_ADDR'] ?? '')]);
+    $leadId = (int)db()->lastInsertId();
+    ensureLeadsMailedColumn();
     logEvent('lead', $name . ' — ' . mb_substr($message, 0, 80));
   } catch (Throwable $e) { error_log('lead save: ' . $e->getMessage()); }
 
-  $to = (string)(config()['lead_email'] ?? '');
-  $sent = false;
-  if ($to !== '') {
-    $host = preg_replace('/[^A-Za-z0-9.\-]/', '', (string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
-    $subject = '=?UTF-8?B?' . base64_encode('Заявка с сайта — ' . $name) . '?=';
-    $body = "Имя: {$name}\nКонтакт ({$type}): {$contact}\n\nСообщение:\n{$message}\n\n"
-          . 'Страница: ' . (string)($data['page'] ?? '—') . "\n"
-          . 'Время: ' . date('d.m.Y H:i') . "\n"
-          . 'IP: ' . (string)($_SERVER['REMOTE_ADDR'] ?? '—') . "\n";
-    $headers = [
-      'From: PELENEV.DESIGN <noreply@' . $host . '>',
-      'Content-Type: text/plain; charset=utf-8',
-      'MIME-Version: 1.0',
-    ];
-    // если клиент оставил email — можно ответить прямо из почтовика
-    if (filter_var($contact, FILTER_VALIDATE_EMAIL)) $headers[] = 'Reply-To: ' . $contact;
-    $sent = @mail($to, $subject, $body, implode("\r\n", $headers), '-f noreply@' . $host);
-    if (!$sent) error_log('lead mail failed for ' . $to);
+  $body = "Имя: {$name}\nКонтакт ({$type}): {$contact}\n\nСообщение:\n{$message}\n\n"
+        . 'Страница: ' . (string)($data['page'] ?? '—') . "\n"
+        . 'Время: ' . date('d.m.Y H:i') . "\n"
+        . 'IP: ' . (string)($_SERVER['REMOTE_ADDR'] ?? '—') . "\n";
+  // если клиент оставил email — можно ответить прямо из почтовика
+  $extra = filter_var($contact, FILTER_VALIDATE_EMAIL) ? ['Reply-To: ' . $contact] : [];
+  $sent = sendLeadMail('Заявка с сайта — ' . $name, $body, $extra);
+
+  /* Отмечаем в самой заявке, ушло письмо или нет: иначе о молчащей почте
+     узнаёшь только по пропавшим клиентам. */
+  if ($leadId) {
+    try { db()->prepare('UPDATE cms_leads SET mailed=? WHERE id=?')->execute([$sent ? 1 : 0, $leadId]); }
+    catch (Throwable $e) { error_log('lead mailed flag: ' . $e->getMessage()); }
   }
 
   leadThrottleRegister();
@@ -500,10 +523,34 @@ if ($action === 'journal-analytics' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 
 /* ---- Заявки (только для админки) ---- */
 if ($action === 'leads' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+  $cols = ensureLeadsMailedColumn() ? 'id,name,contact,contact_type,message,page,status,mailed,created_at' : 'id,name,contact,contact_type,message,page,status,created_at';
   try {
-    $rows = db()->query('SELECT id,name,contact,contact_type,message,page,status,created_at FROM cms_leads ORDER BY id DESC LIMIT 500')->fetchAll();
+    $rows = db()->query("SELECT $cols FROM cms_leads ORDER BY id DESC LIMIT 500")->fetchAll();
     response(200, ['leads' => $rows]);
   } catch (Throwable $e) { error_log($e->__toString()); response(200, ['leads' => []]); /* таблица появляется с первой заявкой */ }
+}
+
+/* Проверка почты: шлёт тестовое письмо тем же путём, что и заявка, и честно
+   отвечает, что вернул mail(). Экшен за авторизацией — см. гейт выше. */
+if ($action === 'mail-test' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+  $to = trim((string)(config()['lead_email'] ?? ''));
+  $from = leadMailFrom();
+  if ($to === '') response(200, ['ok' => false, 'to' => '', 'from' => $from, 'reason' => 'В config.php не заполнен lead_email — письма отправлять некуда.']);
+  if (!filter_var($to, FILTER_VALIDATE_EMAIL)) response(200, ['ok' => false, 'to' => $to, 'from' => $from, 'reason' => 'lead_email в config.php — не похож на адрес почты.']);
+  if (!function_exists('mail')) response(200, ['ok' => false, 'to' => $to, 'from' => $from, 'reason' => 'Хостинг отключил функцию mail() — нужен SMTP.']);
+  $body = "Это проверка из админки PELENEV.DESIGN.\n\n"
+        . "Если вы читаете это письмо — уведомления о заявках доходят.\n"
+        . "Проверьте заодно папку «Спам»: если письмо там, отметьте «Не спам».\n\n"
+        . 'Отправитель: ' . $from . "\n"
+        . 'Получатель: ' . $to . "\n"
+        . 'Время: ' . date('d.m.Y H:i') . "\n";
+  $sent = sendLeadMail('Проверка почты — PELENEV.DESIGN', $body);
+  response(200, [
+    'ok' => $sent,
+    'to' => $to,
+    'from' => $from,
+    'reason' => $sent ? '' : 'Сервер не принял письмо у mail(). Проверьте почтовый ящик на хостинге и лог ошибок.',
+  ]);
 }
 if ($action === 'lead-status' && $_SERVER['REQUEST_METHOD'] === 'PUT') {
   $data = requestData(); $id = (int)($data['id'] ?? 0);

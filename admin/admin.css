@@ -121,6 +121,14 @@ legend{font-weight:600;padding:0 6px;font-size:.95rem}
 .lstatus[data-v=work]{border-color:var(--warn);color:var(--warn)}
 .lstatus[data-v=done]{border-color:var(--ok);color:var(--ok)}
 .lempty{color:var(--muted);padding:26px;text-align:center}
+/* Блок проверки почты над списком заявок */
+.lmail{padding:18px 20px;margin-bottom:14px}
+.lmail__row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.lmail__note{color:var(--muted);font-size:.88rem;margin-top:4px;max-width:58ch}
+.lmail__result{margin-top:14px;padding:12px 14px;border-radius:var(--r-sm);font-size:.9rem;line-height:1.45}
+.lmail__result.is-ok{background:rgba(22,163,74,.08);color:var(--ok)}
+.lmail__result.is-err{background:var(--accent-soft);color:var(--accent)}
+.lmail__fail{color:var(--accent);font-weight:500}
 
 /* ---- Списки записей: Кейсы/Услуги/Статьи — таблица вместо стека карточек.
    Один класс на все три раздела (renderProjects/renderServices/renderArticles
