@@ -34,7 +34,7 @@
   <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
 
-  <link rel="stylesheet" href="styles.css?v=107">
+  <link rel="stylesheet" href="styles.css?v=108">
 
   <script type="application/ld+json">
   {
@@ -306,7 +306,7 @@
         <span class="chat__grab" aria-hidden="true"></span>
         <div class="chat__head">
           <h3 class="chat__title">Напишите мне</h3>
-          <p class="chat__lead">Отвечаю сам — без менеджеров, брифов и анкет.</p>
+          <p class="chat__lead">Отвечаю лично — расскажите, что нужно, и я подскажу, как это сделать.</p>
         </div>
 
         <div class="chat__ways">
@@ -318,12 +318,13 @@
             <span class="chat__way-text"><b>ВКонтакте</b><small>pelenev_design</small></span>
             <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
-          <!-- Строка появится сама, как только в href окажется max.ru/<профиль>.
-               Ссылка задаётся в админке: Контент → Ссылка MAX. -->
-          <a class="chat__way" data-cms="link-max" data-way="max" href="https://max.ru/" target="_blank" rel="noopener noreferrer" hidden>
-            <span class="chat__way-text"><b>MAX</b><small>написать в MAX</small></span>
-            <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </a>
+          <!-- У MAX нет ссылки на диалог по номеру (аналога wa.me), а профильная
+               ссылка живёт только в приложении. Поэтому строка не ведёт никуда,
+               а копирует номер: по нему меня находят поиском внутри MAX. -->
+          <button type="button" class="chat__way" data-way="max" id="c-max" data-phone="+79223885108">
+            <span class="chat__way-text"><b>MAX</b><small id="c-max-note">+7 922 388-51-08 — нажмите, чтобы скопировать</small></span>
+            <svg class="chat__way-go" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="7" y="7" width="9" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M13 4.5A1.5 1.5 0 0 0 11.5 3h-6A2.5 2.5 0 0 0 3 5.5v7A1.5 1.5 0 0 0 4.5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
           <a class="chat__way" data-way="email" id="c-email" href="mailto:dmitrypelenev@gmail.com">
             <span class="chat__way-text"><b>Почта</b><small>dmitrypelenev@gmail.com</small></span>
             <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -441,10 +442,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" crossorigin="anonymous"></script>
-  <script src="cms-schema.js?v=6"></script>
+  <script src="cms-schema.js?v=7"></script>
   <script src="cms.js?v=6"></script>
   <script src="portfolio.js?v=14"></script>
-  <script src="main.js?v=75"></script>
+  <script src="main.js?v=76"></script>
 
   <!-- Уведомление о cookie. Показывается один раз, выбор хранится в localStorage. -->
   <div class="cookie" id="cookie" role="dialog" aria-live="polite" aria-label="Уведомление о cookie" hidden>

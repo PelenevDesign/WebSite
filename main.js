@@ -832,26 +832,36 @@ function initContact() {
     ta.remove();
     return ok;
   }
-  let copyTimer;
-  copyBtn.addEventListener('click', async () => {
-    const text = message();
-    let ok = false;
-    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) { ok = legacyCopy(text); }
-    clearTimeout(copyTimer);
-    copyLabel.textContent = ok ? 'Скопировано' : 'Не вышло — выделите текст';
-    copyBtn.classList.toggle('is-done', ok);
-    copyTimer = setTimeout(() => {
-      copyLabel.textContent = 'Скопировать';
-      copyBtn.classList.remove('is-done');
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { return legacyCopy(text); }
+  }
+  /* Подпись кнопки на пару секунд меняется на результат и возвращается назад. */
+  function flash(el, text, back, cls) {
+    clearTimeout(el._flash);
+    el.textContent = text;
+    if (cls) cls.el.classList.toggle('is-done', cls.on);
+    el._flash = setTimeout(() => {
+      el.textContent = back;
+      if (cls) cls.el.classList.remove('is-done');
     }, 2200);
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    const ok = await copyText(message());
+    flash(copyLabel, ok ? 'Скопировано' : 'Не вышло — выделите текст', 'Скопировать', { el: copyBtn, on: ok });
   });
 
-  /* Ссылку на MAX задаём в админке (Контент → Ссылка MAX). Пока там голый
-     max.ru без профиля, строку не показываем: кнопка в никуда хуже её отсутствия. */
-  function syncMaxWay() {
-    const max = chat.querySelector('[data-way="max"]');
-    if (!max) return;
-    max.hidden = !/max\.ru\/.+/i.test(max.getAttribute('href') || '');
+  /* MAX: ссылки на диалог по номеру у мессенджера нет (аналога wa.me), а
+     профильная ссылка выдаётся только внутри приложения. Поэтому строка
+     копирует номер — по нему меня находят поиском в самом MAX. */
+  const maxBtn = document.getElementById('c-max');
+  const maxNote = document.getElementById('c-max-note');
+  if (maxBtn) {
+    const MAX_NOTE = maxNote.textContent;
+    maxBtn.addEventListener('click', async () => {
+      const ok = await copyText(maxBtn.dataset.phone);
+      flash(maxNote, ok ? 'Номер скопирован — найдите меня в MAX' : 'Не вышло — скопируйте номер вручную', MAX_NOTE, { el: maxBtn, on: ok });
+    });
   }
 
   /* Клики по каналам считаем отдельно — иначе не видно, чем реально пользуются. */
@@ -880,7 +890,6 @@ function initContact() {
     time = '';
     timesBox.querySelectorAll('.chat__opt').forEach((b) => b.classList.remove('is-selected'));
     syncMessage();
-    syncMaxWay();
     gsap.killTweensOf([mBackdrop, mDialog]);
     gsap.set(mDialog, { clearProps: 'y,yPercent' });
     if (prefersReducedMotion) {

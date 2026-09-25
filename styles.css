@@ -2321,13 +2321,17 @@ h1, h2, h3, h4{
 
 /* Прямые каналы связи — главное на этом экране. */
 .chat__ways{ display: flex; flex-direction: column; gap: 8px; }
+/* Строка канала бывает и ссылкой, и кнопкой (MAX копирует номер) —
+   поэтому сбрасываем браузерные стили кнопки. */
 .chat__way{
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 14px; width: 100%;
   padding: 14px 18px; border-radius: 16px;
   border: 1px solid var(--c-line); background: var(--c-field);
-  color: var(--on-dark);
+  color: var(--on-dark); font: inherit; text-align: left; cursor: pointer;
   transition: border-color .2s ease, background-color .2s ease;
 }
+.chat__way.is-done{ border-color: rgba(34,197,94,.45); }
+.chat__way.is-done .chat__way-go{ color: var(--ok, #22C55E); }
 .chat__way[hidden]{ display: none; }
 .chat__way:hover{ background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.24); }
 .chat__way:active{ background: rgba(255,255,255,.14); }
