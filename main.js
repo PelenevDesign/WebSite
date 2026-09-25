@@ -982,6 +982,18 @@ function initContact() {
     el.addEventListener('pointercancel', endDrag);
   });
 
+  /* Глухой щит от «фантомного» клика: Safari на iOS досылает синтетический
+     клик через ~300мс после касания и целится в то, что оказалось под пальцем
+     к этому моменту. Шторка за это время уезжает, и клик попадает по странице —
+     а кнопок, открывающих форму, на главной семь. Ловим на фазе перехвата, до
+     всех остальных обработчиков, и гасим любой клик сразу после закрытия:
+     осознанно нажать что-то за полсекунды человек не успевает. */
+  document.addEventListener('click', (e) => {
+    if (Date.now() - lastClosedAt >= 700) return;
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+
   document.querySelectorAll('[data-contact]').forEach((el) => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
