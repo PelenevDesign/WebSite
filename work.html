@@ -34,7 +34,7 @@
   <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
 
-  <link rel="stylesheet" href="styles.css?v=99">
+  <link rel="stylesheet" href="styles.css?v=100">
 
   <script type="application/ld+json">
   {
@@ -315,10 +315,13 @@
           <!-- Шаг 1 — связь: мессенджер + имя + контакт -->
           <section class="chat__step" data-cstep="1" hidden>
             <h3 class="chat__title">Как с вами связаться?</h3>
-            <div class="chat__chips" id="c-channels" role="group" aria-label="Мессенджер">
-              <button type="button" class="chat__opt chat__opt--chip" data-channel="telegram">Telegram</button>
-              <button type="button" class="chat__opt chat__opt--chip" data-channel="vk">ВКонтакте</button>
-              <button type="button" class="chat__opt chat__opt--chip" data-channel="max">MAX</button>
+            <div class="chat__group">
+              <div class="chat__chips" id="c-channels" role="group" aria-label="Мессенджер">
+                <button type="button" class="chat__opt chat__opt--chip" data-channel="telegram">Telegram</button>
+                <button type="button" class="chat__opt chat__opt--chip" data-channel="vk">ВКонтакте</button>
+                <button type="button" class="chat__opt chat__opt--chip" data-channel="max">MAX</button>
+              </div>
+              <span class="cfield__hint" id="c-channel-hint" role="alert"></span>
             </div>
 
             <div class="cfield" data-step="name">
@@ -329,7 +332,7 @@
                   <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
               </div>
-              <span class="cfield__hint" aria-hidden="true"></span>
+              <span class="cfield__hint" role="alert"></span>
             </div>
 
             <div class="cfield" data-step="contact">
@@ -340,7 +343,7 @@
                   <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
               </div>
-              <span class="cfield__hint" aria-hidden="true"></span>
+              <span class="cfield__hint" role="alert"></span>
             </div>
 
             <div class="chat__nav">
@@ -354,13 +357,19 @@
             <h3 class="chat__title">Когда удобно созвониться?</h3>
 
             <p class="chat__sub">День</p>
-            <div class="chat__chips" id="c-days" role="group" aria-label="День"></div>
+            <div class="chat__group">
+              <div class="chat__chips" id="c-days" role="group" aria-label="День"></div>
+              <span class="cfield__hint" id="c-day-hint" role="alert"></span>
+            </div>
 
             <p class="chat__sub">Время</p>
-            <div class="chat__chips" id="c-times" role="group" aria-label="Время">
-              <button type="button" class="chat__opt chat__opt--chip" data-time="Утро">Утро</button>
-              <button type="button" class="chat__opt chat__opt--chip" data-time="День">День</button>
-              <button type="button" class="chat__opt chat__opt--chip" data-time="Вечер">Вечер</button>
+            <div class="chat__group">
+              <div class="chat__chips" id="c-times" role="group" aria-label="Время">
+                <button type="button" class="chat__opt chat__opt--chip" data-time="Утро">Утро</button>
+                <button type="button" class="chat__opt chat__opt--chip" data-time="День">День</button>
+                <button type="button" class="chat__opt chat__opt--chip" data-time="Вечер">Вечер</button>
+              </div>
+              <span class="cfield__hint" id="c-time-hint" role="alert"></span>
             </div>
 
             <p class="chat__note">Это предпочтительное время — я подтвержу точный созвон в переписке</p>
@@ -496,7 +505,7 @@
   <script src="cms-schema.js?v=4"></script>
   <script src="cms.js?v=6"></script>
   <script src="portfolio.js?v=14"></script>
-  <script src="main.js?v=69"></script>
+  <script src="main.js?v=70"></script>
 
   <!-- Уведомление о cookie. Показывается один раз, выбор хранится в localStorage. -->
   <div class="cookie" id="cookie" role="dialog" aria-live="polite" aria-label="Уведомление о cookie" hidden>
@@ -504,6 +513,6 @@
     <button class="cookie__ok" type="button" id="cookie-ok">Окей</button>
   </div>
   <script src="cookie.js?v=1"></script>
-  <script src="/leadmagnet.js?v=22" defer></script>
+  <script src="/leadmagnet.js?v=23" defer></script>
 </body>
 </html>

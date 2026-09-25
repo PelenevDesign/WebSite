@@ -796,23 +796,83 @@ function initContact() {
   let time = '';
   let step = 0;
 
-  const HINT = {
-    name: 'Введите имя — минимум 2 буквы',
-    contact: 'Укажите ник, номер или ссылку — по ним я напишу вам',
+  /* ---------- Проверка полей ----------
+     Смысл не в формальности: заявка без рабочего контакта бесполезна —
+     написать по ней некуда. Поэтому каждое правило ловит реальную ошибку
+     (номер телефона вместо ника, чужая ссылка, имя из цифр) и объясняет,
+     что именно поправить. Успешная проверка ещё и нормализует значение:
+     «t.me/pelenev» превращается в «@pelenev», «8 900…» в «+7900…». */
+  const PHONEISH = /^\+?\d[\d\s()\-]{5,}$/;
+
+  const checkName = (v) => {
+    const t = v.trim().replace(/\s+/g, ' ');
+    if (!t) return { ok: false, msg: 'Как к вам обращаться?' };
+    if (t.length < 2) return { ok: false, msg: 'Имя — минимум 2 буквы' };
+    if (t.length > 60) return { ok: false, msg: 'Слишком длинно — до 60 символов' };
+    if (/\d/.test(t)) return { ok: false, msg: 'Имя без цифр — просто как вас зовут' };
+    if (!/^[A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё\s'’-]*$/.test(t)) return { ok: false, msg: 'Только буквы, пробел и дефис' };
+    const cap = t.replace(/(^|[\s'’-])([a-zа-яё])/g, (m, sep, ch) => sep + ch.toUpperCase());
+    return { ok: true, value: cap };
   };
-  const validators = {
-    name: (v) => v.trim().length >= 2,
-    contact: (v) => v.trim().length >= 3,
+
+  const CHECK = {
+    telegram(v) {
+      const t = v.trim();
+      if (!t) return { ok: false, msg: 'Укажите ник в Telegram — по нему я вам напишу' };
+      if (PHONEISH.test(t)) return { ok: false, msg: 'Нужен ник, а не номер: Telegram → Настройки → Имя пользователя' };
+      const nick = t.replace(/^https?:\/\//i, '')
+        .replace(/^(www\.)?(t\.me|telegram\.me|telegram\.dog)\//i, '')
+        .replace(/[?#\/].*$/, '')
+        .replace(/^@/, '');
+      if (!/^[A-Za-z][A-Za-z0-9_]{3,30}[A-Za-z0-9]$/.test(nick)) {
+        return { ok: false, msg: 'Ник в Telegram: латиница, цифры и «_», 5–32 символа. Например @pelenev' };
+      }
+      return { ok: true, value: '@' + nick };
+    },
+    vk(v) {
+      const t = v.trim();
+      if (!t) return { ok: false, msg: 'Укажите ссылку на вашу страницу ВКонтакте' };
+      if (PHONEISH.test(t)) return { ok: false, msg: 'Нужна страница, а не номер. Скопируйте адрес профиля: vk.com/…' };
+      const id = t.replace(/^https?:\/\//i, '')
+        .replace(/^(m\.|www\.)?(vk\.com|vk\.ru|vkontakte\.ru)\//i, '')
+        .replace(/[?#].*$/, '')
+        .replace(/\/+$/, '')
+        .replace(/^@/, '');
+      if (!/^[A-Za-z0-9_.]{3,64}$/.test(id)) {
+        return { ok: false, msg: 'Ссылка вида vk.com/ваш_профиль или короткое имя страницы' };
+      }
+      return { ok: true, value: 'vk.com/' + id };
+    },
+    max(v) {
+      const t = v.trim();
+      if (!t) return { ok: false, msg: 'Укажите номер или ник в MAX' };
+      if (/^[+\d][\d\s()\-]*$/.test(t)) {
+        let d = t.replace(/\D/g, '');
+        if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);   // привычное «8» вместо кода страны
+        if (d.length === 10 && d[0] === '9') d = '7' + d;            // номер набрали вообще без кода
+        if (d.length < 11 || d.length > 15) return { ok: false, msg: 'Номер с кодом страны, 11–15 цифр. Например +7 900 000-00-00' };
+        return { ok: true, value: '+' + d };
+      }
+      const nick = t.replace(/^@/, '');
+      if (!/^[A-Za-z0-9_.]{3,64}$/.test(nick)) return { ok: false, msg: 'Номер с кодом страны или ник в MAX' };
+      return { ok: true, value: '@' + nick };
+    },
   };
-  const hintFor = (key) => HINT[key];
+
+  const fieldCheck = {
+    name: () => checkName(inName.value),
+    contact: () => (channel
+      ? CHECK[channel](inContact.value)
+      : { ok: false, msg: 'Сначала выберите мессенджер — от него зависит формат' }),
+  };
   const boxOf = (f) => f.querySelector('.cfield__box');
   const syncFilled = (field, input) => field.classList.toggle('is-filled', input.value.length > 0);
 
   /* --- свечение фокуса / ошибки (GSAP, без CSS-transition) --- */
   const GLOW = {
-    focus: { borderColor: '#FF3C00', boxShadow: '0 0 0 4px rgba(255,60,0,.12)', scale: 1.01 },
-    error: { borderColor: '#F59E0B', boxShadow: '0 0 0 4px rgba(245,158,11,.12)', scale: 1 },
-    none:  { borderColor: 'rgba(255,60,0,0)', boxShadow: '0 0 0 0 rgba(255,60,0,0)', scale: 1 },
+    focus: { borderColor: '#FF3C00', boxShadow: '0 0 0 3px rgba(255,60,0,.12)', scale: 1.01 },
+    error: { borderColor: '#FFB020', boxShadow: '0 0 0 4px rgba(255,176,32,.16)', scale: 1 },
+    none:  { borderColor: 'rgba(255,255,255,.12)', boxShadow: '0 0 0 0 rgba(255,60,0,0)', scale: 1 },
   };
   const glow = (field, state) => gsap.to(boxOf(field), { ...GLOW[state], duration: 0.4, ease: 'power3.out' });
 
@@ -841,31 +901,68 @@ function initContact() {
     if (c) gsap.to(c, { scale: 0, opacity: 0, duration: 0.25, ease: 'power2.in' });
   };
 
-  /* Шаг связи готов, когда выбран мессенджер и заполнены имя с контактом. */
-  const contactReady = () => !!channel && validators.name(inName.value) && validators.contact(inContact.value);
-  const nextBtns = [...form.querySelectorAll('[data-cnext]')];
-  const updateSend = () => {
-    nextBtns.forEach((b) => { b.disabled = !contactReady(); });
-    sendBtn.disabled = !(day && time);
-  };
+  /* Ошибки групп «таблеток» (мессенджер, день, время) — своя строка под группой.
+     Кнопки не блокируем: неактивная кнопка не объясняет, чего не хватает. */
+  const channelHint = document.getElementById('c-channel-hint');
+  const dayHint = document.getElementById('c-day-hint');
+  const timeHint = document.getElementById('c-time-hint');
+  function showHint(hint, msg, group) {
+    hint.textContent = msg;
+    hint.classList.add('is-shown');
+    if (group) group.classList.add('has-error');
+    gsap.to(hint, { height: 'auto', opacity: 1, duration: 0.3, ease: 'power2.out' });
+  }
+  function hideHint(hint, group) {
+    if (group) group.classList.remove('has-error');
+    if (!hint.classList.contains('is-shown')) return;
+    hint.classList.remove('is-shown');
+    gsap.to(hint, { height: 0, opacity: 0, duration: 0.25, ease: 'power2.in' });
+  }
 
-  function evaluate(field, input, key) {
+  /* reveal: 'never' — молча (во время набора), 'filled' — если в поле что-то
+     есть (по уходу из поля), 'always' — при попытке шагнуть дальше. */
+  function evaluate(field, input, key, reveal) {
     syncFilled(field, input);
-    if (validators[key](input.value)) { clearError(field); markValid(field); }
-    else unmarkValid(field);
-    updateSend();
+    const r = fieldCheck[key]();
+    if (r.ok) { clearError(field); markValid(field); }
+    else {
+      unmarkValid(field);
+      if (reveal === 'always' || (reveal === 'filled' && input.value.trim())) showError(field, r.msg);
+    }
+    return r;
+  }
+
+  /* Возвращает первое проблемное поле шага связи — или null, если всё цело. */
+  function contactProblem() {
+    let bad = null;
+    if (!channel) { showHint(channelHint, 'Выберите, куда вам написать', channelsBox); bad = channelsBox.querySelector('.chat__opt'); }
+    else hideHint(channelHint, channelsBox);
+    if (!evaluate(fName, inName, 'name', 'always').ok) bad = bad || inName;
+    const c = evaluate(fContact, inContact, 'contact', channel ? 'always' : 'never');
+    if (!c.ok) bad = bad || (channel ? inContact : bad);
+    return bad;
   }
 
   /* --- поля: фокус / блюр / ввод / hover-scale --- */
   [[fName, inName, 'name'], [fContact, inContact, 'contact']].forEach(([f, inp, key]) => {
-    inp.addEventListener('focus', () => { f.classList.add('is-focus'); clearError(f); glow(f, 'focus'); });
+    /* Ошибку по фокусу не снимаем: человека только что прислали в это поле,
+       и текст с объяснением должен остаться перед глазами. Гаснет по вводу. */
+    inp.addEventListener('focus', () => {
+      f.classList.add('is-focus');
+      glow(f, f.classList.contains('has-error') ? 'error' : 'focus');
+    });
     inp.addEventListener('blur', () => {
       f.classList.remove('is-focus');
-      if (inp.value.trim() && !validators[key](inp.value)) showError(f, hintFor(key));
-      else glow(f, f.classList.contains('has-error') ? 'error' : 'none');
+      const r = evaluate(f, inp, key, 'filled');
+      /* Приводим введённое к единому виду — но только когда человек ушёл
+         из поля, иначе правка дёргалась бы прямо под курсором. */
+      if (r.ok && r.value !== inp.value) { inp.value = r.value; save(); }
+      glow(f, f.classList.contains('has-error') ? 'error' : 'none');
     });
     inp.addEventListener('input', () => {
-      evaluate(f, inp, key); save();
+      clearError(f);
+      evaluate(f, inp, key, 'never');
+      save();
     });
     f.addEventListener('pointerenter', () => { if (!f.classList.contains('is-focus') && !prefersReducedMotion) gsap.to(boxOf(f), { scale: 1.006, duration: 0.4, ease: 'power3.out' }); });
     f.addEventListener('pointerleave', () => { if (!f.classList.contains('is-focus') && !prefersReducedMotion) gsap.to(boxOf(f), { scale: 1, duration: 0.4, ease: 'power3.out' }); });
@@ -874,14 +971,13 @@ function initContact() {
   /* --- согласие с политикой (обязательно) --- */
   function setConsent(on) {
     if (prefersReducedMotion) {
-      gsap.set(consentBox, { backgroundColor: on ? '#22C55E' : 'rgba(0,0,0,0)', borderColor: on ? '#22C55E' : '#EAEAEA' });
+      gsap.set(consentBox, { backgroundColor: on ? '#22C55E' : 'rgba(0,0,0,0)', borderColor: on ? '#22C55E' : 'rgba(255,255,255,.25)' });
       gsap.set(consentCheck, { scale: on ? 1 : 0 });
     } else {
-      gsap.to(consentBox, { backgroundColor: on ? '#22C55E' : 'rgba(0,0,0,0)', borderColor: on ? '#22C55E' : '#EAEAEA', duration: 0.25, ease: 'power2.out' });
+      gsap.to(consentBox, { backgroundColor: on ? '#22C55E' : 'rgba(0,0,0,0)', borderColor: on ? '#22C55E' : 'rgba(255,255,255,.25)', duration: 0.25, ease: 'power2.out' });
       gsap.to(consentCheck, { scale: on ? 1 : 0, duration: on ? 0.35 : 0.2, ease: on ? 'back.out(2.6)' : 'power2.in' });
     }
     if (on) clearConsentError();
-    updateSend();
   }
   function consentError() {
     fFoot.classList.add('has-error');
@@ -889,13 +985,13 @@ function initContact() {
     hint.textContent = 'Отметьте согласие с политикой конфиденциальности';
     gsap.to(hint, { height: 'auto', opacity: 1, duration: 0.3, ease: 'power2.out' });
     gsap.fromTo(consentBox, { x: -5 }, { x: 0, duration: 0.5, ease: 'elastic.out(1,0.4)' });
-    gsap.to(consentBox, { borderColor: '#F59E0B', duration: 0.3 });
+    gsap.to(consentBox, { borderColor: '#FFB020', duration: 0.3 });
   }
   function clearConsentError() {
     if (!fFoot.classList.contains('has-error')) return;
     fFoot.classList.remove('has-error');
     gsap.to(fFoot.querySelector('.cfield__hint'), { height: 0, opacity: 0, duration: 0.25, ease: 'power2.in' });
-    gsap.to(consentBox, { borderColor: consent.checked ? '#22C55E' : '#EAEAEA', duration: 0.25 });
+    gsap.to(consentBox, { borderColor: consent.checked ? '#22C55E' : 'rgba(255,255,255,.25)', duration: 0.25 });
   }
   consent.addEventListener('change', () => setConsent(consent.checked));
 
@@ -905,7 +1001,6 @@ function initContact() {
     steps[step].hidden = true;
     step = n;
     steps[step].hidden = false;
-    updateSend();
     if (!prefersReducedMotion) {
       gsap.fromTo(steps[step].children, { opacity: 0, y: 12 },
         { opacity: 1, y: 0, duration: 0.45, stagger: 0.05, ease: 'power3.out', clearProps: 'transform,opacity' });
@@ -935,8 +1030,11 @@ function initContact() {
       pickOne(channelsBox, b);
       contactLabel.textContent = CHANNELS[channel].field;
       inContact.placeholder = CHANNELS[channel].ph;
+      hideHint(channelHint, channelsBox);
+      /* Формат зависит от мессенджера: ник из Telegram не годится для ВК —
+         перепроверяем уже введённое сразу после переключения. */
       clearError(fContact);
-      updateSend();
+      evaluate(fContact, inContact, 'contact', 'filled');
       save();
       if (!inContact.value) { try { inContact.focus({ preventScroll: true }); } catch (e) { inContact.focus(); } }
     });
@@ -950,18 +1048,19 @@ function initContact() {
       b.type = 'button';
       b.className = 'chat__opt chat__opt--chip';
       b.textContent = d.short;
-      b.addEventListener('click', () => { day = d; pickOne(daysBox, b); updateSend(); });
+      b.addEventListener('click', () => { day = d; pickOne(daysBox, b); hideHint(dayHint, daysBox); });
       daysBox.appendChild(b);
     });
     day = null;
   }
   const timesBox = document.getElementById('c-times');
   timesBox.querySelectorAll('[data-time]').forEach((b) => {
-    b.addEventListener('click', () => { time = b.dataset.time; pickOne(timesBox, b); updateSend(); });
+    b.addEventListener('click', () => { time = b.dataset.time; pickOne(timesBox, b); hideHint(timeHint, timesBox); });
   });
 
   form.querySelectorAll('[data-cnext]').forEach((b) => b.addEventListener('click', () => {
-    if (!contactReady()) return;
+    const bad = contactProblem();
+    if (bad) { if (bad.focus) bad.focus(); return; }
     goStep(2);
   }));
   form.querySelectorAll('[data-cback]').forEach((b) => b.addEventListener('click', () => goStep(step - 1)));
@@ -975,11 +1074,13 @@ function initContact() {
       const r = sendBtn.getBoundingClientRect();
       bx((e.clientX - (r.left + r.width / 2)) * 0.3);
       by((e.clientY - (r.top + r.height / 2)) * 0.3);
+      sendBtn.classList.add('is-hot');
       gsap.to(sendBtn, { backgroundColor: '#FF3C00', duration: 0.4, ease: 'power2.out' });
     });
     sendBtn.addEventListener('pointerleave', () => {
       bx(0); by(0);
-      gsap.to(sendBtn, { backgroundColor: '#0A0A0A', duration: 0.5, ease: 'power3.out' });
+      sendBtn.classList.remove('is-hot');
+      gsap.to(sendBtn, { backgroundColor: '#FFFFFF', duration: 0.5, ease: 'power3.out' });
     });
   }
 
@@ -994,16 +1095,16 @@ function initContact() {
     if (d.contact) inContact.value = d.contact;
     const saved = d.channel && CHANNELS[d.channel] ? channelsBox.querySelector(`[data-channel="${d.channel}"]`) : null;
     if (saved) saved.click();
-    [[fName, inName], [fContact, inContact]].forEach(([f, i]) => syncFilled(f, i));
-    evaluate(fName, inName, 'name');
-    evaluate(fContact, inContact, 'contact');
+    evaluate(fName, inName, 'name', 'never');
+    evaluate(fContact, inContact, 'contact', 'never');
   }
 
   /* --- отправка --- */
   function submitChat() {
     sendBtn.disabled = true;
     sendBtn.classList.add('is-loading');
-    gsap.to(sendBtn, { x: 0, y: 0, backgroundColor: '#0A0A0A', duration: 0.2 });
+    sendBtn.classList.remove('is-hot');
+    gsap.to(sendBtn, { x: 0, y: 0, backgroundColor: '#FFFFFF', duration: 0.2 });
 
     /* Отдельных колонок под путь, мессенджер и время на сервере нет —
        собираем их читаемым текстом в message, как и в квизе. */
@@ -1029,7 +1130,7 @@ function initContact() {
 
       if (!ok) {                                   // заявка не ушла — не притворяемся, что всё хорошо
         sendBtn.disabled = false;
-        gsap.to(sendBtn, { backgroundColor: '#0A0A0A', duration: 0.2 });
+        gsap.to(sendBtn, { backgroundColor: '#FFFFFF', duration: 0.2 });
         showError(fFoot, 'Не удалось отправить. Напишите в Telegram: t.me/dmitrypelenev');
         return;
       }
@@ -1043,11 +1144,12 @@ function initContact() {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    let firstBad = null;
-    [['name', fName, inName], ['contact', fContact, inContact]].forEach(([key, f, inp]) => {
-      if (!validators[key](inp.value)) { if (!firstBad) firstBad = inp; showError(f, hintFor(key)); }
-    });
-    if (firstBad) { goStep(1); firstBad.focus(); return; }
+    /* Порядок проверок = порядок шагов: человека возвращаем ровно туда,
+       где что-то не так, и сразу показываем, что именно. */
+    const bad = contactProblem();
+    if (bad) { goStep(1); setTimeout(() => { if (bad.focus) bad.focus(); }, 80); return; }
+    if (!day) { showHint(dayHint, 'Выберите день созвона', daysBox); return; }
+    if (!time) { showHint(timeHint, 'Выберите время', timesBox); return; }
     if (!consent.checked) { consentError(); return; }
     submitChat();
   });
@@ -1090,6 +1192,7 @@ function initContact() {
     goal = '';
     timesBox.querySelectorAll('.chat__opt').forEach((b) => b.classList.remove('is-selected'));
     form.querySelectorAll('[data-goal]').forEach((b) => b.classList.remove('is-selected'));
+    [[channelHint, channelsBox], [dayHint, daysBox], [timeHint, timesBox]].forEach(([h, g]) => hideHint(h, g));
     goStep(0);
   }
   function openModal() {

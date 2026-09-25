@@ -2264,11 +2264,12 @@ h1, h2, h3, h4{
   position: absolute; top: 12px; right: 12px; z-index: 3;
   width: 40px; height: 40px; border-radius: 50%;
   border: 0; cursor: pointer;
-  background: var(--paper); color: var(--ink);
-  box-shadow: 0 10px 28px -10px rgba(10,10,10,.4);
+  background: rgba(255,255,255,.1); color: rgba(255,255,255,.8);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
   display: grid; place-items: center;
   will-change: transform;
 }
+.modal__close:hover{ background: rgba(255,255,255,.18); color: #fff; }
 .modal__close svg{ width: 20px; height: 20px; }
 
 /* ---------- Чат-форма (#contact) ---------- */
@@ -2293,17 +2294,27 @@ h1, h2, h3, h4{
   font-weight: 500; line-height: .98; letter-spacing: -0.03em;
 }
 
+/* Карточка тёмная — как виджет акции: форма всплывает над тёмным героем
+   и не «выжигает» экран белым прямоугольником. */
 .chat{
-  --ok: #22C55E; --warn: #F59E0B;
+  --ok: #22C55E; --warn: #FFB020;
+  --c-line: rgba(255,255,255,.12);
+  --c-field: rgba(255,255,255,.05);
+  --c-muted: rgba(255,255,255,.55);
   width: 100%; max-width: 560px; min-width: 0;
   margin: 0 auto;
-  background: var(--paper);
-  border: 1px solid var(--paper-line);
+  background: linear-gradient(180deg, rgba(28,28,30,.94), rgba(16,16,17,.96));
+  -webkit-backdrop-filter: blur(30px) saturate(150%); backdrop-filter: blur(30px) saturate(150%);
+  border: 1px solid var(--c-line);
   border-radius: 28px;
-  box-shadow: 0 40px 80px -40px rgba(10,10,10,.18), 0 2px 8px rgba(10,10,10,.04);
+  box-shadow: 0 40px 120px rgba(0,0,0,.55);
+  color: var(--on-dark);
   overflow: hidden;
   display: flex; flex-direction: column;
   will-change: transform, opacity, filter;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+  .chat{ background: #141416; }
 }
 
 .chat__form{
@@ -2317,55 +2328,68 @@ h1, h2, h3, h4{
 .chat__title{ padding-right: 38px; font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }  /* крестик закрытия висит над первой строкой шага */
 .chat__sub{
   font-size: .8rem; font-weight: 500; letter-spacing: .02em;
-  color: var(--muted); padding-left: 4px; margin-bottom: -8px;
+  color: var(--c-muted); padding-left: 4px; margin-bottom: -8px;
 }
 
+/* Группа «варианты + подсказка об ошибке»: пока подсказки нет, она нулевой
+   высоты и лишнего отступа не даёт (см. .cfield__hint). */
+.chat__group{ display: flex; flex-direction: column; min-width: 0; }
 .chat__opts{ display: flex; flex-direction: column; gap: 10px; }
 .chat__chips{ display: flex; flex-wrap: wrap; gap: 8px; }
 .chat__opt{
-  border: 1.5px solid var(--paper-line); background: var(--paper);
+  border: 1px solid var(--c-line); background: var(--c-field);
   border-radius: 16px; padding: 15px 18px; cursor: pointer;
-  font: inherit; font-size: 1rem; line-height: 1.35; color: var(--ink); text-align: left;
+  font: inherit; font-size: 1rem; line-height: 1.35; color: var(--on-dark); text-align: left;
   transition: border-color .2s ease, background-color .2s ease, color .2s ease;
 }
-.chat__opt:hover{ border-color: var(--ink); }
-.chat__opt.is-selected{ border-color: var(--ink); background: var(--ink); color: var(--on-dark); }
+.chat__opt:hover{ background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.22); }
+.chat__opt.is-selected{ border-color: #fff; background: #fff; color: var(--ink); }
 .chat__opt--chip{ padding: 11px 16px; border-radius: var(--r-pill); font-size: .95rem; }
+.chat__chips.has-error .chat__opt{ border-color: rgba(255,176,32,.5); }
 
 .chat__nav{ display: flex; align-items: center; gap: 12px; }
 .chat__nav .chat__send{ margin-left: auto; }
 .chat__back{
   border: 0; background: transparent; cursor: pointer; font: inherit;
-  font-size: .9rem; color: var(--muted); padding: 15px 4px;
+  font-size: .9rem; color: var(--c-muted); padding: 15px 4px;
 }
-.chat__back:hover{ color: var(--ink); }
+.chat__back:hover{ color: var(--on-dark); }
 
 .cfield{ display: flex; flex-direction: column; gap: 9px; }
 .cfield.is-locked{ display: none; }
-.cfield__label{ font-size: .8rem; font-weight: 500; letter-spacing: .02em; color: var(--muted); padding-left: 4px; }
+.cfield__label{ font-size: .8rem; font-weight: 500; letter-spacing: .02em; color: var(--c-muted); padding-left: 4px; }
 .cfield__box{
   position: relative; display: flex; align-items: center;
-  background: var(--paper-soft);
-  border: 1.5px solid transparent; border-radius: 16px;
+  background: var(--c-field);
+  border: 1.5px solid var(--c-line); border-radius: 16px;
   will-change: transform, box-shadow, border-color;
 }
 .cfield__input{
   width: 100%; background: transparent; border: 0; outline: 0;
-  font: inherit; font-size: 1.02rem; color: var(--ink);
+  font: inherit; font-size: 1.02rem; color: var(--on-dark);
   padding: 15px 46px 15px 18px; border-radius: 16px;
 }
+.cfield__input::placeholder{ color: rgba(255,255,255,.35); }
 .cfield__check{
   position: absolute; right: 15px; top: 50%;
   width: 24px; height: 24px; display: grid; place-items: center;
   color: var(--ok); transform: translateY(-50%) scale(0); opacity: 0;
 }
 .cfield__check svg{ width: 20px; height: 20px; }
-.cfield__hint{ font-size: .8rem; color: var(--warn); padding-left: 4px; height: 0; opacity: 0; overflow: hidden; }
+/* height: 0 при border-box съедает и padding — свёрнутая подсказка не занимает места */
+.cfield__hint{
+  box-sizing: border-box; padding: 9px 4px 0;
+  font-size: .8rem; line-height: 1.35; color: var(--warn);
+  height: 0; opacity: 0; overflow: hidden;
+}
+/* Свёрнутая подсказка не должна тратить gap родителя: padding при height: 0
+   и border-box схлопывается, а отрицательный отступ гасит сам gap. */
+.cfield > .cfield__hint{ margin-top: -9px; }
 
 .chat__send{
   flex-shrink: 0; border: 0; cursor: pointer;
   padding: 15px 26px; border-radius: var(--r-pill);
-  background: var(--ink); color: var(--on-dark);
+  background: #fff; color: var(--ink);
   font: inherit; font-size: 1rem; font-weight: 500;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   position: relative; will-change: transform, background-color;
@@ -2373,37 +2397,38 @@ h1, h2, h3, h4{
 .chat__send:disabled{ opacity: .4; cursor: default; }
 .chat__spinner{
   width: 16px; height: 16px; border-radius: 50%;
-  border: 2.2px solid rgba(255,255,255,.3); border-top-color: var(--on-dark);
+  border: 2.2px solid rgba(10,10,10,.25); border-top-color: var(--ink);
   opacity: 0;
 }
+.chat__send.is-hot{ color: #fff; }           /* магнит-ховер заливает кнопку вермилионом */
 .chat__send.is-loading{ color: transparent; }
 .chat__send.is-loading .chat__spinner{ position: absolute; inset: 0; margin: auto; opacity: 1; animation: spin .7s linear infinite; }
 @keyframes spin{ to{ transform: rotate(360deg); } }
 
 /* --- футер формы: согласие + отправка --- */
 .chat__foot{ gap: 12px; }
-.consent{ min-width: 0; display: flex; align-items: flex-start; gap: 11px; cursor: pointer; user-select: none; }
+.consent{ position: relative; min-width: 0; display: flex; align-items: flex-start; gap: 11px; cursor: pointer; user-select: none; }
 .consent__input{ position: absolute; opacity: 0; width: 0; height: 0; }
 .consent__box{
   flex-shrink: 0; width: 22px; height: 22px; margin-top: 1px;
-  border: 1.5px solid var(--paper-line); border-radius: 7px;
+  border: 1.5px solid rgba(255,255,255,.25); border-radius: 7px;
   display: grid; place-items: center; color: #fff;
   will-change: background-color, border-color;
 }
 .consent__box svg{ width: 15px; height: 15px; transform: scale(0); }
-.consent__text{ font-size: .86rem; line-height: 1.4; color: var(--muted); }
-.consent__text a{ color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.consent__text{ font-size: .86rem; line-height: 1.4; color: var(--c-muted); }
+.consent__text a{ color: var(--on-dark); text-decoration: underline; text-underline-offset: 2px; }
 .consent__input:focus-visible + .consent__box{ outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* --- заметка под формой + соцссылки --- */
-.chat__note{ padding-left: 4px; font-size: .84rem; line-height: 1.45; color: var(--muted); }
+.chat__note{ padding-left: 4px; font-size: .84rem; line-height: 1.45; color: rgba(255,255,255,.5); }
 .chat__social{
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
-  padding: 16px 22px 22px; border-top: 1px solid var(--paper-line);
+  padding: 16px 22px 22px; border-top: 1px solid var(--c-line);
 }
-.chat__social-label{ font-size: .84rem; color: var(--muted); }
+.chat__social-label{ font-size: .84rem; color: rgba(255,255,255,.5); }
 .chat__social-links{ display: flex; flex-wrap: wrap; gap: 4px 14px; }
-.chat__social-link{ font-size: .9rem; font-weight: 500; color: var(--ink); text-underline-offset: 3px; }
+.chat__social-link{ font-size: .9rem; font-weight: 500; color: var(--on-dark); text-underline-offset: 3px; }
 .chat__social-link:hover{ text-decoration: underline; }
 
 /* --- экран благодарности --- */
@@ -2411,10 +2436,10 @@ h1, h2, h3, h4{
 .chat__ok{
   width: 46px; height: 46px; border-radius: 50%;
   display: grid; place-items: center;
-  background: rgba(34,197,94,.12); color: var(--ok);
+  background: rgba(34,197,94,.16); color: var(--ok);
 }
 .chat__ok svg{ width: 24px; height: 24px; }
-.chat__thanks{ font-size: 1.02rem; line-height: 1.5; }
+.chat__thanks{ font-size: 1.02rem; line-height: 1.5; color: rgba(255,255,255,.82); }
 
 @media (prefers-reduced-motion: reduce){
   .chat__send.is-loading .chat__spinner{ animation: none !important; }

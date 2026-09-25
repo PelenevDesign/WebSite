@@ -21,7 +21,7 @@
   if (!document.querySelector('link[data-lm-css]')) {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = '/leadmagnet.css?v=22';
+    css.href = '/leadmagnet.css?v=23';
     css.dataset.lmCss = '';
     document.head.appendChild(css);
   }
@@ -55,6 +55,52 @@
   /* «завтра утром», но «вс, 27 сент., утром» — без даты фраза читается живее. */
   const whenPhrase = () => (day.soon ? `${day.short.toLowerCase()} ${TIME_WHEN[time]}` : `${day.full}, ${TIME_WHEN[time]}`);
   const QUESTION_COUNT = 2;                  /* экран-оффер вопросом не считается */
+
+  /* Проверка контакта: заявка без рабочего контакта бесполезна, поэтому
+     ловим типовые ошибки (номер вместо ника, чужая ссылка) и заодно
+     приводим введённое к единому виду. Правила те же, что в модалке. */
+  const PHONEISH = /^\+?\d[\d\s()\-]{5,}$/;
+  const CHECK = {
+    telegram(v) {
+      const t = v.trim();
+      if (!t) return { ok: false, msg: 'Укажите ник в Telegram — по нему я вам напишу' };
+      if (PHONEISH.test(t)) return { ok: false, msg: 'Нужен ник, а не номер: Telegram → Настройки → Имя пользователя' };
+      const nick = t.replace(/^https?:\/\//i, '')
+        .replace(/^(www\.)?(t\.me|telegram\.me|telegram\.dog)\//i, '')
+        .replace(/[?#\/].*$/, '')
+        .replace(/^@/, '');
+      if (!/^[A-Za-z][A-Za-z0-9_]{3,30}[A-Za-z0-9]$/.test(nick)) {
+        return { ok: false, msg: 'Ник в Telegram: латиница, цифры и «_», 5–32 символа. Например @pelenev' };
+      }
+      return { ok: true, value: '@' + nick };
+    },
+    vk(v) {
+      const t = v.trim();
+      if (!t) return { ok: false, msg: 'Укажите ссылку на вашу страницу ВКонтакте' };
+      if (PHONEISH.test(t)) return { ok: false, msg: 'Нужна страница, а не номер. Скопируйте адрес профиля: vk.com/…' };
+      const id = t.replace(/^https?:\/\//i, '')
+        .replace(/^(m\.|www\.)?(vk\.com|vk\.ru|vkontakte\.ru)\//i, '')
+        .replace(/[?#].*$/, '')
+        .replace(/\/+$/, '')
+        .replace(/^@/, '');
+      if (!/^[A-Za-z0-9_.]{3,64}$/.test(id)) return { ok: false, msg: 'Ссылка вида vk.com/ваш_профиль или короткое имя страницы' };
+      return { ok: true, value: 'vk.com/' + id };
+    },
+    max(v) {
+      const t = v.trim();
+      if (!t) return { ok: false, msg: 'Укажите номер или ник в MAX' };
+      if (/^[+\d][\d\s()\-]*$/.test(t)) {
+        let d = t.replace(/\D/g, '');
+        if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);
+        if (d.length === 10 && d[0] === '9') d = '7' + d;
+        if (d.length < 11 || d.length > 15) return { ok: false, msg: 'Номер с кодом страны, 11–15 цифр. Например +7 900 000-00-00' };
+        return { ok: true, value: '+' + d };
+      }
+      const nick = t.replace(/^@/, '');
+      if (!/^[A-Za-z0-9_.]{3,64}$/.test(nick)) return { ok: false, msg: 'Номер с кодом страны или ник в MAX' };
+      return { ok: true, value: '@' + nick };
+    },
+  };
 
   /* Дни считаем от текущей даты, а не списком в коде — виджет не устаревает.
      После 17:00 сегодняшний день уже не предлагаем: созвониться вряд ли успеем. */
@@ -115,8 +161,9 @@
           </label>
           <div class="lm__actions">
             <button type="button" class="lm__btn lm__btn--ghost" data-lm-prev>Назад</button>
-            <button type="button" class="lm__btn lm__btn--primary" data-lm-next disabled>Дальше ${ARROW}</button>
+            <button type="button" class="lm__btn lm__btn--primary" data-lm-next>Дальше ${ARROW}</button>
           </div>
+          <p class="lm__error" data-lm-error1 role="alert" hidden></p>
         </section>
 
         <section class="lm__step" data-step="2" hidden>
@@ -143,7 +190,7 @@
           </label>
           <div class="lm__actions">
             <button type="button" class="lm__btn lm__btn--ghost" data-lm-prev>Назад</button>
-            <button type="submit" class="lm__btn lm__btn--primary" data-lm-submit disabled>Отправить</button>
+            <button type="submit" class="lm__btn lm__btn--primary" data-lm-submit>Отправить</button>
           </div>
           <p class="lm__error" id="lm-err" data-lm-error role="alert" hidden></p>
         </section>
@@ -206,7 +253,6 @@
   const contactLabel = modal.querySelector('[data-lm-contact-label]');
   const daysBox = modal.querySelector('[data-lm-days]');
   const thanksBox = modal.querySelector('[data-lm-thanks]');
-  const nextContact = steps[CONTACT_STEP].querySelector('[data-lm-next]');
   const submitBtn = form.querySelector('[data-lm-submit]');
 
   /* Выбранное на шагах — уходит в текст заявки. */
@@ -217,10 +263,24 @@
   let lastFocus = null;
   let sending = false;
 
-  const contactReady = () => !!channel && contactInput.value.trim().length >= 3;
-  const updateNav = () => {
-    nextContact.disabled = !contactReady();
-    submitBtn.disabled = !(day && time);
+  const errorBox1 = modal.querySelector('[data-lm-error1]');
+  const fail = (box, msg) => { box.textContent = msg; box.hidden = false; };
+
+  /* Возвращает true, если шаг связи заполнен корректно; иначе показывает,
+     что именно поправить, и подсвечивает поле. */
+  const contactOk = (report) => {
+    if (!channel) {
+      if (report) fail(errorBox1, 'Выберите, куда вам написать');
+      return false;
+    }
+    const r = CHECK[channel](contactInput.value);
+    if (!r.ok) {
+      if (report) { fail(errorBox1, r.msg); contactInput.classList.add('is-bad'); contactInput.focus(); }
+      return false;
+    }
+    if (r.value !== contactInput.value) contactInput.value = r.value;
+    errorBox1.hidden = true;
+    return true;
   };
 
   const pickOne = (group, el) => {
@@ -262,7 +322,6 @@
       countBox.firstElementChild.textContent = String(current).padStart(2, '0');
       bar.style.width = (current / QUESTION_COUNT * 100) + '%';
     }
-    updateNav();
     form.scrollTop = 0;
     revealStep(steps[current]);
     /* Фокус уводим на сам диалог, а не на первый элемент шага: скринридер
@@ -298,7 +357,10 @@
     track.hidden = true;
     renderDays();
     time = '';
-    updateNav();
+    channel = '';
+    contactInput.value = '';
+    errorBox.hidden = true;
+    errorBox1.hidden = true;
     document.addEventListener('keydown', onKey);
   };
 
@@ -329,22 +391,12 @@
   const send = async (e) => {
     e.preventDefault();
     if (sending) return;                       // страховка от двойного клика/двойного submit
-    const contact = contactInput.value.trim();
-
     form.querySelectorAll('.is-bad').forEach((n) => n.classList.remove('is-bad'));
-    /* Кнопки шагов заблокированы до выбора, но submit может прийти и по Enter. */
-    if (!channel || contact.length < 3) {
-      errorBox.textContent = 'Выберите мессенджер и укажите ник или ссылку.';
-      errorBox.hidden = false;
-      go(CONTACT_STEP);
-      contactInput.focus();
-      return;
-    }
-    if (!day || !time) {
-      errorBox.textContent = 'Выберите день и время созвона.';
-      errorBox.hidden = false;
-      return;
-    }
+    /* Порядок проверок = порядок шагов: возвращаем ровно туда, где не так. */
+    if (!contactOk(true)) { go(CONTACT_STEP); contactOk(true); return; }
+    const contact = contactInput.value.trim();
+    if (!day) { fail(errorBox, 'Выберите день созвона'); return; }
+    if (!time) { fail(errorBox, 'Выберите время'); return; }
     /* 152-ФЗ: без отмеченного согласия заявка не уходит (см. AGENT.md 5.1). */
     const consent = form.querySelector('[name="consent"]');
     if (!consent.checked) {
@@ -420,14 +472,14 @@
       const c = CHANNEL_BY_ID[channel];
       contactLabel.textContent = c.field;
       contactInput.placeholder = c.ph;
-      updateNav();
+      contactInput.classList.remove('is-bad');
+      errorBox1.hidden = true;
       return;
     }
     const dayBtn = e.target.closest('[data-lm-day]');
     if (dayBtn) {
       day = days[+dayBtn.dataset.lmDay] || null;
       pickOne(daysBox, dayBtn);
-      updateNav();
       errorBox.hidden = true;
       return;
     }
@@ -435,19 +487,29 @@
     if (timeBtn) {
       time = timeBtn.dataset.lmTime;
       pickOne(timeBtn.parentElement, timeBtn);
-      updateNav();
       errorBox.hidden = true;
       return;
     }
     if (e.target.closest('[data-lm-close]')) { closeModal(); return; }
-    if (e.target.closest('[data-lm-next]')) { go(current + 1); return; }
+    /* С шага связи дальше пускаем только с проверенным контактом. */
+    if (e.target.closest('[data-lm-next]')) {
+      if (current === CONTACT_STEP && !contactOk(true)) return;
+      go(current + 1);
+      return;
+    }
     if (e.target.closest('[data-lm-prev]')) { go(current - 1); return; }
   });
   form.addEventListener('submit', send);
   contactInput.addEventListener('input', () => {
     contactInput.classList.remove('is-bad');
-    errorBox.hidden = true;
-    updateNav();
+    errorBox1.hidden = true;
+  });
+  /* Нормализуем по уходу из поля: t.me/pelenev → @pelenev, 8 900… → +7900… */
+  contactInput.addEventListener('blur', () => {
+    if (!channel || !contactInput.value.trim()) return;
+    const r = CHECK[channel](contactInput.value);
+    if (r.ok) { contactInput.value = r.value; errorBox1.hidden = true; }
+    else { contactInput.classList.add('is-bad'); fail(errorBox1, r.msg); }
   });
   form.querySelector('[name="consent"]').addEventListener('change', (e) => {
     if (e.target.checked) {
