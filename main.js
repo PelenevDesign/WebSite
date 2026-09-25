@@ -734,47 +734,33 @@ function initFaq() {
 initFaq();
 
 /* ---------- Контакт: чат-форма ---------- */
+/* Модалка «Напишите мне». Формы нет намеренно: человек пишет сам в удобный
+   мессенджер, а выбор дня и времени складывается в готовый текст — сказать
+   про удобное время может только он, отправлять это некуда. На телефоне
+   модалка работает как шторка снизу: свайп по шапке её закрывает. */
 function initContact() {
   const chat = document.getElementById('chat');
   if (!chat) return;
 
-  const form = document.getElementById('chat-form');
-  const fName = form.querySelector('[data-step="name"]');
-  const fContact = form.querySelector('[data-step="contact"]');
-  const fFoot = form.querySelector('[data-step="foot"]');
-  const inName = document.getElementById('c-name');
-  const inContact = document.getElementById('c-contact');
-  const consent = document.getElementById('c-consent');
-  const consentBox = fFoot.querySelector('.consent__box');
-  const consentCheck = consentBox.querySelector('svg');
-  const sendBtn = document.getElementById('c-send');
-
-  const STORE = 'pelenev_chat';
-  const steps = [...form.querySelectorAll('.chat__step')];
-  const contactLabel = document.getElementById('c-contact-label');
+  const modal = document.getElementById('contact-modal');
+  const mDialog = modal.querySelector('.modal__dialog');
+  const mBackdrop = modal.querySelector('.modal__backdrop');
+  const mClose = document.getElementById('contact-close');
   const daysBox = document.getElementById('c-days');
-  const thanksBox = document.getElementById('c-thanks');
+  const timesBox = document.getElementById('c-times');
+  const msgBox = document.getElementById('c-msg');
+  const copyBtn = document.getElementById('c-copy');
+  const copyLabel = document.getElementById('c-copy-label');
+  const emailWay = document.getElementById('c-email');
 
-  /* Мессенджеры: подпись поля и подсказка меняются под выбранный. */
-  const CHANNELS = {
-    telegram: { label: 'Telegram', field: 'Ник в Telegram', ph: '@username или ссылка t.me/…' },
-    vk: { label: 'ВКонтакте', field: 'Профиль ВКонтакте', ph: 'vk.com/… или ник' },
-    max: { label: 'MAX', field: 'Аккаунт в MAX', ph: '+7 (900) 000-00-00 или ник' },
-  };
-  const GOALS = {
-    price: { label: 'Точная стоимость и сроки разработки', thanks: 'стоимость и сроки' },
-    promo: { label: 'Акция — сайт за 35 000 ₽', thanks: 'детали акции' },
-  };
+  const EMAIL = 'dmitrypelenev@gmail.com';
+  const SUBJECT = 'Вопрос по проекту — pelenevdesign.ru';
+  const OPENER = 'Здравствуйте! Хочу обсудить проект.';
   const TIME_WHEN = { 'Утро': 'утром', 'День': 'днём', 'Вечер': 'вечером' };
+  const isSheet = () => matchMedia('(max-width: 640px)').matches;
 
-  /* «завтра вечером», но «вс, 27 сент., вечером» — без даты фраза читается живее. */
-  const whenPhrase = () => {
-    if (!day || !TIME_WHEN[time]) return 'в выбранное время';
-    return day.soon ? `${day.short.toLowerCase()} ${TIME_WHEN[time]}` : `${day.full}, ${TIME_WHEN[time]}`;
-  };
-
-  /* Дни считаем от текущей даты, а не списком в коде — форма не устаревает.
-     После 17:00 сегодняшний день уже не предлагаем: созвониться вряд ли успеем. */
+  /* Дни считаем от текущей даты, а не списком в коде — вкладка может
+     провисеть открытой до завтра. После 17:00 сегодня уже не предлагаем. */
   function callDays() {
     const now = new Date();
     const fmt = new Intl.DateTimeFormat('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -789,492 +775,171 @@ function initContact() {
     return out;
   }
 
-  /* Выбранное на шагах — уходит в текст заявки. */
-  let goal = '';
-  let channel = '';
+  let days = [];
   let day = null;
   let time = '';
-  let step = 0;
 
-  /* ---------- Проверка полей ----------
-     Смысл не в формальности: заявка без рабочего контакта бесполезна —
-     написать по ней некуда. Поэтому каждое правило ловит реальную ошибку
-     (номер телефона вместо ника, чужая ссылка, имя из цифр) и объясняет,
-     что именно поправить. Успешная проверка ещё и нормализует значение:
-     «t.me/pelenev» превращается в «@pelenev», «8 900…» в «+7900…». */
-  const PHONEISH = /^\+?\d[\d\s()\-]{5,}$/;
-
-  /* ---------- Маска номера +7 (999) 999-99-99 ----------
-     Работает только в MAX и только если человек начал с цифры или «+»:
-     аккаунт там можно указать и ником, маска не должна этому мешать.
-     Лишние цифры просто не влезают — набрать номер длиннее нельзя. */
-  const subscriberDigits = (v) => {
-    let t = String(v).trim();
-    /* «+7» в начале — это наша же маска, а не цифра номера: иначе при наборе
-       «+7…» семёрка ушла бы в номер и всё поехало бы на разряд вправо. */
-    if (t.indexOf('+7') === 0) t = t.slice(2);
-    else if (t.indexOf('+') === 0) t = t.slice(1);
-    let d = t.replace(/\D/g, '');
-    if (d.length > 10 && (d[0] === '7' || d[0] === '8')) d = d.slice(1);  // номер вставили целиком
-    if (d.length === 1 && (d[0] === '7' || d[0] === '8')) d = '';         // начали с кода страны
-    return d.slice(0, 10);
+  /* «завтра вечером», но «вс, 27 сент., вечером» — без даты фраза живее. */
+  function whenPhrase() {
+    if (day && time) return day.soon ? `${day.short.toLowerCase()} ${TIME_WHEN[time]}` : `${day.full}, ${TIME_WHEN[time]}`;
+    if (day) return day.soon ? day.short.toLowerCase() : day.full;
+    if (time) return TIME_WHEN[time];
+    return '';
+  }
+  const message = () => {
+    const when = whenPhrase();
+    return when ? `${OPENER} Удобно связаться ${when}.` : OPENER;
   };
-  const ruMask = (d) => {
-    let out = '+7';
-    if (d.length) out += ' (' + d.slice(0, 3);
-    if (d.length >= 3) out += ')';
-    if (d.length > 3) out += ' ' + d.slice(3, 6);
-    if (d.length > 6) out += '-' + d.slice(6, 8);
-    if (d.length > 8) out += '-' + d.slice(8, 10);
-    return out;
-  };
-  let phoneDigits = '';
-  const phoneMode = () => channel === 'max' && /^[+\d]/.test(inContact.value.trim());
-  function maskContact(e) {
-    if (!phoneMode()) { phoneDigits = ''; return; }
-    const del = !!(e && e.inputType && e.inputType.indexOf('delete') === 0);
-    let d = subscriberDigits(inContact.value);
-    /* Скобки и дефисы сами не стираются: если после Backspace набор цифр
-       не изменился, значит удалили разделитель — убираем цифру за него. */
-    if (del && d === phoneDigits) d = d.slice(0, -1);
-    phoneDigits = d;
-    if (del && !d) { inContact.value = ''; return; }    // поле можно очистить и ввести ник
-    inContact.value = ruMask(d);
-    const end = inContact.value.length;
-    try { inContact.setSelectionRange(end, end); } catch (err) { /* не текстовое поле */ }
+  function syncMessage() {
+    const text = message();
+    msgBox.textContent = text;
+    /* В письме тему и текст можно подставить сразу — в мессенджерах нельзя,
+       поэтому там и нужна кнопка «Скопировать». */
+    emailWay.setAttribute('href', `mailto:${EMAIL}?subject=${encodeURIComponent(SUBJECT)}&body=${encodeURIComponent(text)}`);
   }
 
-  const checkName = (v) => {
-    const t = v.trim().replace(/\s+/g, ' ');
-    if (!t) return { ok: false, msg: 'Как к вам обращаться?' };
-    if (t.length < 2) return { ok: false, msg: 'Имя — минимум 2 буквы' };
-    if (t.length > 60) return { ok: false, msg: 'Слишком длинно — до 60 символов' };
-    if (/\d/.test(t)) return { ok: false, msg: 'Имя без цифр — просто как вас зовут' };
-    if (!/^[A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё\s'’-]*$/.test(t)) return { ok: false, msg: 'Только буквы, пробел и дефис' };
-    const cap = t.replace(/(^|[\s'’-])([a-zа-яё])/g, (m, sep, ch) => sep + ch.toUpperCase());
-    return { ok: true, value: cap };
-  };
-
-  const CHECK = {
-    telegram(v) {
-      const t = v.trim();
-      if (!t) return { ok: false, msg: 'Укажите ник в Telegram — по нему я вам напишу' };
-      if (PHONEISH.test(t)) return { ok: false, msg: 'Нужен ник, а не номер: Telegram → Настройки → Имя пользователя' };
-      const nick = t.replace(/^https?:\/\//i, '')
-        .replace(/^(www\.)?(t\.me|telegram\.me|telegram\.dog)\//i, '')
-        .replace(/[?#\/].*$/, '')
-        .replace(/^@/, '');
-      if (!/^[A-Za-z][A-Za-z0-9_]{3,30}[A-Za-z0-9]$/.test(nick)) {
-        return { ok: false, msg: 'Ник в Telegram: латиница, цифры и «_», 5–32 символа. Например @pelenev' };
-      }
-      return { ok: true, value: '@' + nick };
-    },
-    vk(v) {
-      const t = v.trim();
-      if (!t) return { ok: false, msg: 'Укажите ссылку на вашу страницу ВКонтакте' };
-      if (PHONEISH.test(t)) return { ok: false, msg: 'Нужна страница, а не номер. Скопируйте адрес профиля: vk.com/…' };
-      const id = t.replace(/^https?:\/\//i, '')
-        .replace(/^(m\.|www\.)?(vk\.com|vk\.ru|vkontakte\.ru)\//i, '')
-        .replace(/[?#].*$/, '')
-        .replace(/\/+$/, '')
-        .replace(/^@/, '');
-      if (!/^[A-Za-z0-9_.]{3,64}$/.test(id)) {
-        return { ok: false, msg: 'Ссылка вида vk.com/ваш_профиль или короткое имя страницы' };
-      }
-      return { ok: true, value: 'vk.com/' + id };
-    },
-    max(v) {
-      const t = v.trim();
-      if (!t) return { ok: false, msg: 'Укажите номер или ник в MAX' };
-      if (/^[+\d]/.test(t)) {
-        const d = subscriberDigits(t);
-        if (d.length !== 10) return { ok: false, msg: 'Номер из 10 цифр после +7. Например +7 (900) 000-00-00' };
-        return { ok: true, value: ruMask(d) };
-      }
-      const nick = t.replace(/^@/, '');
-      if (!/^[A-Za-z0-9_.]{3,64}$/.test(nick)) return { ok: false, msg: 'Номер в формате +7 (900) 000-00-00 или ник в MAX' };
-      return { ok: true, value: '@' + nick };
-    },
-  };
-
-  const fieldCheck = {
-    name: () => checkName(inName.value),
-    contact: () => (channel
-      ? CHECK[channel](inContact.value)
-      : { ok: false, msg: 'Сначала выберите мессенджер — от него зависит формат' }),
-  };
-  const boxOf = (f) => f.querySelector('.cfield__box');
-  const syncFilled = (field, input) => field.classList.toggle('is-filled', input.value.length > 0);
-
-  /* --- свечение фокуса / ошибки (GSAP, без CSS-transition) --- */
-  const GLOW = {
-    focus: { borderColor: 'rgba(255,255,255,.4)', boxShadow: '0 0 0 3px rgba(255,255,255,.06)', scale: 1.01 },
-    error: { borderColor: '#F5320E', boxShadow: '0 0 0 4px rgba(245,50,14,.18)', scale: 1 },
-    none:  { borderColor: 'rgba(255,255,255,.12)', boxShadow: '0 0 0 0 rgba(255,60,0,0)', scale: 1 },
-  };
-  const glow = (field, state) => gsap.to(boxOf(field), { ...GLOW[state], duration: 0.4, ease: 'power3.out' });
-
-  function showError(field, msg) {
-    field.classList.add('has-error');
-    glow(field, 'error');
-    gsap.fromTo(boxOf(field), { x: -6 }, { x: 0, duration: 0.6, ease: 'elastic.out(1,0.4)' });
-    const hint = field.querySelector('.cfield__hint');
-    hint.textContent = msg;
-    gsap.to(hint, { height: 'auto', opacity: 1, duration: 0.35, ease: 'power2.out' });
-  }
-  function clearError(field) {
-    if (!field.classList.contains('has-error')) return;
-    field.classList.remove('has-error');
-    gsap.to(field.querySelector('.cfield__hint'), { height: 0, opacity: 0, duration: 0.3, ease: 'power2.in' });
-  }
-
-  const markValid = (field, instant) => {
-    const c = field.querySelector('.cfield__check');
-    if (!c) return;
-    if (instant) gsap.set(c, { scale: 1, opacity: 1 });
-    else gsap.to(c, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2.4)' });
-  };
-  const unmarkValid = (field) => {
-    const c = field.querySelector('.cfield__check');
-    if (c) gsap.to(c, { scale: 0, opacity: 0, duration: 0.25, ease: 'power2.in' });
-  };
-
-  /* Ошибки групп «таблеток» (мессенджер, день, время) — своя строка под группой.
-     Кнопки не блокируем: неактивная кнопка не объясняет, чего не хватает. */
-  const channelHint = document.getElementById('c-channel-hint');
-  const dayHint = document.getElementById('c-day-hint');
-  const timeHint = document.getElementById('c-time-hint');
-  function showHint(hint, msg, group) {
-    hint.textContent = msg;
-    hint.classList.add('is-shown');
-    if (group) group.classList.add('has-error');
-    gsap.to(hint, { height: 'auto', opacity: 1, duration: 0.3, ease: 'power2.out' });
-  }
-  function hideHint(hint, group) {
-    if (group) group.classList.remove('has-error');
-    if (!hint.classList.contains('is-shown')) return;
-    hint.classList.remove('is-shown');
-    gsap.to(hint, { height: 0, opacity: 0, duration: 0.25, ease: 'power2.in' });
-  }
-
-  /* reveal: 'never' — молча (во время набора), 'filled' — если в поле что-то
-     есть (по уходу из поля), 'always' — при попытке шагнуть дальше. */
-  function evaluate(field, input, key, reveal) {
-    syncFilled(field, input);
-    const r = fieldCheck[key]();
-    if (r.ok) { clearError(field); markValid(field); }
-    else {
-      unmarkValid(field);
-      if (reveal === 'always' || (reveal === 'filled' && input.value.trim())) showError(field, r.msg);
-    }
-    return r;
-  }
-
-  /* Возвращает первое проблемное поле шага связи — или null, если всё цело. */
-  function contactProblem() {
-    let bad = null;
-    if (!channel) { showHint(channelHint, 'Выберите, куда вам написать', channelsBox); bad = channelsBox.querySelector('.chat__opt'); }
-    else hideHint(channelHint, channelsBox);
-    if (!evaluate(fName, inName, 'name', 'always').ok) bad = bad || inName;
-    const c = evaluate(fContact, inContact, 'contact', channel ? 'always' : 'never');
-    if (!c.ok) bad = bad || (channel ? inContact : bad);
-    return bad;
-  }
-
-  /* --- поля: фокус / блюр / ввод / hover-scale --- */
-  [[fName, inName, 'name'], [fContact, inContact, 'contact']].forEach(([f, inp, key]) => {
-    /* Ошибку по фокусу не снимаем: человека только что прислали в это поле,
-       и текст с объяснением должен остаться перед глазами. Гаснет по вводу. */
-    inp.addEventListener('focus', () => {
-      f.classList.add('is-focus');
-      glow(f, f.classList.contains('has-error') ? 'error' : 'focus');
-    });
-    inp.addEventListener('blur', () => {
-      f.classList.remove('is-focus');
-      const r = evaluate(f, inp, key, 'filled');
-      /* Приводим введённое к единому виду — но только когда человек ушёл
-         из поля, иначе правка дёргалась бы прямо под курсором. */
-      if (r.ok && r.value !== inp.value) { inp.value = r.value; save(); }
-      glow(f, f.classList.contains('has-error') ? 'error' : 'none');
-    });
-    inp.addEventListener('input', (e) => {
-      if (key === 'contact') maskContact(e);
-      clearError(f);
-      evaluate(f, inp, key, 'never');
-      save();
-    });
-    f.addEventListener('pointerenter', () => { if (!f.classList.contains('is-focus') && !prefersReducedMotion) gsap.to(boxOf(f), { scale: 1.006, duration: 0.4, ease: 'power3.out' }); });
-    f.addEventListener('pointerleave', () => { if (!f.classList.contains('is-focus') && !prefersReducedMotion) gsap.to(boxOf(f), { scale: 1, duration: 0.4, ease: 'power3.out' }); });
-  });
-
-  /* --- согласие с политикой (обязательно) --- */
-  function setConsent(on) {
-    if (prefersReducedMotion) {
-      gsap.set(consentBox, { backgroundColor: on ? '#22C55E' : 'rgba(0,0,0,0)', borderColor: on ? '#22C55E' : 'rgba(255,255,255,.25)' });
-      gsap.set(consentCheck, { scale: on ? 1 : 0 });
-    } else {
-      gsap.to(consentBox, { backgroundColor: on ? '#22C55E' : 'rgba(0,0,0,0)', borderColor: on ? '#22C55E' : 'rgba(255,255,255,.25)', duration: 0.25, ease: 'power2.out' });
-      gsap.to(consentCheck, { scale: on ? 1 : 0, duration: on ? 0.35 : 0.2, ease: on ? 'back.out(2.6)' : 'power2.in' });
-    }
-    if (on) clearConsentError();
-  }
-  function consentError() {
-    fFoot.classList.add('has-error');
-    const hint = fFoot.querySelector('.cfield__hint');
-    hint.textContent = 'Отметьте согласие с политикой конфиденциальности';
-    gsap.to(hint, { height: 'auto', opacity: 1, duration: 0.3, ease: 'power2.out' });
-    gsap.fromTo(consentBox, { x: -5 }, { x: 0, duration: 0.5, ease: 'elastic.out(1,0.4)' });
-    gsap.to(consentBox, { borderColor: '#F5320E', duration: 0.3 });
-  }
-  function clearConsentError() {
-    if (!fFoot.classList.contains('has-error')) return;
-    fFoot.classList.remove('has-error');
-    gsap.to(fFoot.querySelector('.cfield__hint'), { height: 0, opacity: 0, duration: 0.25, ease: 'power2.in' });
-    gsap.to(consentBox, { borderColor: consent.checked ? '#22C55E' : 'rgba(255,255,255,.25)', duration: 0.25 });
-  }
-  consent.addEventListener('change', () => setConsent(consent.checked));
-
-  /* --- шаги: оффер → связь → время → спасибо --- */
-  function goStep(n) {
-    if (n < 0 || n >= steps.length) return;
-    steps[step].hidden = true;
-    step = n;
-    steps[step].hidden = false;
-    chat.classList.toggle('is-ways', step === 1);
-    if (!prefersReducedMotion) {
-      gsap.fromTo(steps[step].children, { opacity: 0, y: 12 },
-        { opacity: 1, y: 0, duration: 0.45, stagger: 0.05, ease: 'power3.out', clearProps: 'transform,opacity' });
-    }
-    /* Фокус в поле имени больше не ставим: главное на этом шаге — кнопки
-       «напишите мне», а курсор в форме уводил бы внимание вниз. */
-  }
-
-  /* Одна «таблетка» выбрана — остальные в группе гаснут. */
-  function pickOne(group, el) {
+  const pickOne = (group, el) => {
     group.querySelectorAll('.chat__opt').forEach((b) => b.classList.toggle('is-selected', b === el));
-  }
-
-  /* Шаг 0 — выбор пути. Он же задаёт текст благодарности. */
-  form.querySelectorAll('[data-goal]').forEach((b) => {
-    b.addEventListener('click', () => { goal = b.dataset.goal; pickOne(b.parentElement, b); goStep(1); });
-  });
-
-  /* Шаг 1 — мессенджер: меняем подпись и подсказку поля под выбранный. */
-  const channelsBox = document.getElementById('c-channels');
-  channelsBox.querySelectorAll('[data-channel]').forEach((b) => {
-    b.addEventListener('click', () => {
-      channel = b.dataset.channel;
-      pickOne(channelsBox, b);
-      contactLabel.textContent = CHANNELS[channel].field;
-      inContact.placeholder = CHANNELS[channel].ph;
-      hideHint(channelHint, channelsBox);
-      phoneDigits = phoneMode() ? subscriberDigits(inContact.value) : '';
-      /* Формат зависит от мессенджера: ник из Telegram не годится для ВК —
-         перепроверяем уже введённое сразу после переключения. */
-      clearError(fContact);
-      evaluate(fContact, inContact, 'contact', 'filled');
-      save();
-      if (!inContact.value) { try { inContact.focus({ preventScroll: true }); } catch (e) { inContact.focus(); } }
-    });
-  });
-
-  /* Шаг 2 — день и время. Дни рисуем от текущей даты при каждом открытии. */
+  };
   function renderDays() {
+    day = null;
+    days = callDays();
     daysBox.innerHTML = '';
-    callDays().forEach((d) => {
+    days.forEach((d, i) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'chat__opt chat__opt--chip';
       b.textContent = d.short;
-      b.addEventListener('click', () => { day = d; pickOne(daysBox, b); hideHint(dayHint, daysBox); });
+      b.addEventListener('click', () => { day = days[i]; pickOne(daysBox, b); syncMessage(); });
       daysBox.appendChild(b);
     });
-    day = null;
   }
-  const timesBox = document.getElementById('c-times');
   timesBox.querySelectorAll('[data-time]').forEach((b) => {
-    b.addEventListener('click', () => { time = b.dataset.time; pickOne(timesBox, b); hideHint(timeHint, timesBox); });
+    b.addEventListener('click', () => { time = b.dataset.time; pickOne(timesBox, b); syncMessage(); });
   });
 
-  form.querySelectorAll('[data-cnext]').forEach((b) => b.addEventListener('click', () => {
-    const bad = contactProblem();
-    if (bad) { if (bad.focus) bad.focus(); return; }
-    goStep(2);
-  }));
-  form.querySelectorAll('[data-cback]').forEach((b) => b.addEventListener('click', () => goStep(step - 1)));
-
-  /* --- кнопка отправки: магнит + смена фона --- */
-  if (!prefersReducedMotion) {
-    const bx = gsap.quickTo(sendBtn, 'x', { duration: 0.4, ease: 'power3.out' });
-    const by = gsap.quickTo(sendBtn, 'y', { duration: 0.4, ease: 'power3.out' });
-    sendBtn.addEventListener('pointermove', (e) => {
-      if (sendBtn.disabled) return;
-      const r = sendBtn.getBoundingClientRect();
-      bx((e.clientX - (r.left + r.width / 2)) * 0.3);
-      by((e.clientY - (r.top + r.height / 2)) * 0.3);
-      sendBtn.classList.add('is-hot');
-      gsap.to(sendBtn, { backgroundColor: '#FF3C00', duration: 0.4, ease: 'power2.out' });
-    });
-    sendBtn.addEventListener('pointerleave', () => {
-      bx(0); by(0);
-      sendBtn.classList.remove('is-hot');
-      gsap.to(sendBtn, { backgroundColor: '#FFFFFF', duration: 0.5, ease: 'power3.out' });
-    });
+  /* Копирование: clipboard API есть не везде (http, старые webview) —
+     на отказ подставляем скрытое поле и старый execCommand. */
+  function legacyCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove();
+    return ok;
   }
-
-  /* --- сохранение / восстановление --- */
-  function save() {
-    try { localStorage.setItem(STORE, JSON.stringify({ name: inName.value, contact: inContact.value, channel })); } catch (e) { /* ignore */ }
-  }
-  function restore() {
-    let d = {};
-    try { d = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) { d = {}; }
-    if (d.name) inName.value = d.name;
-    if (d.contact) inContact.value = d.contact;
-    const saved = d.channel && CHANNELS[d.channel] ? channelsBox.querySelector(`[data-channel="${d.channel}"]`) : null;
-    if (saved) saved.click();
-    phoneDigits = phoneMode() ? subscriberDigits(inContact.value) : '';
-    evaluate(fName, inName, 'name', 'never');
-    evaluate(fContact, inContact, 'contact', 'never');
-  }
-
-  /* --- отправка --- */
-  function submitChat() {
-    sendBtn.disabled = true;
-    sendBtn.classList.add('is-loading');
-    sendBtn.classList.remove('is-hot');
-    gsap.to(sendBtn, { x: 0, y: 0, backgroundColor: '#FFFFFF', duration: 0.2 });
-
-    /* Отдельных колонок под путь, мессенджер и время на сервере нет —
-       собираем их читаемым текстом в message, как и в квизе. */
-    const message = 'Заявка с сайта.'
-      + `\n\nИнтерес: ${GOALS[goal] ? GOALS[goal].label : '—'}`
-      + `\nСвязь: ${CHANNELS[channel] ? CHANNELS[channel].label : '—'} — ${inContact.value.trim()}`
-      + `\nСозвон: ${day ? day.full : '—'}, ${time || '—'}`;
-
-    const trap = form.querySelector('.cfield__trap');
-    fetch('/api.php?action=lead', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: inName.value.trim(),
-        contact: inContact.value.trim(),
-        type: channel,
-        message,
-        page: location.pathname,
-        company: trap ? trap.value : '',
-      }),
-    }).then((r) => r.ok).catch(() => false).then((ok) => {
-      sendBtn.classList.remove('is-loading');
-
-      if (!ok) {                                   // заявка не ушла — не притворяемся, что всё хорошо
-        sendBtn.disabled = false;
-        gsap.to(sendBtn, { backgroundColor: '#FFFFFF', duration: 0.2 });
-        showError(fFoot, 'Не удалось отправить. Напишите в Telegram: t.me/dmitrypelenev');
-        return;
-      }
-      ym(111032105, 'reachGoal', 'form_submit');
-      try { localStorage.removeItem(STORE); } catch (e) { /* ignore */ }
-
-      thanksBox.textContent = `Свяжусь с вами ${whenPhrase()}, чтобы обсудить ${GOALS[goal] ? GOALS[goal].thanks : 'ваш проект'}.`;
-      goStep(3);
-    });
-  }
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    /* Порядок проверок = порядок шагов: человека возвращаем ровно туда,
-       где что-то не так, и сразу показываем, что именно. */
-    const bad = contactProblem();
-    if (bad) { goStep(1); setTimeout(() => { if (bad.focus) bad.focus(); }, 80); return; }
-    if (!day) { showHint(dayHint, 'Выберите день созвона', daysBox); return; }
-    if (!time) { showHint(timeHint, 'Выберите время', timesBox); return; }
-    if (!consent.checked) { consentError(); return; }
-    submitChat();
+  let copyTimer;
+  copyBtn.addEventListener('click', async () => {
+    const text = message();
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) { ok = legacyCopy(text); }
+    clearTimeout(copyTimer);
+    copyLabel.textContent = ok ? 'Скопировано' : 'Не вышло — выделите текст';
+    copyBtn.classList.toggle('is-done', ok);
+    copyTimer = setTimeout(() => {
+      copyLabel.textContent = 'Скопировать';
+      copyBtn.classList.remove('is-done');
+    }, 2200);
   });
 
-  /* --- восстановление --- */
-  restore();
+  /* Ссылку на MAX задаём в админке (Контент → Ссылка MAX). Пока там голый
+     max.ru без профиля, строку не показываем: кнопка в никуда хуже её отсутствия. */
+  function syncMaxWay() {
+    const max = chat.querySelector('[data-way="max"]');
+    if (!max) return;
+    max.hidden = !/max\.ru\/.+/i.test(max.getAttribute('href') || '');
+  }
 
-  /* --- модалка: открытие со всех CTA «обсудить / оставить заявку» --- */
-  const modal = document.getElementById('contact-modal');
-  const mDialog = modal.querySelector('.modal__dialog');
-  const mBackdrop = modal.querySelector('.modal__backdrop');
-  const mClose = document.getElementById('contact-close');
-  let modalOpen = false;
+  /* Клики по каналам считаем отдельно — иначе не видно, чем реально пользуются. */
+  chat.querySelectorAll('[data-way]').forEach((a) => {
+    a.addEventListener('click', () => ym(111032105, 'reachGoal', 'messenger_click'));
+  });
 
-  // Клавиатура на iOS/Android уменьшает Visual Viewport, но не всегда layout viewport.
-  // Передаём фактическую высоту в CSS, чтобы модалка и её внутренний скролл не уходили под клавиатуру.
+  // Клавиатура на телефоне меняет видимую высоту окна — модалка считает её отсюда.
   const viewport = window.visualViewport;
   const syncVisualViewport = () => {
-    const height = viewport ? viewport.height : window.innerHeight;
-    const top = viewport ? viewport.offsetTop : 0;
-    document.documentElement.style.setProperty('--vvh', `${Math.round(height)}px`);
-    document.documentElement.style.setProperty('--vv-top', `${Math.round(top)}px`);
+    document.documentElement.style.setProperty('--vvh', `${Math.round(viewport ? viewport.height : window.innerHeight)}px`);
+    document.documentElement.style.setProperty('--vv-top', `${Math.round(viewport ? viewport.offsetTop : 0)}px`);
   };
   syncVisualViewport();
   (viewport || window).addEventListener('resize', syncVisualViewport, { passive: true });
   if (viewport) viewport.addEventListener('scroll', syncVisualViewport, { passive: true });
 
-  const keepFieldVisible = (field) => {
-    if (!modalOpen || !field) return;
-    window.setTimeout(() => field.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' }), 80);
-  };
-  [inName, inContact].forEach((field) => field.addEventListener('focus', () => keepFieldVisible(field)));
+  let modalOpen = false;
 
-  /* Каждое открытие — с первого шага и со свежими датами: вкладка могла
-     провисеть открытой до следующего дня. Отправленную заявку не переоткрываем. */
-  /* Ссылку на MAX задаём через CMS (Контент → Ссылка MAX). Пока там голый
-     max.ru без профиля, строку не показываем: кнопка в никуда хуже её отсутствия. */
-  function syncMaxWay() {
-    const max = form.querySelector('[data-way="max"]');
-    if (!max) return;
-    const href = max.getAttribute('href') || '';
-    max.hidden = !/max\.ru\/.+/i.test(href);
-  }
-
-  /* Клики по прямым каналам считаем отдельно — иначе не увидеть, что
-     реально сработало: кнопка «напишите мне» или форма. */
-  form.querySelectorAll('[data-way]').forEach((a) => {
-    a.addEventListener('click', () => ym(111032105, 'reachGoal', 'messenger_click'));
-  });
-
-  function runEntrance() {
-    syncMaxWay();
-    if (step === 3) return;
-    renderDays();
-    time = '';
-    goal = '';
-    timesBox.querySelectorAll('.chat__opt').forEach((b) => b.classList.remove('is-selected'));
-    form.querySelectorAll('[data-goal]').forEach((b) => b.classList.remove('is-selected'));
-    [[channelHint, channelsBox], [dayHint, daysBox], [timeHint, timesBox]].forEach(([h, g]) => hideHint(h, g));
-    goStep(0);
-  }
   function openModal() {
     if (modalOpen) return;
     modalOpen = true;
     modal.setAttribute('aria-hidden', 'false');
     lenis.stop();
+    renderDays();
+    time = '';
+    timesBox.querySelectorAll('.chat__opt').forEach((b) => b.classList.remove('is-selected'));
+    syncMessage();
+    syncMaxWay();
+    gsap.killTweensOf([mBackdrop, mDialog]);
+    gsap.set(mDialog, { clearProps: 'y,yPercent' });
     if (prefersReducedMotion) {
       gsap.set(mBackdrop, { opacity: 1 });
-      gsap.set(mDialog, { opacity: 1, y: 0 });
+      gsap.set(mDialog, { opacity: 1, y: 0, yPercent: 0 });
+      return;
+    }
+    gsap.fromTo(mBackdrop, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power2.out' });
+    if (isSheet()) {
+      // Шторка выезжает снизу, без размытия: так двигаются панели в приложениях.
+      gsap.fromTo(mDialog, { yPercent: 100, opacity: 1 }, { yPercent: 0, duration: 0.5, ease: 'power3.out' });
     } else {
-      gsap.killTweensOf([mBackdrop, mDialog]);
-      gsap.fromTo(mBackdrop, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power2.out' });
       gsap.fromTo(mDialog, { y: 60, opacity: 0, filter: 'blur(14px)' },
         { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', onComplete: () => gsap.set(mDialog, { clearProps: 'filter' }) });
     }
-    runEntrance();
   }
+
   function closeModal() {
     if (!modalOpen) return;
     modalOpen = false;
     lenis.start();
-    const done = () => modal.setAttribute('aria-hidden', 'true');
+    const done = () => { modal.setAttribute('aria-hidden', 'true'); gsap.set(mDialog, { clearProps: 'y,yPercent' }); };
     if (prefersReducedMotion) { gsap.set([mBackdrop, mDialog], { opacity: 0 }); done(); return; }
+    gsap.killTweensOf([mBackdrop, mDialog]);
     gsap.to(mBackdrop, { opacity: 0, duration: 0.3, ease: 'power2.in' });
-    gsap.to(mDialog, { y: 40, opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: done });
+    if (isSheet()) gsap.to(mDialog, { yPercent: 100, duration: 0.35, ease: 'power2.in', onComplete: done });
+    else gsap.to(mDialog, { y: 40, opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: done });
   }
+
+  /* Свайп вниз по шапке закрывает шторку — привычный жест. Тянем только
+     за «ручку» и заголовок: на списке каналов жест мешал бы прокрутке. */
+  const grip = [chat.querySelector('.chat__grab'), chat.querySelector('.chat__head')].filter(Boolean);
+  let dragging = false;
+  let startY = 0;
+  let dragY = 0;
+  grip.forEach((el) => {
+    el.addEventListener('pointerdown', (e) => {
+      if (!isSheet() || e.pointerType === 'mouse' || !modalOpen) return;
+      dragging = true; startY = e.clientY; dragY = 0;
+      gsap.killTweensOf(mDialog);
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* не поддержано */ }
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      dragY = Math.max(0, e.clientY - startY);
+      gsap.set(mDialog, { y: dragY });
+      gsap.set(mBackdrop, { opacity: Math.max(0, 1 - dragY / 420) });
+    });
+    const endDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (dragY > 110) { closeModal(); dragY = 0; return; }
+      gsap.to(mDialog, { y: 0, duration: 0.35, ease: 'power3.out' });
+      gsap.to(mBackdrop, { opacity: 1, duration: 0.25 });
+      dragY = 0;
+    };
+    el.addEventListener('pointerup', endDrag);
+    el.addEventListener('pointercancel', endDrag);
+  });
 
   document.querySelectorAll('[data-contact]').forEach((el) => {
     el.addEventListener('click', (e) => {

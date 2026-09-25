@@ -139,7 +139,7 @@ function imgSize(string $src): string {
 <?php /* Предзагружаем только картинку: видео грузится своим чередом. */ ?>
 <?php if (!isVideoSrc($coverRaw)): ?>  <link rel="preload" as="image" href="<?= $esc($coverRaw) ?>" fetchpriority="high">
 <?php endif; ?>
-  <link rel="stylesheet" href="/styles.css?v=102">
+  <link rel="stylesheet" href="/styles.css?v=103">
   <link rel="stylesheet" href="/journal.css?v=9">
   <link rel="stylesheet" href="/article.css?v=5">
 <?= $integrationsHtml ?>

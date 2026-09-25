@@ -34,7 +34,7 @@
   <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
 
-  <link rel="stylesheet" href="styles.css?v=102">
+  <link rel="stylesheet" href="styles.css?v=103">
 
   <script type="application/ld+json">
   {
@@ -300,150 +300,58 @@
       </button>
 
       <div class="chat" id="chat">
-        <form class="chat__form" id="chat-form" novalidate autocomplete="off">
+        <span class="chat__grab" aria-hidden="true"></span>
+        <div class="chat__head">
+          <h3 class="chat__title">Напишите мне</h3>
+          <p class="chat__lead">Отвечаю сам — без менеджеров, брифов и анкет.</p>
+        </div>
 
-          <!-- Шаг 0 — оффер: два пути, выбор уходит в текст заявки -->
-          <section class="chat__step" data-cstep="0">
-            <h3 class="chat__title">Как хотите продолжить?</h3>
-            <div class="chat__opts">
-              <button type="button" class="chat__opt" data-goal="price">Узнать точную стоимость и сроки разработки</button>
-              <button type="button" class="chat__opt" data-goal="promo">Воспользоваться акцией — сайт за 35 000 ₽</button>
-            </div>
-            <p class="chat__note">Заполнение формы ни к чему не обязывает — просто пообщаемся, чтобы я мог точно сориентировать вас по срокам и стоимости</p>
-          </section>
+        <div class="chat__ways">
+          <a class="chat__way" data-cms="link-telegram" data-way="telegram" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer">
+            <span class="chat__way-text"><b>Telegram</b><small>@dmitrypelenev</small></span>
+            <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="chat__way" data-cms="link-vk-write" data-way="vk" href="https://vk.me/pelenev_design" target="_blank" rel="noopener noreferrer">
+            <span class="chat__way-text"><b>ВКонтакте</b><small>pelenev_design</small></span>
+            <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <!-- Строка появится сама, как только в href окажется max.ru/<профиль>.
+               Ссылка задаётся в админке: Контент → Ссылка MAX. -->
+          <a class="chat__way" data-cms="link-max" data-way="max" href="https://max.ru/" target="_blank" rel="noopener noreferrer" hidden>
+            <span class="chat__way-text"><b>MAX</b><small>написать в MAX</small></span>
+            <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="chat__way" data-way="email" id="c-email" href="mailto:dmitrypelenev@gmail.com">
+            <span class="chat__way-text"><b>Почта</b><small>dmitrypelenev@gmail.com</small></span>
+            <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
 
-          <!-- Шаг 1 — связь. Сначала прямые кнопки «напишите мне»: человеку
-               проще написать самому, чем оставлять свои данные и ждать.
-               Форма ниже — для тех, кто писать первым не хочет. -->
-          <section class="chat__step" data-cstep="1" hidden>
-            <h3 class="chat__title">Напишите мне — отвечу и предложу решение</h3>
+        <!-- Времени созвона взяться неоткуда: формы нет, и сказать его может
+             только сам человек. Поэтому выбор складывается в готовый текст,
+             который он копирует и отправляет вместе с вопросом. -->
+        <p class="chat__or"><span>если удобно — выберите время для связи</span></p>
 
-            <div class="chat__ways">
-              <a class="chat__way" data-cms="link-telegram" data-way="telegram" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer">
-                <span class="chat__way-text"><b>Telegram</b><small>@dmitrypelenev</small></span>
-                <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </a>
-              <a class="chat__way" data-cms="link-vk-write" data-way="vk" href="https://vk.me/pelenev_design" target="_blank" rel="noopener noreferrer">
-                <span class="chat__way-text"><b>ВКонтакте</b><small>vk.me/pelenev_design</small></span>
-                <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </a>
-              <!-- Ссылки на профиль в MAX пока нет: строка показывается сама,
-                   как только в href появится адрес вида max.ru/<профиль>. -->
-              <a class="chat__way" data-cms="link-max" data-way="max" href="https://max.ru/" target="_blank" rel="noopener noreferrer" hidden>
-                <span class="chat__way-text"><b>MAX</b><small>написать в MAX</small></span>
-                <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </a>
-              <a class="chat__way" data-way="email" href="mailto:dmitrypelenev@gmail.com?subject=%D0%92%D0%BE%D0%BF%D1%80%D0%BE%D1%81%20%D0%BF%D0%BE%20%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D1%83%20%E2%80%94%20pelenevdesign.ru">
-                <span class="chat__way-text"><b>Почта</b><small>dmitrypelenev@gmail.com</small></span>
-                <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </a>
-            </div>
-
-            <p class="chat__note">Расскажите задачу своими словами — этого достаточно, чтобы я сориентировал по срокам и стоимости.</p>
-
-            <p class="chat__or"><span>или оставьте контакт — напишу вам сам</span></p>
-
-            <div class="chat__group">
-              <span class="cfield__label">Куда вам написать</span>
-              <div class="chat__chips" id="c-channels" role="group" aria-label="Мессенджер">
-                <button type="button" class="chat__opt chat__opt--chip" data-channel="telegram">Telegram</button>
-                <button type="button" class="chat__opt chat__opt--chip" data-channel="vk">ВКонтакте</button>
-                <button type="button" class="chat__opt chat__opt--chip" data-channel="max">MAX</button>
-              </div>
-              <span class="cfield__hint" id="c-channel-hint" role="alert"></span>
-            </div>
-
-            <div class="cfield" data-step="name">
-              <span class="cfield__label">Имя</span>
-              <div class="cfield__box">
-                <input class="cfield__input" id="c-name" type="text" autocomplete="name" spellcheck="false" placeholder="Как вас зовут?">
-                <span class="cfield__check" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-              </div>
-              <span class="cfield__hint" role="alert"></span>
-            </div>
-
-            <div class="cfield" data-step="contact">
-              <span class="cfield__label" id="c-contact-label">Ник или ссылка</span>
-              <div class="cfield__box">
-                <input class="cfield__input" id="c-contact" type="text" autocomplete="off" spellcheck="false" placeholder="Юзернейм, номер или ссылка">
-                <span class="cfield__check" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-              </div>
-              <span class="cfield__hint" role="alert"></span>
-            </div>
-
-            <div class="chat__nav">
-              <button type="button" class="chat__back" data-cback>Назад</button>
-              <button type="button" class="chat__send" data-cnext>Выбрать удобное время</button>
-            </div>
-          </section>
-
-          <!-- Шаг 2 — время созвона: дни считает скрипт от текущей даты -->
-          <section class="chat__step" data-cstep="2" hidden>
-            <h3 class="chat__title">Когда удобно созвониться?</h3>
-
-            <p class="chat__sub">День</p>
-            <div class="chat__group">
-              <div class="chat__chips" id="c-days" role="group" aria-label="День"></div>
-              <span class="cfield__hint" id="c-day-hint" role="alert"></span>
-            </div>
-
-            <p class="chat__sub">Время</p>
-            <div class="chat__group">
-              <div class="chat__chips" id="c-times" role="group" aria-label="Время">
-                <button type="button" class="chat__opt chat__opt--chip" data-time="Утро">Утро</button>
-                <button type="button" class="chat__opt chat__opt--chip" data-time="День">День</button>
-                <button type="button" class="chat__opt chat__opt--chip" data-time="Вечер">Вечер</button>
-              </div>
-              <span class="cfield__hint" id="c-time-hint" role="alert"></span>
-            </div>
-
-            <p class="chat__note">Это предпочтительное время — я подтвержу точный созвон в переписке</p>
-
-            <!-- honeypot: скрыто от людей, боты заполняют — такие заявки отбрасываются -->
-            <input class="cfield__trap" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
-
-            <div class="cfield chat__foot" data-step="foot">
-              <label class="consent">
-                <input type="checkbox" class="consent__input" id="c-consent">
-                <span class="consent__box" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-                <span class="consent__text">Соглашаюсь с <a href="privacy.html" target="_blank" rel="noopener">политикой&nbsp;конфиденциальности</a> и обработкой персональных данных</span>
-              </label>
-              <div class="chat__nav">
-                <button type="button" class="chat__back" data-cback>Назад</button>
-                <button type="submit" class="chat__send" id="c-send">
-                  Отправить
-                  <span class="chat__spinner" aria-hidden="true"></span>
-                </button>
-              </div>
-              <span class="cfield__hint" aria-hidden="true"></span>
-            </div>
-          </section>
-
-          <!-- Шаг 3 — благодарность -->
-          <section class="chat__step chat__done" data-cstep="3" hidden>
-            <span class="chat__ok" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            <h3 class="chat__title">Спасибо!</h3>
-            <p class="chat__thanks" id="c-thanks"></p>
-            <p class="chat__note">Это предпочтительное время, точный созвон подтвержу в переписке.</p>
-          </section>
-        </form>
-
-        <div class="chat__social">
-          <span class="chat__social-label">или свяжитесь со мной сами</span>
-          <div class="chat__social-links">
-            <a data-cms="link-telegram" class="chat__social-link" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer">Telegram</a>
-            <a data-cms="link-behance" class="chat__social-link" href="https://www.behance.net/Pelenev-design" target="_blank" rel="noopener noreferrer">Behance</a>
-            <a data-cms="link-vk" class="chat__social-link" href="https://vk.ru/pelenev_design" target="_blank" rel="noopener noreferrer">ВК</a>
+        <div class="chat__when">
+          <p class="chat__sub">День</p>
+          <div class="chat__chips" id="c-days" role="group" aria-label="День"></div>
+          <p class="chat__sub">Время</p>
+          <div class="chat__chips" id="c-times" role="group" aria-label="Время">
+            <button type="button" class="chat__opt chat__opt--chip" data-time="Утро">Утро</button>
+            <button type="button" class="chat__opt chat__opt--chip" data-time="День">День</button>
+            <button type="button" class="chat__opt chat__opt--chip" data-time="Вечер">Вечер</button>
           </div>
         </div>
+
+        <div class="chat__msg">
+          <p class="chat__msg-text" id="c-msg"></p>
+          <button type="button" class="chat__copy" id="c-copy">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="7" y="7" width="9" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M13 4.5A1.5 1.5 0 0 0 11.5 3h-6A2.5 2.5 0 0 0 3 5.5v7A1.5 1.5 0 0 0 4.5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span id="c-copy-label">Скопировать</span>
+          </button>
+        </div>
+
+        <p class="chat__note">Обычно отвечаю в течение дня.</p>
       </div>
     </div>
   </div>
@@ -534,7 +442,7 @@
   <script src="cms-schema.js?v=6"></script>
   <script src="cms.js?v=6"></script>
   <script src="portfolio.js?v=14"></script>
-  <script src="main.js?v=72"></script>
+  <script src="main.js?v=73"></script>
 
   <!-- Уведомление о cookie. Показывается один раз, выбор хранится в localStorage. -->
   <div class="cookie" id="cookie" role="dialog" aria-live="polite" aria-label="Уведомление о cookie" hidden>
