@@ -894,11 +894,22 @@ function initContact() {
 
   let modalOpen = false;
 
+  /* Одного lenis.stop() мало: на телефоне прокрутка пальцем нативная, Lenis
+     её не перехватывает — и страница продолжает ездить под шторкой. Гасим
+     скролл документа, как это делает виджет акции. */
+  function lockPage(on) {
+    document.documentElement.style.overflow = on ? 'hidden' : '';
+    if (on) lenis.stop(); else lenis.start();
+  }
+
   function openModal() {
     if (modalOpen) return;
     modalOpen = true;
     modal.setAttribute('aria-hidden', 'false');
-    lenis.stop();
+    /* Высоту видимой области пересчитываем именно сейчас: панель браузера
+       могла свернуться после загрузки, и шторка взялась бы не по размеру. */
+    syncVisualViewport();
+    lockPage(true);
     renderDays();
     time = '';
     timesBox.querySelectorAll('.chat__opt').forEach((b) => b.classList.remove('is-selected'));
@@ -928,7 +939,7 @@ function initContact() {
   function closeModal() {
     if (!modalOpen) return;
     modalOpen = false;
-    lenis.start();
+    lockPage(false);
     const done = () => { modal.setAttribute('aria-hidden', 'true'); gsap.set(mDialog, { clearProps: 'y,yPercent' }); };
     if (prefersReducedMotion) { gsap.set([mBackdrop, mDialog], { opacity: 0 }); done(); return; }
     gsap.killTweensOf([mBackdrop, mDialog]);
