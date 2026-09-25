@@ -755,7 +755,7 @@ function initContact() {
 
   const EMAIL = 'dmitrypelenev@gmail.com';
   const SUBJECT = 'Вопрос по проекту — pelenevdesign.ru';
-  const OPENER = 'Здравствуйте! Хочу обсудить проект.';
+  const OPENER = 'Привет, Дмитрий! Хочу обсудить проект 🙂';
   const TIME_WHEN = { 'Утро': 'утром', 'День': 'днём', 'Вечер': 'вечером' };
   const isSheet = () => matchMedia('(max-width: 640px)').matches;
 
