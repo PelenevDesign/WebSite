@@ -171,7 +171,7 @@ $catNames = ['site' => 'Сайты', 'ai-site' => 'AI-сайты', 'ai-content' 
 <?php /* Обложка на странице не выводится — греем первое фото галереи, оно выше сгиба. */ ?>
 <?php if ($gallery): ?>  <link rel="preload" as="image" href="<?= $esc($gallery[0]) ?>" fetchpriority="high">
 <?php endif; ?>
-  <link rel="stylesheet" href="/styles.css?v=101">
+  <link rel="stylesheet" href="/styles.css?v=102">
   <link rel="stylesheet" href="/case.css?v=13">
 <?= $integrationsHtml ?>
   <script src="/metrika.js?v=1" defer></script>
@@ -380,7 +380,7 @@ $catNames = ['site' => 'Сайты', 'ai-site' => 'AI-сайты', 'ai-content' 
     </div>
   </footer>
 
-  <script src="/cms-schema.js?v=4"></script>
+  <script src="/cms-schema.js?v=6"></script>
   <script src="/cms.js?v=6"></script>
   <script src="/case.js?v=7"></script>
   <script src="/cookie.js?v=1"></script>

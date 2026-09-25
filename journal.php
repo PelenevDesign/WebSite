@@ -93,7 +93,7 @@ function articleCardHTML(array $a, array $catNames, callable $esc): string {
   <meta name="twitter:card" content="summary_large_image">
   <link rel="alternate" type="application/rss+xml" title="PELENEV.DESIGN — Гайды" href="/rss.xml">
   <script type="application/ld+json"><?= $jsonLd ?></script>
-  <link rel="stylesheet" href="/styles.css?v=101">
+  <link rel="stylesheet" href="/styles.css?v=102">
   <link rel="stylesheet" href="/journal.css?v=9">
 <?= $integrationsHtml ?>
   <script src="/metrika.js?v=1" defer></script>
@@ -201,7 +201,7 @@ function articleCardHTML(array $a, array $catNames, callable $esc): string {
     </div>
   </footer>
 
-  <script src="/cms-schema.js?v=5"></script>
+  <script src="/cms-schema.js?v=6"></script>
   <script src="/cms.js?v=6"></script>
   <script src="/journal.js?v=2"></script>
   <script src="/cookie.js?v=1"></script>

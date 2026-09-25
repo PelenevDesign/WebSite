@@ -1040,15 +1040,13 @@ function initContact() {
     steps[step].hidden = true;
     step = n;
     steps[step].hidden = false;
+    chat.classList.toggle('is-ways', step === 1);
     if (!prefersReducedMotion) {
       gsap.fromTo(steps[step].children, { opacity: 0, y: 12 },
         { opacity: 1, y: 0, duration: 0.45, stagger: 0.05, ease: 'power3.out', clearProps: 'transform,opacity' });
     }
-    /* Фокус — на первое поле шага связи, но не на мобильном: там всплывающая
-       клавиатура закрыла бы половину формы сразу после перехода. */
-    if (step === 1 && !matchMedia('(max-width: 768px)').matches) {
-      setTimeout(() => { try { inName.focus({ preventScroll: true }); } catch (e) { inName.focus(); } }, 120);
-    }
+    /* Фокус в поле имени больше не ставим: главное на этом шаге — кнопки
+       «напишите мне», а курсор в форме уводил бы внимание вниз. */
   }
 
   /* Одна «таблетка» выбрана — остальные в группе гаснут. */
@@ -1226,7 +1224,23 @@ function initContact() {
 
   /* Каждое открытие — с первого шага и со свежими датами: вкладка могла
      провисеть открытой до следующего дня. Отправленную заявку не переоткрываем. */
+  /* Ссылку на MAX задаём через CMS (Контент → Ссылка MAX). Пока там голый
+     max.ru без профиля, строку не показываем: кнопка в никуда хуже её отсутствия. */
+  function syncMaxWay() {
+    const max = form.querySelector('[data-way="max"]');
+    if (!max) return;
+    const href = max.getAttribute('href') || '';
+    max.hidden = !/max\.ru\/.+/i.test(href);
+  }
+
+  /* Клики по прямым каналам считаем отдельно — иначе не увидеть, что
+     реально сработало: кнопка «напишите мне» или форма. */
+  form.querySelectorAll('[data-way]').forEach((a) => {
+    a.addEventListener('click', () => ym(111032105, 'reachGoal', 'messenger_click'));
+  });
+
   function runEntrance() {
+    syncMaxWay();
     if (step === 3) return;
     renderDays();
     time = '';

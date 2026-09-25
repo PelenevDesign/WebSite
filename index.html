@@ -34,7 +34,7 @@
   <link rel="preload" as="style" href="https://rsms.me/inter/inter.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://rsms.me/inter/inter.css"></noscript>
 
-  <link rel="stylesheet" href="styles.css?v=101">
+  <link rel="stylesheet" href="styles.css?v=102">
 
   <script type="application/ld+json">
   {
@@ -496,10 +496,39 @@
             <p class="chat__note">Заполнение формы ни к чему не обязывает — просто пообщаемся, чтобы я мог точно сориентировать вас по срокам и стоимости</p>
           </section>
 
-          <!-- Шаг 1 — связь: мессенджер + имя + контакт -->
+          <!-- Шаг 1 — связь. Сначала прямые кнопки «напишите мне»: человеку
+               проще написать самому, чем оставлять свои данные и ждать.
+               Форма ниже — для тех, кто писать первым не хочет. -->
           <section class="chat__step" data-cstep="1" hidden>
-            <h3 class="chat__title">Как с вами связаться?</h3>
+            <h3 class="chat__title">Напишите мне — отвечу и предложу решение</h3>
+
+            <div class="chat__ways">
+              <a class="chat__way" data-cms="link-telegram" data-way="telegram" href="https://t.me/dmitrypelenev" target="_blank" rel="noopener noreferrer">
+                <span class="chat__way-text"><b>Telegram</b><small>@dmitrypelenev</small></span>
+                <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+              <a class="chat__way" data-cms="link-vk-write" data-way="vk" href="https://vk.me/pelenev_design" target="_blank" rel="noopener noreferrer">
+                <span class="chat__way-text"><b>ВКонтакте</b><small>vk.me/pelenev_design</small></span>
+                <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+              <!-- Ссылки на профиль в MAX пока нет: строка показывается сама,
+                   как только в href появится адрес вида max.ru/<профиль>. -->
+              <a class="chat__way" data-cms="link-max" data-way="max" href="https://max.ru/" target="_blank" rel="noopener noreferrer" hidden>
+                <span class="chat__way-text"><b>MAX</b><small>написать в MAX</small></span>
+                <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+              <a class="chat__way" data-way="email" href="mailto:dmitrypelenev@gmail.com?subject=%D0%92%D0%BE%D0%BF%D1%80%D0%BE%D1%81%20%D0%BF%D0%BE%20%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D1%83%20%E2%80%94%20pelenevdesign.ru">
+                <span class="chat__way-text"><b>Почта</b><small>dmitrypelenev@gmail.com</small></span>
+                <svg class="chat__way-go" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 6h15m0 0-5-4.5M16 6l-5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+            </div>
+
+            <p class="chat__note">Расскажите задачу своими словами — этого достаточно, чтобы я сориентировал по срокам и стоимости.</p>
+
+            <p class="chat__or"><span>или оставьте контакт — напишу вам сам</span></p>
+
             <div class="chat__group">
+              <span class="cfield__label">Куда вам написать</span>
               <div class="chat__chips" id="c-channels" role="group" aria-label="Мессенджер">
                 <button type="button" class="chat__opt chat__opt--chip" data-channel="telegram">Telegram</button>
                 <button type="button" class="chat__opt chat__opt--chip" data-channel="vk">ВКонтакте</button>
@@ -532,7 +561,7 @@
 
             <div class="chat__nav">
               <button type="button" class="chat__back" data-cback>Назад</button>
-              <button type="button" class="chat__send" data-cnext>Дальше</button>
+              <button type="button" class="chat__send" data-cnext>Выбрать удобное время</button>
             </div>
           </section>
 
@@ -686,9 +715,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" crossorigin="anonymous"></script>
-  <script src="cms-schema.js?v=4"></script>
+  <script src="cms-schema.js?v=6"></script>
   <script src="cms.js?v=6"></script>
-  <script src="main.js?v=71"></script>
+  <script src="main.js?v=72"></script>
 
   <!-- Уведомление о cookie. Показывается один раз, выбор хранится в localStorage. -->
   <div class="cookie" id="cookie" role="dialog" aria-live="polite" aria-label="Уведомление о cookie" hidden>

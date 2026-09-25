@@ -2347,6 +2347,43 @@ h1, h2, h3, h4{
 .chat__opt--chip{ padding: 11px 16px; border-radius: var(--r-pill); font-size: .95rem; }
 .chat__chips.has-error .chat__opt{ border-color: rgba(245,50,14,.55); }
 
+/* Прямые каналы связи: крупные строки-ссылки, главный путь на этом шаге. */
+.chat__ways{ display: flex; flex-direction: column; gap: 8px; }
+.chat__way{
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px; border-radius: 16px;
+  border: 1px solid var(--c-line); background: var(--c-field);
+  color: var(--on-dark);
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.chat__way[hidden]{ display: none; }
+.chat__way:hover{ background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.24); }
+.chat__way-text{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.chat__way-text b{ font-size: 1rem; font-weight: 600; letter-spacing: -.01em; }
+.chat__way-text small{
+  font-size: .82rem; color: rgba(255,255,255,.5);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chat__way-go{ flex: none; width: 18px; height: 12px; color: rgba(255,255,255,.45); transition: transform .25s cubic-bezier(.22,1,.36,1), color .2s ease; }
+.chat__way:hover .chat__way-go{ transform: translateX(4px); color: var(--on-dark); }
+
+/* Разделитель «или оставьте контакт» */
+.chat__or{
+  display: flex; align-items: center; gap: 14px;
+  font-size: .82rem; color: rgba(255,255,255,.45);
+}
+.chat__or::before, .chat__or::after{ content: ''; flex: 1; height: 1px; background: var(--c-line); }
+/* На узком экране подпись переносится и боковые линейки схлопываются
+   в огрызки — оставляем одну линию сверху, текст под ней. */
+@media (max-width: 480px){
+  .chat__or{ flex-direction: column; gap: 10px; text-align: center; }
+  .chat__or::before{ width: 100%; flex: none; }
+  .chat__or::after{ display: none; }
+  .chat__nav{ flex-direction: column-reverse; align-items: stretch; gap: 6px; }
+  .chat__nav .chat__send{ margin-left: 0; width: 100%; }
+  .chat__back{ padding: 12px 4px; }
+}
+
 .chat__nav{ display: flex; align-items: center; gap: 12px; }
 .chat__nav .chat__send{ margin-left: auto; }
 .chat__back{
@@ -2426,6 +2463,8 @@ h1, h2, h3, h4{
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
   padding: 16px 22px 22px; border-top: 1px solid var(--c-line);
 }
+/* На шаге связи те же ссылки уже стоят крупными кнопками — не дублируем. */
+.chat.is-ways .chat__social{ display: none; }
 .chat__social-label{ font-size: .84rem; color: rgba(255,255,255,.5); }
 .chat__social-links{ display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .chat__social-link{ font-size: .9rem; font-weight: 500; color: var(--on-dark); text-underline-offset: 3px; }

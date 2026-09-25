@@ -84,7 +84,9 @@ window.CMS_SCHEMA = [
     ['link-telegram', 'Ссылка Telegram (и все кнопки «Написать в ТГ»)', 'href', '[data-cms="link-telegram"], .chat__tg'],
     ['link-behance', 'Ссылка Behance', 'href', '[data-cms="link-behance"]'],
     ['link-instagram', 'Ссылка Instagram', 'href', '[data-cms="link-instagram"]'],
-    ['link-vk', 'Ссылка ВК', 'href', '[data-cms="link-vk"]']
+    ['link-vk', 'Ссылка ВК', 'href', '[data-cms="link-vk"]'],
+    ['link-vk-write', 'Ссылка «Написать ВКонтакте» (vk.me/…)', 'href', '[data-cms="link-vk-write"]'],
+    ['link-max', 'Ссылка MAX (кнопка появится, как только укажете профиль)', 'href', '[data-cms="link-max"]']
   ]},
   { section: 'Кнопки и списки', fields: [
     ['btn-hero-cta', 'Кнопка на главном экране', 'text', '.hero__cta .btn-slide__label'],
