@@ -757,7 +757,6 @@ function initContact() {
   const SUBJECT = 'Вопрос по проекту — pelenevdesign.ru';
   const MSG_EMPTY = 'Удобно связаться…';   // пока день и время не выбраны — подсказка, а не текст
   const TIME_WHEN = { 'Утро': 'утром', 'День': 'днём', 'Вечер': 'вечером' };
-  const isSheet = () => matchMedia('(max-width: 640px)').matches;
 
   /* Дни считаем от текущей даты, а не списком в коде — вкладка может
      провисеть открытой до завтра. После 17:00 сегодня уже не предлагаем. */
@@ -916,25 +915,20 @@ function initContact() {
     timesBox.querySelectorAll('.chat__opt').forEach((b) => b.classList.remove('is-selected'));
     syncMessage();
     gsap.killTweensOf([mBackdrop, mDialog]);
-    gsap.set(mDialog, { clearProps: 'y,yPercent' });
+    gsap.set(mDialog, { clearProps: 'y' });
     if (prefersReducedMotion) {
       gsap.set(mBackdrop, { opacity: 1 });
-      gsap.set(mDialog, { opacity: 1, y: 0, yPercent: 0 });
+      gsap.set(mDialog, { opacity: 1, y: 0 });
       return;
     }
     gsap.fromTo(mBackdrop, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power2.out' });
-    if (isSheet()) {
-      // Шторка выезжает снизу, без размытия: так двигаются панели в приложениях.
-      gsap.fromTo(mDialog, { yPercent: 100, opacity: 1 }, { yPercent: 0, duration: 0.5, ease: 'power3.out' });
-    } else {
-      gsap.fromTo(mDialog, { y: 60, opacity: 0, filter: 'blur(14px)' },
-        { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', onComplete: () => gsap.set(mDialog, { clearProps: 'filter' }) });
-      /* Содержимое всплывает по очереди: на десктопе окно большое, и разом
-         проявившийся блок читается как статичная картинка. */
-      const items = chat.querySelectorAll('.chat__head, .chat__way, .chat__or, .chat__when, .chat__msgbox');
-      gsap.fromTo(items, { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.5, stagger: 0.04, ease: 'power3.out', delay: 0.1, clearProps: 'transform,opacity' });
-    }
+    gsap.fromTo(mDialog, { y: 60, opacity: 0, filter: 'blur(14px)' },
+      { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', onComplete: () => gsap.set(mDialog, { clearProps: 'filter' }) });
+    /* Содержимое всплывает по очереди: разом проявившийся блок читается
+       как статичная картинка. */
+    const items = chat.querySelectorAll('.chat__head, .chat__way, .chat__or, .chat__when, .chat__msgbox');
+    gsap.fromTo(items, { opacity: 0, y: 14 },
+      { opacity: 1, y: 0, duration: 0.5, stagger: 0.04, ease: 'power3.out', delay: 0.1, clearProps: 'transform,opacity' });
   }
 
   function closeModal() {
@@ -942,52 +936,13 @@ function initContact() {
     modalOpen = false;
     lastClosedAt = Date.now();
     lockPage(false);
-    const done = () => { modal.setAttribute('aria-hidden', 'true'); gsap.set(mDialog, { clearProps: 'y,yPercent' }); };
+    const done = () => { modal.setAttribute('aria-hidden', 'true'); gsap.set(mDialog, { clearProps: 'y' }); };
     if (prefersReducedMotion) { gsap.set([mBackdrop, mDialog], { opacity: 0 }); done(); return; }
     gsap.killTweensOf([mBackdrop, mDialog]);
     gsap.to(mBackdrop, { opacity: 0, duration: 0.3, ease: 'power2.in' });
-    if (isSheet()) gsap.to(mDialog, { yPercent: 100, duration: 0.35, ease: 'power2.in', onComplete: done });
-    else gsap.to(mDialog, { y: 40, opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: done });
+    gsap.to(mDialog, { y: 40, opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: done });
   }
 
-  /* Свайп вниз закрывает шторку — привычный жест. Тянем только за «ручку»:
-     заголовок лежит в прокручиваемой области, и перетаскивание за него
-     отбирало бы у пальца обычный скролл. */
-  const grip = [chat.querySelector('.chat__grab')].filter(Boolean);
-  let dragging = false;
-  let startY = 0;
-  let dragY = 0;
-  grip.forEach((el) => {
-    el.addEventListener('pointerdown', (e) => {
-      if (!isSheet() || e.pointerType === 'mouse' || !modalOpen) return;
-      dragging = true; startY = e.clientY; dragY = 0;
-      gsap.killTweensOf(mDialog);
-      try { el.setPointerCapture(e.pointerId); } catch (err) { /* не поддержано */ }
-    });
-    el.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      dragY = Math.max(0, e.clientY - startY);
-      gsap.set(mDialog, { y: dragY });
-      gsap.set(mBackdrop, { opacity: Math.max(0, 1 - dragY / 420) });
-    });
-    const endDrag = () => {
-      if (!dragging) return;
-      dragging = false;
-      if (dragY > 110) { closeModal(); dragY = 0; return; }
-      gsap.to(mDialog, { y: 0, duration: 0.35, ease: 'power3.out' });
-      gsap.to(mBackdrop, { opacity: 1, duration: 0.25 });
-      dragY = 0;
-    };
-    el.addEventListener('pointerup', endDrag);
-    el.addEventListener('pointercancel', endDrag);
-  });
-
-  /* Глухой щит от «фантомного» клика: Safari на iOS досылает синтетический
-     клик через ~300мс после касания и целится в то, что оказалось под пальцем
-     к этому моменту. Шторка за это время уезжает, и клик попадает по странице —
-     а кнопок, открывающих форму, на главной семь. Ловим на фазе перехвата, до
-     всех остальных обработчиков, и гасим любой клик сразу после закрытия:
-     осознанно нажать что-то за полсекунды человек не успевает. */
   document.addEventListener('click', (e) => {
     if (Date.now() - lastClosedAt >= 700) return;
     e.stopPropagation();

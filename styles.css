@@ -2329,7 +2329,6 @@ h1, h2, h3, h4{
   .chat{ background: #141416; }
 }
 
-.chat__grab{ display: none; }
 /* Колонки существуют только на широком экране: ниже брейкпоинта они
    «растворяются», и дети снова становятся элементами .chat__body. */
 .chat__body{
@@ -2446,40 +2445,17 @@ h1, h2, h3, h4{
   .chat__msgbox{ margin-top: auto; }
 }
 
-/* --- Телефон: шторка снизу, как в приложениях --- */
+/* --- Телефон: то же всплывающее окно, что и на десктопе ---
+   Шторку снизу убрали: свайп, touch-action и синтетические клики Safari
+   давали больше проблем, чем сама шторка пользы. Окно по центру, фон
+   вокруг — по нему и закрывают тапом. */
 @media (max-width: 640px){
-  .modal{ place-items: end stretch; padding: 0; }
-  .modal__dialog{
-    width: 100%; max-width: none;
-    /* 52px сверху — не «дырка», а полоса фона: по ней закрывают шторку тапом,
-       как в приложениях. Без неё диалог занимал экран целиком. */
-    max-height: calc(var(--vvh, 100dvh) - 52px);
-  }
-  /* На телефоне полосу прокрутки не показываем — она и так системная. */
+  .modal{ padding: 16px; }
+  .modal__dialog{ max-height: calc(var(--vvh, 100dvh) - 32px); }
+  /* Полосу прокрутки не показываем — она и так системная. */
   .chat__body{ scrollbar-width: none; }
   .chat__body::-webkit-scrollbar{ display: none; }
-  .chat{
-    max-width: none;
-    border-radius: 24px 24px 0 0;
-    border-bottom: 0;
-    gap: 16px;
-    padding: 10px 18px max(20px, env(safe-area-inset-bottom));
-  }
-  /* «Ручка» — и метка, что шторку можно утянуть вниз, и зона захвата. */
-  .chat__grab{
-    display: block; flex: none; position: relative;
-    width: 100%; height: 26px; margin: 0 0 2px;
-  }
-  .chat__grab::before{
-    content: ''; position: absolute; top: 11px; left: 50%;
-    width: 40px; height: 4px; margin-left: -20px;
-    border-radius: 99px; background: rgba(255,255,255,.28);
-  }
-  /* touch-action: none только на «ручке». Раньше он стоял и на заголовке,
-     а заголовок лежит внутри прокручиваемой области — палец на нём не
-     листал шторку вообще, получалась мёртвая зона в сотню пикселей. */
-  .chat__grab{ touch-action: none; }
-  .modal__close{ top: 16px; right: 14px; width: 40px; height: 40px; }
+  .chat{ gap: 16px; padding: 22px 18px 20px; }
   .chat__title{ font-size: 1.22rem; }
   /* Пальцевые тап-зоны: строки каналов и «таблетки» крупнее. */
   .chat__way{ padding: 15px 16px; }
