@@ -139,7 +139,7 @@ function imgSize(string $src): string {
 <?php /* Предзагружаем только картинку: видео грузится своим чередом. */ ?>
 <?php if (!isVideoSrc($coverRaw)): ?>  <link rel="preload" as="image" href="<?= $esc($coverRaw) ?>" fetchpriority="high">
 <?php endif; ?>
-  <link rel="stylesheet" href="/styles.css?v=117">
+  <link rel="stylesheet" href="/styles.css?v=118">
   <link rel="stylesheet" href="/journal.css?v=9">
   <link rel="stylesheet" href="/article.css?v=5">
 <?= $integrationsHtml ?>
@@ -368,6 +368,6 @@ function imgSize(string $src): string {
 <?php if (!$isPreview): ?>
   <script>fetch('/api.php?action=article-view', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: <?= (int)$article['id'] ?> }), keepalive: true }).catch(() => {});</script>
 <?php endif; ?>
-  <script src="/leadmagnet.js?v=24" defer></script>
+  <script src="/leadmagnet.js?v=25" defer></script>
 </body>
 </html>

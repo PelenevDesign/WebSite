@@ -899,6 +899,8 @@ function initContact() {
      скролл документа, как это делает виджет акции. */
   function lockPage(on) {
     document.documentElement.style.overflow = on ? 'hidden' : '';
+    /* По этой метке виджет акции понимает, что вылезать сейчас нельзя. */
+    document.body.classList.toggle('is-modal-open', on);
     if (on) lenis.stop(); else lenis.start();
   }
 

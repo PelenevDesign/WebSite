@@ -9,7 +9,7 @@
   position: fixed;
   right: clamp(14px, 2vw, 26px);
   bottom: clamp(14px, 2vh, 26px);
-  z-index: 1150;                 /* выше дока (900), ниже меню-оверлея (1100+) не нужно */
+  z-index: 1050;                 /* выше дока (900), но НИЖЕ модалки связи (1100): на 1150 карточка ложилась поверх открытой формы и перехватывала нажатия */
   width: min(330px, calc(100vw - 28px));
   padding: 16px 16px 14px;
   border-radius: var(--r-card);

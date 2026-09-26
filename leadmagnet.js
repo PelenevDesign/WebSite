@@ -21,7 +21,7 @@
   if (!document.querySelector('link[data-lm-css]')) {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = '/leadmagnet.css?v=24';
+    css.href = '/leadmagnet.css?v=25';
     css.dataset.lmCss = '';
     document.head.appendChild(css);
   }
@@ -562,6 +562,8 @@
      дальше виджет открывает квиз только по клику на его кнопку. */
   const showCard = () => {
     if (seen()) return;
+    /* Форма связи открыта — не лезем поверх неё, пробуем позже. */
+    if (document.body.classList.contains('is-modal-open')) { setTimeout(showCard, 5000); return; }
     document.body.appendChild(card);
     void card.offsetWidth; /* см. openModal — на rAF полагаться нельзя */
     card.classList.add('is-in');

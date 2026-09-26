@@ -2236,6 +2236,11 @@ h1, h2, h3, h4{
   --ok: #22C55E; --warn: #FF5C3D;
 }
 .modal[aria-hidden="false"]{ pointer-events: auto; }
+/* Виджет акции и его карточка не должны появляться поверх открытой формы:
+   таймер виджета срабатывает через 10с и раньше выкидывал карточку прямо
+   на модалку, накрывая её кнопки. */
+body.is-modal-open .lm-card,
+body.is-modal-open .lm{ display: none !important; }
 .modal__backdrop{
   position: absolute; inset: 0;
   touch-action: none;            /* по фону ничего не прокручиваем */
