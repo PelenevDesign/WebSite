@@ -15,4 +15,8 @@ RedirectMatch 404 ^/school/_storage(/|$)
 
 <IfModule mod_headers.c>
   Header always set X-Robots-Tag "noindex, nofollow, noarchive"
+  # Кабинет и админка школы во фрейм не встраиваются. Своя CSP обязательна:
+  # при наличии frame-ancestors браузер игнорирует X-Frame-Options, поэтому
+  # белый список из корневого .htaccess иначе распространился бы и сюда.
+  Header always set Content-Security-Policy "frame-ancestors 'none'"
 </IfModule>

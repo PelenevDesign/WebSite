@@ -37,10 +37,17 @@ Options -Indexes
 </IfModule>
 
 # Заголовки безопасности — их отсутствие снижало оценку «Рекомендации».
-# CSP намеренно не добавляю: вслепую она ломает счётчики и инлайн-скрипты.
+# CSP здесь ровно одна директива — frame-ancestors. Счётчики и инлайн-скрипты
+# она не трогает: ограничения на скрипты задаёт script-src, которого тут нет.
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
-  Header always set X-Frame-Options "SAMEORIGIN"
+  # X-Frame-Options убран намеренно. Он умеет только «свой домен» и не даёт
+  # перечислить чужие (ALLOW-FROM давно не поддерживается браузерами). Его
+  # роль играет frame-ancestors ниже: тот же запрет на встраивание, но с
+  # белым списком. Метрика строит карты кликов, ссылок и скроллинга, открывая
+  # сайт во фрейме со своих доменов — при SAMEORIGIN они молча не работали,
+  # хотя Вебвизор продолжал писать, потому что проигрывает слепок, а не фрейм.
+  Header always set Content-Security-Policy "frame-ancestors 'self' https://metrika.yandex.ru https://*.metrika.yandex.ru https://webvisor.com https://*.webvisor.com"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
   # HSTS включаем только когда сайт уже стабильно работает по https
