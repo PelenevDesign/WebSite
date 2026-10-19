@@ -360,9 +360,11 @@ p { margin: 0; }
   padding-bottom: 12px; margin: 0 -4px; padding-left: 4px; padding-right: 4px;
   overscroll-behavior-x: contain;
 }
-.board::-webkit-scrollbar { height: 10px; }
-.board::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 999px; background: var(--scroll-thumb); background-clip: content-box; }
-.board::-webkit-scrollbar-track { background: transparent; }
+/* Полосу прокрутки прячем, сама прокрутка остаётся: колёсико с Shift,
+   тачпад, перетаскивание карточки к краю. Край обрезанной колонки и есть
+   подсказка, что доска продолжается вправо. */
+.board { scrollbar-width: none; -ms-overflow-style: none; }
+.board::-webkit-scrollbar { width: 0; height: 0; }
 
 .col {
   --col-tint: var(--quiet);
@@ -401,10 +403,28 @@ p { margin: 0; }
 }
 .col__add:hover { color: var(--accent); border-color: var(--accent-line); background: var(--accent-pale); }
 
+/* Колонка листается внутри себя, чтобы доска помещалась в экран и шапки
+   этапов оставались на виду. Полосу прокрутки прячем — видно и так, что
+   карточка обрезана нижним краем. */
 .col__body {
   display: grid; align-content: start; gap: 10px;
   padding: 12px; min-height: 96px; max-height: calc(100vh - 330px); overflow-y: auto;
   overscroll-behavior-y: contain;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.col__body::-webkit-scrollbar { width: 0; height: 0; }
+
+/* На десктопе доска занимает ровно остаток экрана: страница не листается,
+   вертикальная прокрутка остаётся только одна — внутри колонки. Высоту
+   подбирает флекс, а не формула с вычитанием: над доской то заголовок, то
+   развёрнутые метрики, и любое фиксированное число промахивалось бы. */
+@media (min-width: 901px) {
+  .content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .view.is-visible { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+  #task-groups { display: flex; flex: 1 1 auto; min-height: 0; }
+  .board { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+  .col { max-height: 100%; }
+  .col__body { flex: 1 1 auto; min-height: 0; max-height: none; }
 }
 .col__empty { padding: 18px 4px; color: var(--quiet); font-size: 12.5px; text-align: center; }
 
