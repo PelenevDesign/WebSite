@@ -2,14 +2,15 @@
   'use strict';
 
   /* ──────────────────────────────────────────────────────────────
-     Модель данных (v4) — максимально просто: карточки добавляют и удаляют,
-     без статусов, срочности и отдельной сущности «клиент».
-     tasks: {id, title, price, paid, due, time, note, createdAt}
+     Модель данных (v5) — канбан-доска: у карточки есть этап и клиент.
+     stages: [{id, name}] — колонки доски слева направо
+     tasks: {id, title, client, stage, price, paid, due, time, note, createdAt}
      notes: {id, body (санитизированный HTML, первая строка = заголовок),
              pinned, deletedAt, createdAt, updatedAt}
      ────────────────────────────────────────────────────────────── */
 
-  const KEY = 'pelenev.crm.workspace.v4';
+  const KEY = 'pelenev.crm.workspace.v5';
+  const LEGACY_KEY_V4 = 'pelenev.crm.workspace.v4';
   const LEGACY_KEY_V3 = 'pelenev.crm.workspace.v3';
   const LEGACY_KEY_V2 = 'pelenev.crm.workspace.v2';
   const LEGACY_KEY_V1 = 'pelenev.crm.workspace.v1';
@@ -167,13 +168,26 @@
   });
 
   /* ── Состояние ────────────────────────────────────────────── */
-  const emptyState = () => ({ v: 4, tasks: [], notes: [] });
+  /* Колонки доски. Лежат в состоянии, а не в коде, — чтобы позже
+     переименовывать их из интерфейса, не трогая уже разложенные карточки. */
+  const DEFAULT_STAGES = [
+    { id: 'new',    name: 'Новая' },
+    { id: 'talks',  name: 'Переговоры' },
+    { id: 'prepay', name: 'Предоплата' },
+    { id: 'work',   name: 'В работе' },
+    { id: 'final',  name: 'Финальный счёт' },
+    { id: 'done',   name: 'Готово' }
+  ];
+  const firstStageId = () => (data?.stages?.[0]?.id) || DEFAULT_STAGES[0].id;
+  const stageExists = (id) => Boolean(data?.stages?.some((s) => s.id === id));
+
+  const emptyState = () => ({ v: 5, stages: DEFAULT_STAGES.map((s) => ({ ...s })), tasks: [], notes: [] });
 
   const seed = () => {
     const state = emptyState();
     state.tasks = [
-      { id: uid('t'), title: 'Отправить КП', price: 65000, paid: 30000, due: today(), time: '10:00', note: '', createdAt: today() },
-      { id: uid('t'), title: 'Собрать референсы для главного экрана', price: 0, paid: 0, due: '', time: '', note: '', createdAt: today() }
+      { id: uid('t'), title: 'Отправить КП', client: 'Василий Фёдоров', stage: 'talks', price: 65000, paid: 30000, due: today(), time: '10:00', note: 'Нужен лендинг, бюджет подтвердил', createdAt: today() },
+      { id: uid('t'), title: 'Собрать референсы для главного экрана', client: '', stage: 'new', price: 0, paid: 0, due: '', time: '', note: '', createdAt: today() }
     ];
     const now = new Date().toISOString();
     state.notes = [{
@@ -187,27 +201,47 @@
   /* Перенос данных со старой (веб-архивной) версии CRM, ещё до сделок/задач v2 */
   const migrateLegacy = (old) => {
     const state = emptyState();
+    const start = state.stages[0].id;
     (Array.isArray(old.deals) ? old.deals : []).forEach((d) => {
-      state.tasks.push({ id: d.id || uid('t'), title: d.name || 'Без названия', price: num(d.value), paid: d.status === 'Завершено' ? num(d.value) : 0, due: '', time: '', note: '', createdAt: today() });
+      state.tasks.push({ id: d.id || uid('t'), title: d.name || 'Без названия', client: '', stage: d.status === 'Завершено' ? 'done' : start, price: num(d.value), paid: d.status === 'Завершено' ? num(d.value) : 0, due: '', time: '', note: '', createdAt: today() });
     });
     (Array.isArray(old.tasks) ? old.tasks : []).forEach((t) => {
-      state.tasks.push({ id: t.id || uid('t'), title: t.title || 'Без названия', price: 0, paid: 0, due: today(), time: t.time || '', note: '', createdAt: today() });
+      state.tasks.push({ id: t.id || uid('t'), title: t.title || 'Без названия', client: '', stage: start, price: 0, paid: 0, due: today(), time: t.time || '', note: '', createdAt: today() });
     });
     return state;
   };
 
   const normalize = (incoming) => {
     if (!incoming || typeof incoming !== 'object') return seed();
-    if (incoming.v !== 2 && incoming.v !== 3 && incoming.v !== 4 && (Array.isArray(incoming.deals) || Array.isArray(incoming.finance))) return migrateLegacy(incoming);
+    if (incoming.v !== 2 && incoming.v !== 3 && incoming.v !== 4 && incoming.v !== 5 && (Array.isArray(incoming.deals) || Array.isArray(incoming.finance))) return migrateLegacy(incoming);
 
     const state = emptyState();
+
+    /* Колонки: берём сохранённые, но только валидные и без дублей.
+       Пустой список недопустим — иначе карточки станет некуда положить. */
+    const seenStage = new Set();
+    const stages = (Array.isArray(incoming.stages) ? incoming.stages : []).reduce((acc, raw) => {
+      if (!raw || typeof raw !== 'object') return acc;
+      const id = String(raw.id || '').trim().slice(0, 40);
+      const name = String(raw.name || '').trim().slice(0, 40);
+      if (!id || !name || seenStage.has(id)) return acc;
+      seenStage.add(id);
+      acc.push({ id, name });
+      return acc;
+    }, []);
+    if (stages.length) state.stages = stages;
+    const knownStage = new Set(state.stages.map((s) => s.id));
+    const fallbackStage = state.stages[0].id;
 
     (Array.isArray(incoming.tasks) ? incoming.tasks : []).forEach((t) => {
       if (!t || typeof t !== 'object') return;
       const price = num(t.price);
+      const stage = String(t.stage || '');
       state.tasks.push({
         id: String(t.id || uid('t')),
         title: String(t.title || 'Без названия').slice(0, 200),
+        client: String(t.client || '').slice(0, 120),
+        stage: knownStage.has(stage) ? stage : fallbackStage,
         price,
         paid: Math.min(price, num(t.paid)),
         due: fromIso(t.due) ? t.due : '',
@@ -240,10 +274,11 @@
   let migratedFromLegacy = false;
   try {
     const current = localStorage.getItem(KEY);
-    const legacyV3 = current ? null : localStorage.getItem(LEGACY_KEY_V3);
-    const legacyV2 = current || legacyV3 ? null : localStorage.getItem(LEGACY_KEY_V2);
-    const legacyV1 = current || legacyV3 || legacyV2 ? null : localStorage.getItem(LEGACY_KEY_V1);
-    const source = current || legacyV3 || legacyV2 || legacyV1;
+    const legacyV4 = current ? null : localStorage.getItem(LEGACY_KEY_V4);
+    const legacyV3 = current || legacyV4 ? null : localStorage.getItem(LEGACY_KEY_V3);
+    const legacyV2 = current || legacyV4 || legacyV3 ? null : localStorage.getItem(LEGACY_KEY_V2);
+    const legacyV1 = current || legacyV4 || legacyV3 || legacyV2 ? null : localStorage.getItem(LEGACY_KEY_V1);
+    const source = current || legacyV4 || legacyV3 || legacyV2 || legacyV1;
     data = source ? normalize(JSON.parse(source)) : seed();
     migratedFromLegacy = Boolean(legacyV3 || legacyV2 || legacyV1);
   } catch (_) {
@@ -281,7 +316,7 @@
       const result = await response.json();
       serverMode = true;
       if (result.state && typeof result.state === 'object') {
-        const wasLegacy = result.state.v !== 4;
+        const wasLegacy = result.state.v !== 5;
         data = normalize(result.state);
         setSyncState('Синхронизировано', 'ok');
         render();
@@ -328,47 +363,268 @@
       : 'Карточек пока нет — самое время добавить первую.';
   };
 
-  const taskCard = (task) => {
+  /* ── Доска ────────────────────────────────────────────────── */
+  /* Цена редактируется прямо в карточке: пока поле в фокусе — голые цифры,
+     после ухода — отформатированная сумма. Иначе каретка прыгает по пробелам. */
+  const priceText = (value) => (Number(value) > 0 ? Math.round(Number(value)).toLocaleString('ru-RU') : '');
+
+  const stageTasks = (stageId) => data.tasks.filter((t) => t.stage === stageId);
+  const stageSum = (stageId) => stageTasks(stageId).reduce((sum, t) => sum + t.price, 0);
+
+  const dealCard = (task) => {
     const left = taskLeft(task);
     const payPercent = task.price > 0 ? Math.round(task.paid / task.price * 100) : 0;
     const overdue = task.due && daysBetween(today(), task.due) < 0;
     return `
-      <article class="task" data-task="${esc(task.id)}">
-        <div class="task__top">
-          <div class="task__main" data-edit-task="${esc(task.id)}">
-            <b>${esc(task.title)}</b>
-            ${task.due ? `<div class="task__meta"><span class="task__due${overdue ? ' is-overdue' : ''}">${esc(fmtDateRelative(task.due))}${task.time ? ` · ${esc(task.time)}` : ''}</span></div>` : ''}
-          </div>
-          <button class="mini-btn" data-edit-task="${esc(task.id)}" title="Редактировать" aria-label="Редактировать">↗</button>
+      <article class="deal" data-task="${esc(task.id)}">
+        <div class="deal__head">
+          <b class="deal__title" data-edit-task="${esc(task.id)}" title="Открыть карточку">${esc(task.title)}</b>
+          <button class="deal__open mini-btn" data-edit-task="${esc(task.id)}" title="Редактировать" aria-label="Редактировать">↗</button>
         </div>
-        ${task.price > 0 ? `
-          <div class="task__money">
-            <b>${money(task.paid)} <i>из ${money(task.price)}</i></b>
-            <div class="bar"><span style="width:${Math.min(100, payPercent)}%"></span></div>
-            <small>${left > 0 ? `осталось ${money(left)}` : 'оплачено полностью'}</small>
-          </div>` : ''}
-        <div class="task__controls">
-          ${left > 0 ? `<button class="mini-btn" data-pay-task="${esc(task.id)}" title="Внести оплату">+ ₽</button>` : ''}
-          <button class="task__delete" data-delete-task="${esc(task.id)}" title="Удалить" aria-label="Удалить карточку">🗑</button>
+
+        <label class="deal__price">
+          <input type="text" inputmode="numeric" autocomplete="off" spellcheck="false"
+                 data-field="price" data-task="${esc(task.id)}"
+                 value="${esc(priceText(task.price))}" placeholder="0" aria-label="Цена, ₽">
+          <span aria-hidden="true">₽</span>
+        </label>
+
+        <input class="deal__client" type="text" autocomplete="off"
+               data-field="client" data-task="${esc(task.id)}"
+               value="${esc(task.client)}" placeholder="Имя клиента" aria-label="Клиент">
+
+        <textarea class="deal__note" rows="1" data-field="note" data-task="${esc(task.id)}"
+                  placeholder="Заметка о клиенте" aria-label="Заметка о клиенте">${esc(task.note)}</textarea>
+
+        <div class="deal__money" data-money="${esc(task.id)}">${task.price > 0 && task.paid > 0 ? `
+          <div class="bar"><span style="width:${Math.min(100, payPercent)}%"></span></div>
+          <small>${left > 0 ? `${money(task.paid)} из ${money(task.price)}` : 'оплачено полностью'}</small>` : ''}
+        </div>
+
+        <div class="deal__foot">
+          ${task.due ? `<span class="deal__due${overdue ? ' is-overdue' : ''}">${esc(fmtDateRelative(task.due))}${task.time ? ` · ${esc(task.time)}` : ''}</span>` : '<span class="deal__due deal__due--empty">без срока</span>'}
+          <div class="deal__actions">
+            ${left > 0 ? `<button class="mini-btn" data-pay-task="${esc(task.id)}" title="Внести оплату" aria-label="Внести оплату">+ ₽</button>` : ''}
+            <button class="task__delete" data-delete-task="${esc(task.id)}" title="Удалить" aria-label="Удалить карточку">🗑</button>
+          </div>
         </div>
       </article>`;
   };
 
-  const renderTasks = () => {
-    const sorted = data.tasks.slice().sort((a, b) => {
-      if (!a.due && b.due) return 1;
-      if (a.due && !b.due) return -1;
-      if (a.due !== b.due) return a.due < b.due ? -1 : 1;
-      return 0;
-    });
-
-    byId('task-groups').innerHTML = sorted.length ? `<div class="task-list">${sorted.map(taskCard).join('')}</div>` : `
-      <div class="empty">
-        <b>Задач пока нет</b>
-        <p>Добавь первую карточку — название, срок и стоимость по желанию.</p>
-        <button class="primary-btn" data-action="new-task">+ Задача</button>
-      </div>`;
+  const columnHtml = (stage) => {
+    const list = stageTasks(stage.id);
+    return `
+      <section class="col" data-stage="${esc(stage.id)}">
+        <header class="col__head">
+          <div class="col__title">
+            <b>${esc(stage.name)}</b>
+            <i>${list.length}</i>
+          </div>
+          <strong class="col__sum" data-sum="${esc(stage.id)}">${money(stageSum(stage.id))}</strong>
+          <button class="col__add" data-add-stage="${esc(stage.id)}" title="Добавить карточку" aria-label="Добавить карточку в «${esc(stage.name)}»">+</button>
+        </header>
+        <div class="col__body" data-drop="${esc(stage.id)}">
+          ${list.map(dealCard).join('') || '<p class="col__empty">Перетащите карточку сюда</p>'}
+        </div>
+      </section>`;
   };
+
+  const renderTasks = () => {
+    byId('task-groups').innerHTML = `<div class="board" id="board">${data.stages.map(columnHtml).join('')}</div>`;
+    autoGrowAll();
+  };
+
+  /* Пересчитываем только шапки колонок — перерисовывать доску нельзя:
+     пользователь в этот момент может печатать в соседней карточке. */
+  const refreshTotals = () => {
+    data.stages.forEach((stage) => {
+      const sum = byId('board')?.querySelector(`[data-sum="${CSS.escape(stage.id)}"]`);
+      if (sum) sum.textContent = money(stageSum(stage.id));
+    });
+    renderWorkMetrics();
+  };
+
+  const refreshMoney = (task) => {
+    const box = document.querySelector(`[data-money="${CSS.escape(task.id)}"]`);
+    if (!box) return;
+    const left = taskLeft(task);
+    const payPercent = task.price > 0 ? Math.round(task.paid / task.price * 100) : 0;
+    box.innerHTML = task.price > 0 && task.paid > 0
+      ? `<div class="bar"><span style="width:${Math.min(100, payPercent)}%"></span></div>
+         <small>${left > 0 ? `${money(task.paid)} из ${money(task.price)}` : 'оплачено полностью'}</small>`
+      : '';
+  };
+
+  const autoGrow = (el) => { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; };
+  const autoGrowAll = () => document.querySelectorAll('.deal__note').forEach(autoGrow);
+
+  /* ── Быстрая правка прямо в карточке ──────────────────────── */
+  const taskOfField = (el) => data.tasks.find((t) => t.id === el.dataset.task);
+
+  const commitField = (el) => {
+    const task = taskOfField(el);
+    if (!task) return;
+    if (el.dataset.cancel === '1') { delete el.dataset.cancel; return; }
+    const changed = el.value !== el.dataset.before;
+
+    if (el.dataset.field === 'price') {
+      const price = num(String(el.value).replace(/[^0-9]/g, ''));
+      task.price = price;
+      task.paid = Math.min(task.paid, price);
+      el.value = priceText(price);
+      refreshMoney(task);
+      refreshTotals();
+    } else if (el.dataset.field === 'client') {
+      task.client = String(el.value).trim().slice(0, 120);
+      el.value = task.client;
+    } else if (el.dataset.field === 'note') {
+      task.note = String(el.value).trim().slice(0, 800);
+      el.value = task.note;
+      autoGrow(el);
+    }
+    if (changed) persist();
+  };
+
+  document.addEventListener('focusin', (event) => {
+    const el = event.target.closest?.('[data-field][data-task]');
+    if (!el) return;
+    /* В фокусе цена — голые цифры: с пробелами-разделителями каретка скачет */
+    if (el.dataset.field === 'price') {
+      const task = taskOfField(el);
+      if (task) el.value = task.price > 0 ? String(task.price) : '';
+    }
+    el.dataset.before = el.value;
+  });
+
+  document.addEventListener('focusout', (event) => {
+    const el = event.target.closest?.('[data-field][data-task]');
+    if (el) commitField(el);
+  });
+
+  document.addEventListener('input', (event) => {
+    const el = event.target.closest?.('.deal__note');
+    if (el) autoGrow(el);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    const el = event.target.closest?.('[data-field][data-task]');
+    if (!el) return;
+    if (event.key === 'Escape') {
+      el.dataset.cancel = '1';
+      el.value = el.dataset.before || '';
+      el.blur();
+      return;
+    }
+    /* Enter завершает правку; в заметке с Shift — перенос строки */
+    if (event.key === 'Enter' && !(el.dataset.field === 'note' && event.shiftKey)) {
+      event.preventDefault();
+      el.blur();
+    }
+  });
+
+  /* ── Перетаскивание карточек между колонками ──────────────── */
+  /* Pointer Events вместо HTML5 drag-and-drop: тот не работает на тачскрине.
+     На касании вертикаль отдаём прокрутке колонки (см. touch-action: pan-y),
+     перетаскиванием считаем только горизонтальный жест. */
+  let drag = null;
+  let edgeScroll = 0;
+  let edgeFrame = 0;
+
+  const runEdgeScroll = () => {
+    edgeFrame = 0;
+    if (!drag || !drag.active || !edgeScroll) return;
+    byId('board')?.scrollBy({ left: edgeScroll });
+    edgeFrame = requestAnimationFrame(runEdgeScroll);
+  };
+
+  const dropColumnAt = (x, y) => {
+    const under = document.elementFromPoint(x, y);
+    return under ? under.closest('.col') : null;
+  };
+
+  const highlightColumn = (col) => {
+    document.querySelectorAll('.col.is-target').forEach((el) => { if (el !== col) el.classList.remove('is-target'); });
+    if (col) col.classList.add('is-target');
+  };
+
+  const stopDrag = (moved) => {
+    if (!drag) return;
+    const state = drag;
+    drag = null;
+    edgeScroll = 0;
+    if (edgeFrame) { cancelAnimationFrame(edgeFrame); edgeFrame = 0; }
+    if (state.ghost) state.ghost.remove();
+    state.card.classList.remove('is-dragging');
+    document.body.classList.remove('is-dragging-card');
+    highlightColumn(null);
+    if (!moved) return;
+
+    const stage = state.target;
+    const task = data.tasks.find((t) => t.id === state.id);
+    if (!task || !stage || task.stage === stage) { render(); return; }
+    task.stage = stage;
+    /* В конец массива — значит в низ новой колонки: порядок предсказуем */
+    data.tasks = data.tasks.filter((t) => t.id !== task.id).concat(task);
+    persist();
+    render();
+    toast(`Перенесено в «${data.stages.find((s) => s.id === stage)?.name || stage}»`);
+  };
+
+  document.addEventListener('pointerdown', (event) => {
+    if (event.button) return;
+    if (event.target.closest('input, textarea, button, a, select')) return;
+    const card = event.target.closest('.deal');
+    if (!card) return;
+    const box = card.getBoundingClientRect();
+    drag = {
+      card, id: card.dataset.task, pointerId: event.pointerId,
+      x: event.clientX, y: event.clientY,
+      offsetX: event.clientX - box.left, offsetY: event.clientY - box.top,
+      width: box.width, mouse: event.pointerType === 'mouse',
+      active: false, ghost: null, target: ''
+    };
+  });
+
+  document.addEventListener('pointermove', (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+
+    if (!drag.active) {
+      if (Math.hypot(dx, dy) < 8) return;
+      if (!drag.mouse && Math.abs(dy) >= Math.abs(dx)) { drag = null; return; }
+      drag.active = true;
+      const ghost = drag.card.cloneNode(true);
+      ghost.classList.add('deal-ghost');
+      ghost.style.width = `${drag.width}px`;
+      document.body.appendChild(ghost);
+      drag.ghost = ghost;
+      drag.card.classList.add('is-dragging');
+      document.body.classList.add('is-dragging-card');
+    }
+
+    event.preventDefault();
+    drag.ghost.style.transform = `translate(${event.clientX - drag.offsetX}px, ${event.clientY - drag.offsetY}px)`;
+
+    const col = dropColumnAt(event.clientX, event.clientY);
+    drag.target = col ? col.dataset.stage : '';
+    highlightColumn(col);
+
+    const board = byId('board');
+    if (board) {
+      const edge = board.getBoundingClientRect();
+      if (event.clientX < edge.left + 70) edgeScroll = -16;
+      else if (event.clientX > edge.right - 70) edgeScroll = 16;
+      else edgeScroll = 0;
+      if (edgeScroll && !edgeFrame) edgeFrame = requestAnimationFrame(runEdgeScroll);
+    }
+  }, { passive: false });
+
+  document.addEventListener('pointerup', (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    stopDrag(drag.active);
+  });
+  document.addEventListener('pointercancel', () => stopDrag(false));
 
   /* ── Заметки ──────────────────────────────────────────────── */
   let selectedNoteId = '';
@@ -519,6 +775,8 @@
       title: (edit) => (edit ? 'Редактировать задачу' : 'Новая задача'),
       fields: [
         { key: 'title', label: 'Что нужно сделать', type: 'text', required: true },
+        { key: 'client', label: 'Клиент', type: 'text', half: true },
+        { key: 'stage', label: 'Этап', type: 'select', half: true, options: () => data.stages.map((s) => [s.id, s.name]) },
         { key: 'due', label: 'Дата', type: 'date', half: true },
         { key: 'time', label: 'Время', type: 'time', half: true },
         { key: 'price', label: 'Стоимость, ₽', type: 'number', half: true },
@@ -543,6 +801,10 @@
     let control = '';
     if (field.type === 'textarea') {
       control = `<textarea name="${name}" rows="3">${esc(value)}</textarea>`;
+    } else if (field.type === 'select') {
+      const options = (typeof field.options === 'function' ? field.options() : field.options) || [];
+      control = `<select name="${name}">${options.map(([id, label]) =>
+        `<option value="${esc(id)}"${String(id) === String(value) ? ' selected' : ''}>${esc(label)}</option>`).join('')}</select>`;
     } else {
       const min = field.type === 'number' ? ' min="0" step="100"' : '';
       control = `<input name="${name}" type="${field.type}" value="${esc(value)}"${field.required ? ' required' : ''}${min}>`;
@@ -580,8 +842,11 @@
       const price = num(raw.price);
       const task = modal.id ? data.tasks.find((t) => t.id === modal.id) : { id: uid('t'), createdAt: today() };
       if (!task) { closeModal(); return; }
+      const stage = stageExists(String(raw.stage || '')) ? String(raw.stage) : (task.stage || firstStageId());
       Object.assign(task, {
         title: String(raw.title).trim(),
+        client: String(raw.client || '').trim().slice(0, 120),
+        stage,
         due: fromIso(raw.due) ? raw.due : '',
         time: validTime(raw.time),
         price,
@@ -607,7 +872,7 @@
 
   /* ── Резервные копии ──────────────────────────────────────── */
   const exportBackup = () => {
-    const blob = new Blob([JSON.stringify({ version: 4, exportedAt: new Date().toISOString(), state: data }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ version: 5, exportedAt: new Date().toISOString(), state: data }, null, 2)], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `workspace-${today()}.json`;
@@ -634,7 +899,7 @@
 
   /* ── События ──────────────────────────────────────────────── */
   const openAction = (action) => {
-    if (action === 'new-task') { openModal('task', { due: today() }); return true; }
+    if (action === 'new-task') { openModal('task', { due: today(), stage: firstStageId() }); return true; }
     if (action === 'new-note') { setView('notes'); notesTrash = false; createNote(); return true; }
     if (action === 'export') { exportBackup(); return true; }
     if (action === 'import') { byId('backup-file').click(); return true; }
@@ -654,6 +919,9 @@
       byId('profile-btn').setAttribute('aria-expanded', 'false');
       return;
     }
+
+    const addToStage = target.closest('[data-add-stage]');
+    if (addToStage) { openModal('task', { due: today(), stage: addToStage.dataset.addStage }); return; }
 
     const deleteBtn = target.closest('[data-delete-task]');
     if (deleteBtn) {
@@ -810,8 +1078,10 @@
   /* Компактный снимок: модели нужны id и суть, а не всё подряд */
   const agentSnapshot = () => ({
     today: today(),
+    stages: data.stages.map((s) => ({ id: s.id, name: s.name })),
     tasks: data.tasks.slice(0, 80).map((t) => ({
-      id: t.id, title: t.title, price: t.price, paid: t.paid, due: t.due || null, time: t.time || null
+      id: t.id, title: t.title, client: t.client || null, stage: t.stage,
+      price: t.price, paid: t.paid, due: t.due || null, time: t.time || null
     })),
     totals: { earned: earned(), awaiting: awaiting() }
   });
@@ -826,6 +1096,8 @@
     const price = op.price !== undefined ? num(op.price) : (task ? task.price : 0);
     if (op.price !== undefined) patch.price = price;
     if (op.paid !== undefined) patch.paid = Math.min(price, num(op.paid));
+    if (op.client !== undefined) patch.client = String(op.client || '').trim().slice(0, 120);
+    if (op.stage !== undefined && stageExists(String(op.stage))) patch.stage = String(op.stage);
     return patch;
   };
 
@@ -834,7 +1106,7 @@
     ops.forEach((op) => {
       try {
         if (op.op === 'task.create') {
-          const task = { id: uid('t'), title: 'Без названия', price: 0, paid: 0, due: '', time: '', note: '', createdAt: today() };
+          const task = { id: uid('t'), title: 'Без названия', client: '', stage: firstStageId(), price: 0, paid: 0, due: '', time: '', note: '', createdAt: today() };
           Object.assign(task, taskFieldsFrom(op, task));
           data.tasks.unshift(task);
           done.push(`Задача «${task.title}»`);

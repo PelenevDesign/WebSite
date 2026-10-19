@@ -18,7 +18,7 @@ header('Cache-Control: no-store, private', true);
   <title>Workspace — PELENEV.DESIGN</title>
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <script>/* тема до первой отрисовки — иначе моргает */(function(){try{var t=localStorage.getItem('pelenev.crm.theme');if(t!=='light'&&t!=='dark')t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
-  <link rel="stylesheet" href="/crm/crm.css?v=27">
+  <link rel="stylesheet" href="/crm/crm.css?v=28">
 </head>
 <body class="crm-app">
 <div class="shell">
@@ -183,6 +183,6 @@ header('Cache-Control: no-store, private', true);
   </div>
 </div>
 
-<script src="/crm/crm.js?v=27"></script>
+<script src="/crm/crm.js?v=28"></script>
 </body>
 </html>
