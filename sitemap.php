@@ -13,11 +13,37 @@ $today = date('Y-m-d');
 $urls = [
   ['loc' => $base . '/',            'changefreq' => 'weekly',  'priority' => '1.0', 'lastmod' => $today],
   ['loc' => $base . '/work',        'changefreq' => 'weekly',  'priority' => '0.9', 'lastmod' => $today],
-  /* SEO-страницы услуг. Новую услугу добавлять сюда же — каталог в /services/. */
-  ['loc' => $base . '/services/websites/', 'changefreq' => 'monthly', 'priority' => '0.9', 'lastmod' => $today],
   ['loc' => $base . '/journal',     'changefreq' => 'daily',   'priority' => '0.9', 'lastmod' => $today],
   ['loc' => $base . '/privacy.html','changefreq' => 'yearly',  'priority' => '0.2', 'lastmod' => $today],
 ];
+
+/* SEO-страницы услуг. Список собираем сам — раньше он был вписан руками и в
+   sitemap попадала только одна услуга из пяти, остальные поисковик не видел.
+   Источники те же, что у самих страниц: сначала админка, затем _data.php. */
+$serviceSlugs = [];
+try {
+  foreach (serviceRows() as $service) {
+    if (strpos((string)($service['meta_robots'] ?? ''), 'noindex') !== false) continue;
+    $serviceSlugs[(string)$service['slug']] = !empty($service['updated_at'])
+      ? date('Y-m-d', strtotime((string)$service['updated_at']))
+      : $today;
+  }
+} catch (Throwable $e) {
+  /* таблица услуг ещё не создана — ниже подхватим статику */
+}
+foreach (array_keys(require __DIR__ . '/services/_data.php') as $slug) {
+  /* Страница существует только если есть каталог со stub-файлом. */
+  if (!is_file(__DIR__ . '/services/' . $slug . '/index.php')) continue;
+  if (!isset($serviceSlugs[$slug])) $serviceSlugs[$slug] = $today;
+}
+foreach ($serviceSlugs as $slug => $lastmod) {
+  $urls[] = [
+    'loc'        => $base . '/services/' . $slug . '/',
+    'changefreq' => 'monthly',
+    'priority'   => '0.9',
+    'lastmod'    => $lastmod,
+  ];
+}
 
 try {
   foreach (projectRows() as $project) {

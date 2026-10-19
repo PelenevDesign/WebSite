@@ -18,7 +18,7 @@ header('Cache-Control: no-store, private', true);
   <title>Workspace — PELENEV.DESIGN</title>
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <script>/* тема до первой отрисовки — иначе моргает */(function(){try{var t=localStorage.getItem('pelenev.crm.theme');if(t!=='light'&&t!=='dark')t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
-  <link rel="stylesheet" href="/crm/crm.css?v=27">
+  <link rel="stylesheet" href="/crm/crm.css?v=29">
 </head>
 <body class="crm-app">
 <div class="shell">
@@ -178,11 +178,11 @@ header('Cache-Control: no-store, private', true);
 <div class="sheet" id="add-sheet" hidden>
   <div class="modal__backdrop" data-sheet-close></div>
   <div class="sheet__body" role="menu" aria-label="Что добавить">
-    <button data-action="new-task" role="menuitem"><b>Задача</b><small>название, срок и стоимость по желанию</small></button>
+    <button data-action="new-task" role="menuitem"><b>Задача</b><small>название, клиент и стоимость по желанию</small></button>
     <button data-action="new-note" role="menuitem"><b>Заметка</b><small>текст, чек-лист, форматирование</small></button>
   </div>
 </div>
 
-<script src="/crm/crm.js?v=27"></script>
+<script src="/crm/crm.js?v=29"></script>
 </body>
 </html>
