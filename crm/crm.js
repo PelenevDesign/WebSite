@@ -384,10 +384,12 @@
       <section class="col" data-stage="${esc(stage.id)}">
         <header class="col__head">
           <div class="col__title">
-            <b>${esc(stage.name)}</b>
+            <input class="col__name" type="text" autocomplete="off" maxlength="40"
+                   data-stage-name="${esc(stage.id)}" value="${esc(stage.name)}" aria-label="Название этапа">
             <i>${list.length}</i>
           </div>
           <strong class="col__sum" data-sum="${esc(stage.id)}">${money(stageSum(stage.id))}</strong>
+          <button class="col__drop" data-remove-stage="${esc(stage.id)}" title="Удалить этап" aria-label="Удалить этап «${esc(stage.name)}»">×</button>
           <button class="col__add" data-add-stage="${esc(stage.id)}" title="Добавить карточку" aria-label="Добавить карточку в «${esc(stage.name)}»">+</button>
         </header>
         <div class="col__body" data-drop="${esc(stage.id)}">
@@ -397,8 +399,57 @@
   };
 
   const renderTasks = () => {
-    byId('task-groups').innerHTML = `<div class="board" id="board">${data.stages.map(columnHtml).join('')}</div>`;
+    byId('task-groups').innerHTML = `
+      <div class="board" id="board">
+        ${data.stages.map(columnHtml).join('')}
+        <button type="button" class="col-new" id="col-new" title="Добавить этап">
+          <span aria-hidden="true">+</span>Этап
+        </button>
+      </div>`;
     autoGrowAll();
+  };
+
+  /* ── Этапы: добавить, переименовать, удалить ──────────────── */
+  const NEW_STAGE_NAME = 'Новый этап';
+
+  const addStage = () => {
+    if (data.stages.length >= 12) { toast('Больше двенадцати этапов — доска станет нечитаемой'); return; }
+    const stage = { id: uid('s'), name: NEW_STAGE_NAME };
+    data.stages.push(stage);
+    persist();
+    render();
+    /* Сразу отдаём название в правку с выделенным текстом — переименовать
+       новый этап нужно всегда, отдельным кликом это лишний шаг. */
+    const field = document.querySelector(`[data-stage-name="${CSS.escape(stage.id)}"]`);
+    if (field) {
+      byId('board')?.scrollBy({ left: 400, behavior: 'smooth' });
+      field.focus();
+      field.select();
+    }
+  };
+
+  const removeStage = (id) => {
+    if (data.stages.length <= 1) { toast('Последний этап удалить нельзя'); return; }
+    if (stageTasks(id).length) { toast('Сначала перенесите карточки в другой этап'); return; }
+    const name = data.stages.find((s) => s.id === id)?.name || '';
+    data.stages = data.stages.filter((s) => s.id !== id);
+    persist();
+    render();
+    toast(`Этап «${name}» удалён`);
+  };
+
+  const commitStageName = (el) => {
+    const stage = data.stages.find((s) => s.id === el.dataset.stageName);
+    if (!stage) return;
+    if (el.dataset.cancel === '1') { delete el.dataset.cancel; el.value = stage.name; return; }
+    const name = String(el.value).trim().slice(0, 40);
+    /* Безымянная колонка на доске выглядит как сломанная — возвращаем прежнее */
+    if (!name) { el.value = stage.name; return; }
+    if (name === stage.name) return;
+    stage.name = name;
+    el.value = name;
+    persist();
+    render();
   };
 
   /* Пересчитываем только шапки колонок — перерисовывать доску нельзя:
@@ -453,6 +504,8 @@
   };
 
   document.addEventListener('focusin', (event) => {
+    const stageName = event.target.closest?.('[data-stage-name]');
+    if (stageName) { stageName.dataset.before = stageName.value; return; }
     const el = event.target.closest?.('[data-field][data-task]');
     if (!el) return;
     /* В фокусе цена — голые цифры: с пробелами-разделителями каретка скачет */
@@ -464,6 +517,8 @@
   });
 
   document.addEventListener('focusout', (event) => {
+    const stageName = event.target.closest?.('[data-stage-name]');
+    if (stageName) { commitStageName(stageName); return; }
     const el = event.target.closest?.('[data-field][data-task]');
     if (el) commitField(el);
   });
@@ -474,7 +529,7 @@
   });
 
   document.addEventListener('keydown', (event) => {
-    const el = event.target.closest?.('[data-field][data-task]');
+    const el = event.target.closest?.('[data-field][data-task], [data-stage-name]');
     if (!el) return;
     if (event.key === 'Escape') {
       el.dataset.cancel = '1';
@@ -882,6 +937,11 @@
       byId('profile-btn').setAttribute('aria-expanded', 'false');
       return;
     }
+
+    if (target.closest('#col-new')) { addStage(); return; }
+
+    const removeStageBtn = target.closest('[data-remove-stage]');
+    if (removeStageBtn) { removeStage(removeStageBtn.dataset.removeStage); return; }
 
     const addToStage = target.closest('[data-add-stage]');
     if (addToStage) { openModal('task', { stage: addToStage.dataset.addStage }); return; }
