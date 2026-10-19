@@ -407,7 +407,15 @@
         </button>
       </div>`;
     autoGrowAll();
+    markPannable();
   };
+
+  /* Курсор-ладонь показываем, только когда доска реально шире экрана */
+  const markPannable = () => {
+    const board = byId('board');
+    if (board) board.classList.toggle('is-pannable', board.scrollWidth > board.clientWidth + 1);
+  };
+  window.addEventListener('resize', markPannable);
 
   /* ── Этапы: добавить, переименовать, удалить ──────────────── */
   const NEW_STAGE_NAME = 'Новый этап';
@@ -592,11 +600,21 @@
     toast(`Перенесено в «${data.stages.find((s) => s.id === stage)?.name || stage}»`);
   };
 
+  /* Перетаскивание доски за пустое место. Только мышью: на тачскрине доска
+     и так листается свайпом, перехватывать его незачем. */
+  let pan = null;
+
   document.addEventListener('pointerdown', (event) => {
     if (event.button) return;
     if (event.target.closest('input, textarea, button, a, select')) return;
     const card = event.target.closest('.deal');
-    if (!card) return;
+    if (!card) {
+      if (event.pointerType !== 'mouse') return;
+      const board = event.target.closest('.board');
+      if (!board || board.scrollWidth <= board.clientWidth) return;
+      pan = { board, x: event.clientX, left: board.scrollLeft, active: false };
+      return;
+    }
     const box = card.getBoundingClientRect();
     drag = {
       card, id: card.dataset.task, pointerId: event.pointerId,
@@ -608,6 +626,17 @@
   });
 
   document.addEventListener('pointermove', (event) => {
+    if (pan) {
+      const shift = event.clientX - pan.x;
+      if (!pan.active) {
+        if (Math.abs(shift) < 6) return;
+        pan.active = true;
+        document.body.classList.add('is-panning');
+      }
+      event.preventDefault();
+      pan.board.scrollLeft = pan.left - shift;
+      return;
+    }
     if (!drag || event.pointerId !== drag.pointerId) return;
     const dx = event.clientX - drag.x;
     const dy = event.clientY - drag.y;
@@ -642,11 +671,18 @@
     }
   }, { passive: false });
 
+  const stopPan = () => {
+    if (!pan) return;
+    pan = null;
+    document.body.classList.remove('is-panning');
+  };
+
   document.addEventListener('pointerup', (event) => {
+    stopPan();
     if (!drag || event.pointerId !== drag.pointerId) return;
     stopDrag(drag.active);
   });
-  document.addEventListener('pointercancel', () => stopDrag(false));
+  document.addEventListener('pointercancel', () => { stopPan(); stopDrag(false); });
 
   /* ── Заметки ──────────────────────────────────────────────── */
   let selectedNoteId = '';
