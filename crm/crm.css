@@ -365,6 +365,11 @@ p { margin: 0; }
    подсказка, что доска продолжается вправо. */
 .board { scrollbar-width: none; -ms-overflow-style: none; }
 .board::-webkit-scrollbar { width: 0; height: 0; }
+/* Доску двигают мышью за любое пустое место — за фон, шапку этапа или
+   пустоту под карточками. На ноутбуке без горизонтального колеса это
+   единственный удобный способ добраться до дальних этапов. */
+.board.is-pannable { cursor: grab; }
+body.is-panning, body.is-panning .board.is-pannable { cursor: grabbing; user-select: none; -webkit-user-select: none; }
 
 .col {
   --col-tint: var(--quiet);
@@ -429,29 +434,13 @@ p { margin: 0; }
 }
 .col__add:hover { color: var(--accent); border-color: var(--accent-line); background: var(--accent-pale); }
 
-/* Колонка листается внутри себя, чтобы доска помещалась в экран и шапки
-   этапов оставались на виду. Полосу прокрутки прячем — видно и так, что
-   карточка обрезана нижним краем. */
+/* Своей прокрутки у колонки нет: карточки видны все до одной, длинную
+   колонку листает страница целиком обычным колёсиком. */
 .col__body {
   display: grid; align-content: start; gap: 10px;
-  padding: 12px; min-height: 96px; max-height: calc(100vh - 330px); overflow-y: auto;
-  overscroll-behavior-y: contain;
-  scrollbar-width: none; -ms-overflow-style: none;
+  padding: 12px; min-height: 96px;
 }
-.col__body::-webkit-scrollbar { width: 0; height: 0; }
 
-/* На десктопе доска занимает ровно остаток экрана: страница не листается,
-   вертикальная прокрутка остаётся только одна — внутри колонки. Высоту
-   подбирает флекс, а не формула с вычитанием: над доской то заголовок, то
-   развёрнутые метрики, и любое фиксированное число промахивалось бы. */
-@media (min-width: 901px) {
-  .content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-  .view.is-visible { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-  #task-groups { display: flex; flex: 1 1 auto; min-height: 0; }
-  .board { flex: 1 1 auto; min-height: 0; align-items: stretch; }
-  .col { max-height: 100%; }
-  .col__body { flex: 1 1 auto; min-height: 0; max-height: none; }
-}
 .col__empty { padding: 18px 4px; color: var(--quiet); font-size: 12.5px; text-align: center; }
 
 .col-new {
@@ -731,7 +720,6 @@ body.is-dragging-card { user-select: none; -webkit-user-select: none; }
   /* Доска на телефоне: колонка почти во всю ширину, с «прилипанием» */
   .board { scroll-snap-type: x proximity; gap: 10px; }
   .col { flex-basis: min(84vw, 320px); width: min(84vw, 320px); scroll-snap-align: start; }
-  .col__body { max-height: calc(100dvh - 300px); }
 
   /* Пальцевые цели: мелкие кнопки подрастают до ~44px */
   .mini-btn, .task__delete, .col__add { min-width: 40px; height: 40px; border-radius: 12px; }
