@@ -455,10 +455,7 @@ body.is-dragging-card { user-select: none; -webkit-user-select: none; }
 .deal__money:empty { display: none; }
 .deal__money small { font-size: 11.5px; color: var(--muted); }
 
-.deal__foot { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
-.deal__due { font-size: 11.5px; color: var(--muted); }
-.deal__due.is-overdue { color: var(--accent); font-weight: 600; }
-.deal__due--empty { color: var(--quiet); }
+.deal__foot { display: flex; align-items: center; margin-top: 2px; }
 .deal__actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 
 .bar { height: 5px; border-radius: 999px; background: var(--track); overflow: hidden; }

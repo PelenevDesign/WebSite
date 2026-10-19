@@ -4,7 +4,7 @@
   /* ──────────────────────────────────────────────────────────────
      Модель данных (v5) — канбан-доска: у карточки есть этап и клиент.
      stages: [{id, name}] — колонки доски слева направо
-     tasks: {id, title, client, stage, price, paid, due, time, note, createdAt}
+     tasks: {id, title, client, stage, price, paid, note, createdAt}
      notes: {id, body (санитизированный HTML, первая строка = заголовок),
              pinned, deletedAt, createdAt, updatedAt}
      ────────────────────────────────────────────────────────────── */
@@ -25,36 +25,6 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
   const today = () => iso(new Date());
-  const fromIso = (value) => {
-    const parts = String(value || '').split('-').map(Number);
-    if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
-    return new Date(parts[0], parts[1] - 1, parts[2]);
-  };
-  const daysBetween = (a, b) => Math.round((fromIso(b) - fromIso(a)) / 86400000);
-  const fmtDate = (value) => {
-    const d = fromIso(value);
-    if (!d) return 'без даты';
-    return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
-  };
-  const fmtDateRelative = (value) => {
-    const diff = daysBetween(today(), value);
-    if (diff === null || Number.isNaN(diff)) return 'без даты';
-    if (diff === 0) return 'сегодня';
-    if (diff === 1) return 'завтра';
-    if (diff === -1) return 'вчера';
-    if (diff < 0) return `${fmtDate(value)} · просрочено`;
-    if (diff <= 6) return `через ${diff} ${plural(diff, 'день', 'дня', 'дней')}`;
-    return fmtDate(value);
-  };
-  /* Проверяем не форму, а диапазон: «25:99» формально подходит под \d\d:\d\d */
-  const validTime = (value) => {
-    const match = /^(\d{1,2}):(\d{2})$/.exec(String(value || '').trim());
-    if (!match) return '';
-    const h = Number(match[1]);
-    const m = Number(match[2]);
-    if (h > 23 || m > 59) return '';
-    return `${String(h).padStart(2, '0')}:${match[2]}`;
-  };
   const plural = (n, one, few, many) => {
     const a = Math.abs(n) % 100;
     const b = a % 10;
@@ -186,8 +156,8 @@
   const seed = () => {
     const state = emptyState();
     state.tasks = [
-      { id: uid('t'), title: 'Отправить КП', client: 'Василий Фёдоров', stage: 'talks', price: 65000, paid: 30000, due: today(), time: '10:00', note: 'Нужен лендинг, бюджет подтвердил', createdAt: today() },
-      { id: uid('t'), title: 'Собрать референсы для главного экрана', client: '', stage: 'new', price: 0, paid: 0, due: '', time: '', note: '', createdAt: today() }
+      { id: uid('t'), title: 'Отправить КП', client: 'Василий Фёдоров', stage: 'talks', price: 65000, paid: 30000, note: 'Нужен лендинг, бюджет подтвердил', createdAt: today() },
+      { id: uid('t'), title: 'Собрать референсы для главного экрана', client: '', stage: 'new', price: 0, paid: 0, note: '', createdAt: today() }
     ];
     const now = new Date().toISOString();
     state.notes = [{
@@ -203,10 +173,10 @@
     const state = emptyState();
     const start = state.stages[0].id;
     (Array.isArray(old.deals) ? old.deals : []).forEach((d) => {
-      state.tasks.push({ id: d.id || uid('t'), title: d.name || 'Без названия', client: '', stage: d.status === 'Завершено' ? 'done' : start, price: num(d.value), paid: d.status === 'Завершено' ? num(d.value) : 0, due: '', time: '', note: '', createdAt: today() });
+      state.tasks.push({ id: d.id || uid('t'), title: d.name || 'Без названия', client: '', stage: d.status === 'Завершено' ? 'done' : start, price: num(d.value), paid: d.status === 'Завершено' ? num(d.value) : 0, note: '', createdAt: today() });
     });
     (Array.isArray(old.tasks) ? old.tasks : []).forEach((t) => {
-      state.tasks.push({ id: t.id || uid('t'), title: t.title || 'Без названия', client: '', stage: start, price: 0, paid: 0, due: today(), time: t.time || '', note: '', createdAt: today() });
+      state.tasks.push({ id: t.id || uid('t'), title: t.title || 'Без названия', client: '', stage: start, price: 0, paid: 0, note: '', createdAt: today() });
     });
     return state;
   };
@@ -244,8 +214,6 @@
         stage: knownStage.has(stage) ? stage : fallbackStage,
         price,
         paid: Math.min(price, num(t.paid)),
-        due: fromIso(t.due) ? t.due : '',
-        time: validTime(t.time),
         note: String(t.note || '').slice(0, 800),
         createdAt: typeof t.createdAt === 'string' && t.createdAt ? t.createdAt : today()
       });
@@ -348,14 +316,15 @@
     </article>`;
 
   const renderWorkMetrics = () => {
-    const overdue = data.tasks.filter((t) => t.due && daysBetween(today(), t.due) < 0);
+    const priced = data.tasks.filter((t) => t.price > 0);
+    const average = priced.length ? Math.round(priced.reduce((sum, t) => sum + t.price, 0) / priced.length) : 0;
     byId('work-metrics').innerHTML = [
       metricCard('Заработано', money(earned()), `по ${data.tasks.length} ${plural(data.tasks.length, 'задаче', 'задачам', 'задачам')}`),
       metricCard('Ждёт оплаты', money(awaiting()), awaiting() ? 'выставлено, но не получено' : 'всё оплачено', awaiting() ? 'warn' : 'ok'),
       metricCard('Всего задач', String(data.tasks.length), data.tasks.length ? 'на доске' : 'доска пуста'),
-      metricCard('Просрочено', String(overdue.length), overdue.length ? 'нужно закрыть' : 'всё в срок', overdue.length ? 'urgent' : 'ok')
+      metricCard('Средний чек', money(average), priced.length ? `по ${priced.length} ${plural(priced.length, 'карточке', 'карточкам', 'карточкам')} с ценой` : 'цены ещё не проставлены')
     ].join('');
-    byId('metrics-summary-text').textContent = `${money(earned())} заработано · ${data.tasks.length} ${plural(data.tasks.length, 'задача', 'задачи', 'задач')}${overdue.length ? ` · ${overdue.length} просрочено` : ''}`;
+    byId('metrics-summary-text').textContent = `${money(earned())} заработано · ${data.tasks.length} ${plural(data.tasks.length, 'задача', 'задачи', 'задач')}`;
     byId('metrics-toggle').setAttribute('aria-expanded', String(metricsOpen));
     byId('work-metrics').hidden = !metricsOpen;
     byId('work-subtitle').textContent = data.tasks.length
@@ -374,7 +343,6 @@
   const dealCard = (task) => {
     const left = taskLeft(task);
     const payPercent = task.price > 0 ? Math.round(task.paid / task.price * 100) : 0;
-    const overdue = task.due && daysBetween(today(), task.due) < 0;
     return `
       <article class="deal" data-task="${esc(task.id)}">
         <div class="deal__head">
@@ -402,7 +370,6 @@
         </div>
 
         <div class="deal__foot">
-          ${task.due ? `<span class="deal__due${overdue ? ' is-overdue' : ''}">${esc(fmtDateRelative(task.due))}${task.time ? ` · ${esc(task.time)}` : ''}</span>` : '<span class="deal__due deal__due--empty">без срока</span>'}
           <div class="deal__actions">
             ${left > 0 ? `<button class="mini-btn" data-pay-task="${esc(task.id)}" title="Внести оплату" aria-label="Внести оплату">+ ₽</button>` : ''}
             <button class="task__delete" data-delete-task="${esc(task.id)}" title="Удалить" aria-label="Удалить карточку">🗑</button>
@@ -777,8 +744,6 @@
         { key: 'title', label: 'Что нужно сделать', type: 'text', required: true },
         { key: 'client', label: 'Клиент', type: 'text', half: true },
         { key: 'stage', label: 'Этап', type: 'select', half: true, options: () => data.stages.map((s) => [s.id, s.name]) },
-        { key: 'due', label: 'Дата', type: 'date', half: true },
-        { key: 'time', label: 'Время', type: 'time', half: true },
         { key: 'price', label: 'Стоимость, ₽', type: 'number', half: true },
         { key: 'paid', label: 'Уже оплачено, ₽', type: 'number', half: true },
         { key: 'note', label: 'Заметка', type: 'textarea' }
@@ -847,8 +812,6 @@
         title: String(raw.title).trim(),
         client: String(raw.client || '').trim().slice(0, 120),
         stage,
-        due: fromIso(raw.due) ? raw.due : '',
-        time: validTime(raw.time),
         price,
         paid: Math.min(price, num(raw.paid)),
         note: String(raw.note || '').trim()
@@ -899,7 +862,7 @@
 
   /* ── События ──────────────────────────────────────────────── */
   const openAction = (action) => {
-    if (action === 'new-task') { openModal('task', { due: today(), stage: firstStageId() }); return true; }
+    if (action === 'new-task') { openModal('task', { stage: firstStageId() }); return true; }
     if (action === 'new-note') { setView('notes'); notesTrash = false; createNote(); return true; }
     if (action === 'export') { exportBackup(); return true; }
     if (action === 'import') { byId('backup-file').click(); return true; }
@@ -921,7 +884,7 @@
     }
 
     const addToStage = target.closest('[data-add-stage]');
-    if (addToStage) { openModal('task', { due: today(), stage: addToStage.dataset.addStage }); return; }
+    if (addToStage) { openModal('task', { stage: addToStage.dataset.addStage }); return; }
 
     const deleteBtn = target.closest('[data-delete-task]');
     if (deleteBtn) {
@@ -1081,7 +1044,7 @@
     stages: data.stages.map((s) => ({ id: s.id, name: s.name })),
     tasks: data.tasks.slice(0, 80).map((t) => ({
       id: t.id, title: t.title, client: t.client || null, stage: t.stage,
-      price: t.price, paid: t.paid, due: t.due || null, time: t.time || null
+      price: t.price, paid: t.paid
     })),
     totals: { earned: earned(), awaiting: awaiting() }
   });
@@ -1090,8 +1053,6 @@
   const taskFieldsFrom = (op, task) => {
     const patch = {};
     if (op.title !== undefined && String(op.title).trim()) patch.title = String(op.title).trim();
-    if (op.due !== undefined) patch.due = fromIso(op.due) ? op.due : '';
-    if (op.time !== undefined) patch.time = validTime(op.time);
     if (op.note !== undefined) patch.note = String(op.note).trim();
     const price = op.price !== undefined ? num(op.price) : (task ? task.price : 0);
     if (op.price !== undefined) patch.price = price;
@@ -1106,7 +1067,7 @@
     ops.forEach((op) => {
       try {
         if (op.op === 'task.create') {
-          const task = { id: uid('t'), title: 'Без названия', client: '', stage: firstStageId(), price: 0, paid: 0, due: '', time: '', note: '', createdAt: today() };
+          const task = { id: uid('t'), title: 'Без названия', client: '', stage: firstStageId(), price: 0, paid: 0, note: '', createdAt: today() };
           Object.assign(task, taskFieldsFrom(op, task));
           data.tasks.unshift(task);
           done.push(`Задача «${task.title}»`);
